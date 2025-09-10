@@ -1,4 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Admin Demo
+
+当前项目已补齐以下基础能力：
+
+- bcrypt 密码校验与签名会话 Cookie
+- 统一请求封装
+- 用户管理远程分页 / 搜索 / 状态筛选
+- RBAC 权限控制（页面、菜单、API）
+
+## 环境变量
+
+至少配置以下变量：
+
+```bash
+DATABASE_URL=postgresql://...
+AUTH_SECRET=replace-with-a-random-secret
+```
+
+## 管理员角色
+
+- `super_admin`：完整权限
+- `admin`：可看仪表盘、查看/新增/编辑用户、查看系统设置
+- `viewer`：只读查看仪表盘和用户列表
+
+## 密码加密
+
+管理员密码必须以 bcrypt hash 存入 `AdminUser.password`，不要存明文。
+
+生成 hash：
+
+```bash
+npm run password:hash -- 123456
+```
+
+新增 `AdminUser.role` 字段后，需要执行 Prisma 迁移或 `db push` 同步数据库结构。
 
 ## Getting Started
 
@@ -16,21 +50,3 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

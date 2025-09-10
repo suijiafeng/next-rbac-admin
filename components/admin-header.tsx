@@ -7,6 +7,7 @@ import {
   UserOutlined,
   LogoutOutlined,
 } from '@ant-design/icons';
+import { useRouter } from 'next/navigation';
 import type { MenuProps } from 'antd';
 const { Text } = Typography
 const { Header } = Layout;
@@ -18,7 +19,7 @@ interface AdminHeaderProps {
 
 export default function AdminHeader(props: AdminHeaderProps) {
   const { collapsed, onToggleCollapse } = props;
-
+  const router = useRouter();
   const items: MenuProps['items'] = [
     {
       key: 'profile',
@@ -64,6 +65,9 @@ export default function AdminHeader(props: AdminHeaderProps) {
                 method: 'POST',
               });
               window.location.href = '/login';
+            }
+            if (key === 'profile') {
+              router.push('/profile')
             }
           },
         }}
