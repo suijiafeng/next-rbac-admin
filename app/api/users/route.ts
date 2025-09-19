@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+const userSelect = {
+  id: true,
+  username: true,
+  nickname: true,
+  email: true,
+  role: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -28,6 +39,7 @@ export async function GET(request: Request) {
     const [list, total] = await Promise.all([
       prisma.user.findMany({
         where,
+        select: userSelect,
         orderBy: {
           id: 'asc',
         },
@@ -112,6 +124,7 @@ export async function POST(request: Request) {
         email: email || null,
         status: Number(status ?? 1),
       },
+      select: userSelect,
     });
 
     return NextResponse.json({
