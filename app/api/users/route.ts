@@ -1,17 +1,52 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const list = await prisma.user.findMany({
-      orderBy: {
-        id: 'desc',
-      },
-    });
+    const { searchParams } = new URL(request.url);
+
+    const page = Number(searchParams.get('page') || 1);
+    const pageSize = Number(searchParams.get('pageSize') || 10);
+    const username = searchParams.get('username') || '';
+    const status = searchParams.get('status');
+
+    const where = {
+      ...(username
+        ? {
+          username: {
+            contains: username,
+          },
+        }
+        : {}),
+      ...(status !== null && status !== ''
+        ? {
+          status: Number(status),
+        }
+        : {}),
+    };
+
+    const [list, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        orderBy: {
+          id: 'asc',
+        },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.user.count({
+        where,
+      }),
+    ]);
 
     return NextResponse.json({
       code: 0,
-      data: list,
+      data: {
+        list,
+        total,
+        page,
+        pageSize,
+      },
       message: 'success',
     });
   } catch (error) {
