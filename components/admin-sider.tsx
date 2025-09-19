@@ -6,8 +6,9 @@ import {
   UserOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 const { Sider } = Layout;
 
@@ -19,6 +20,13 @@ export default function AdminSider(props: AdminSiderProps) {
   const { collapsed } = props;
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    router.prefetch('/dashboard');
+    router.prefetch('/users');
+    router.prefetch('/settings');
+    router.prefetch('/profile');
+  }, [router]);
 
   const selectedKeys = useMemo(() => {
     if (pathname.startsWith('/dashboard')) {
@@ -63,22 +71,19 @@ export default function AdminSider(props: AdminSiderProps) {
           {
             key: '/dashboard',
             icon: <DashboardOutlined />,
-            label: '仪表盘',
+            label: <Link href="/dashboard">仪表盘</Link>,
           },
           {
             key: '/users',
             icon: <UserOutlined />,
-            label: '用户管理',
+            label: <Link href="/users">用户管理</Link>,
           },
           {
             key: '/settings',
             icon: <SettingOutlined />,
-            label: '系统设置',
+            label: <Link href="/settings">系统设置</Link>,
           },
         ]}
-        onClick={(info) => {
-          router.push(info.key);
-        }}
       />
     </Sider>
   );

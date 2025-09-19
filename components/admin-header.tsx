@@ -8,6 +8,7 @@ import {
   LogoutOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import type { MenuProps } from 'antd';
 const { Text } = Typography
 const { Header } = Layout;
@@ -20,6 +21,11 @@ interface AdminHeaderProps {
 export default function AdminHeader(props: AdminHeaderProps) {
   const { collapsed, onToggleCollapse } = props;
   const router = useRouter();
+
+  useEffect(() => {
+    router.prefetch('/profile');
+  }, [router]);
+
   const items: MenuProps['items'] = [
     {
       key: 'profile',
