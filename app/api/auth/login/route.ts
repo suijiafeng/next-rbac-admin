@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
+import bcrypt from 'bcryptjs';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -22,12 +22,30 @@ export async function POST(request: Request) {
         const adminUser = await prisma.adminUser.findFirst({
             where: {
                 username,
-                password,
                 status: 1,
             },
         });
 
         if (!adminUser) {
+            return NextResponse.json(
+                {
+                    code: 1,
+                    data: null,
+                    message: '该用户不存在',
+                },
+                {
+                    status: 401,
+                },
+            );
+        }
+
+
+        const isPasswordValid = await bcrypt.compare(
+            password,
+            adminUser.password,
+        );
+
+        if (!isPasswordValid) {
             return NextResponse.json(
                 {
                     code: 1,
@@ -39,6 +57,7 @@ export async function POST(request: Request) {
                 },
             );
         }
+
 
         const response = NextResponse.json({
             code: 0,
