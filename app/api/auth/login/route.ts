@@ -64,7 +64,6 @@ export async function POST(request: Request) {
       },
       message: '登录成功',
     });
-
     response.cookies.set('admin_token', String(adminUser.id), {
       httpOnly: true,
       sameSite: 'lax',
@@ -72,6 +71,18 @@ export async function POST(request: Request) {
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
     });
+
+    response.cookies.set(
+      'admin_user',
+      JSON.stringify({
+        id: adminUser.id,
+        role: adminUser.role,
+      }),
+      {
+        httpOnly: true,
+        path: '/',
+      },
+    );
 
     return response;
   } catch (error) {
