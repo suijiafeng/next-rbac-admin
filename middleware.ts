@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-const publicPaths = ['/login', '/api/auth/login','/api/profile',];
+import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from '@/lib/session';
 
-export function middleware(request: NextRequest) {
+const publicPaths = ['/login', '/api/auth/login'];
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isPublicPath = publicPaths.some((path) =>
@@ -9,27 +11,27 @@ export function middleware(request: NextRequest) {
   );
 
   if (isPublicPath) {
+    const sessionToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    const session = await verifyAdminSessionToken(sessionToken);
+
+    if (session && pathname === '/login') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
     return NextResponse.next();
   }
 
-  // const adminToken = request.cookies.get('admin_token')?.value;
-  const adminUser = request.cookies.get('admin_user')?.value;
+  const sessionToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  const session = await verifyAdminSessionToken(sessionToken);
 
-
-
-
-  if (!adminUser) {
+  if (!session) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (adminUser && pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/users/:path*', '/settings/:path*', '/profile/:path*', '/'],
+  matcher: ['/login', '/dashboard/:path*', '/users/:path*', '/settings/:path*', '/profile/:path*', '/'],
 };

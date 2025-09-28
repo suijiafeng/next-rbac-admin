@@ -1,21 +1,19 @@
 import { cookies } from 'next/headers';
+import {
+  ADMIN_SESSION_COOKIE,
+  verifyAdminSessionToken,
+  type AdminSessionPayload,
+} from '@/lib/session';
 
 export function getAdminToken() {
-  return cookies().get('admin_token')?.value;
+  return cookies().get(ADMIN_SESSION_COOKIE)?.value;
 }
 
-export function getAdminUserId() {
-  const token = getAdminToken();
+export async function getAdminSession(): Promise<AdminSessionPayload | null> {
+  return verifyAdminSessionToken(getAdminToken());
+}
 
-  if (!token) {
-    return null;
-  }
-
-  const adminUserId = Number(token);
-
-  if (Number.isNaN(adminUserId)) {
-    return null;
-  }
-
-  return adminUserId;
+export async function getAdminUserId() {
+  const session = await getAdminSession();
+  return session?.userId ?? null;
 }
