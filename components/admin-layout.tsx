@@ -7,17 +7,32 @@ import AdminSider from './admin-sider';
 
 const { Content } = Layout;
 
+interface CurrentUser {
+  id: number;
+  username: string;
+  nickname: string;
+  email: string | null;
+  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+  status: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 interface AdminLayoutProps {
   children: React.ReactNode;
+  currentUser: CurrentUser;
 }
 
 export default function AdminLayout(props: AdminLayoutProps) {
-  const { children } = props;
+  const { children, currentUser } = props;
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <Layout hasSider style={{ minHeight: '100vh' }}>
-      <AdminSider collapsed={collapsed} />
+      <AdminSider
+        collapsed={collapsed}
+        role={currentUser.role}
+      />
 
       <Layout>
         <AdminHeader

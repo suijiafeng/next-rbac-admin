@@ -5,6 +5,7 @@ import {
   DashboardOutlined,
   UserOutlined,
   SettingOutlined,
+  ProfileOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -12,37 +13,77 @@ import { useEffect, useMemo } from 'react';
 
 const { Sider } = Layout;
 
+type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+
 interface AdminSiderProps {
   collapsed: boolean;
+  role: Role;
 }
 
+interface MenuItemConfig {
+  key: string;
+  icon: React.ReactNode;
+  label: string;
+  roles: Role[];
+}
+
+const menuConfig: MenuItemConfig[] = [
+  {
+    key: '/dashboard',
+    icon: <DashboardOutlined />,
+    label: '仪表盘',
+    roles: ['USER', 'ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/users',
+    icon: <UserOutlined />,
+    label: '用户管理',
+    roles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/settings',
+    icon: <SettingOutlined />,
+    label: '系统设置',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
+    key: '/profile',
+    icon: <ProfileOutlined />,
+    label: '个人信息',
+    roles: ['USER', 'ADMIN', 'SUPER_ADMIN'],
+  },
+];
+
 export default function AdminSider(props: AdminSiderProps) {
-  const { collapsed } = props;
+  const { collapsed, role } = props;
   const pathname = usePathname();
   const router = useRouter();
 
+  const visibleMenus = useMemo(() => {
+    return menuConfig.filter((item) => item.roles.includes(role));
+  }, [role]);
+
   useEffect(() => {
-    router.prefetch('/dashboard');
-    router.prefetch('/users');
-    router.prefetch('/settings');
-    router.prefetch('/profile');
-  }, [router]);
+    visibleMenus.forEach((item) => {
+      router.prefetch(item.key);
+    });
+  }, [router, visibleMenus]);
 
   const selectedKeys = useMemo(() => {
-    if (pathname.startsWith('/dashboard')) {
-      return ['/dashboard'];
-    }
+    const matchedMenu = visibleMenus
+      .filter((item) => pathname.startsWith(item.key))
+      .sort((a, b) => b.key.length - a.key.length)[0];
+      
+    return matchedMenu ? [matchedMenu.key] : [];
+  }, [pathname, visibleMenus]);
 
-    if (pathname.startsWith('/users')) {
-      return ['/users'];
-    }
-
-    if (pathname.startsWith('/settings')) {
-      return ['/settings'];
-    }
-
-    return ['/dashboard'];
-  }, [pathname]);
+  const menuItems = useMemo(() => {
+    return visibleMenus.map((item) => ({
+      key: item.key,
+      icon: item.icon,
+      label: <Link href={item.key}>{item.label}</Link>,
+    }));
+  }, [visibleMenus]);
 
   return (
     <Sider trigger={null} collapsible collapsed={collapsed}>
@@ -67,23 +108,7 @@ export default function AdminSider(props: AdminSiderProps) {
         theme="dark"
         mode="inline"
         selectedKeys={selectedKeys}
-        items={[
-          {
-            key: '/dashboard',
-            icon: <DashboardOutlined />,
-            label: <Link href="/dashboard">仪表盘</Link>,
-          },
-          {
-            key: '/users',
-            icon: <UserOutlined />,
-            label: <Link href="/users">用户管理</Link>,
-          },
-          {
-            key: '/settings',
-            icon: <SettingOutlined />,
-            label: <Link href="/settings">系统设置</Link>,
-          },
-        ]}
+        items={menuItems}
       />
     </Sider>
   );
