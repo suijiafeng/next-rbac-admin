@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from '@/lib/session';
 
-const publicPaths = ['/login', '/api/auth/login'];
+const publicPaths = ['/login', '/register', '/api/auth/login', '/api/auth/register', '/api/auth/captcha'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -33,5 +33,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/login', '/dashboard/:path*', '/users/:path*', '/settings/:path*', '/profile/:path*', '/'],
+  matcher: ['/login', '/register/:path*', '/dashboard/:path*', '/users/:path*', '/settings/:path*', '/profile/:path*', '/'],
 };

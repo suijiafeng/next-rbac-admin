@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Dropdown, Layout, Space, Typography } from 'antd';
+import { Avatar, Button, Dropdown, Layout, Space, Typography } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -10,35 +10,65 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import type { MenuProps } from 'antd';
-const { Text } = Typography
+
+const { Text } = Typography;
 const { Header } = Layout;
+
+interface CurrentUser {
+  nickname: string;
+  username: string;
+  role: string;
+}
 
 interface AdminHeaderProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
+  currentUser: CurrentUser;
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  SUPER_ADMIN: '超级管理员',
+  ADMIN: '管理员',
+  USER: '普通用户',
+};
+
+// 根据用户名生成固定颜色
+const AVATAR_COLORS = [
+  '#1677ff', '#52c41a', '#faad14', '#f5222d',
+  '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16',
+];
+function avatarColor(username: string) {
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) hash += username.charCodeAt(i);
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
 export default function AdminHeader(props: AdminHeaderProps) {
-  const { collapsed, onToggleCollapse } = props;
+  const { collapsed, onToggleCollapse, currentUser } = props;
   const router = useRouter();
 
   useEffect(() => {
     router.prefetch('/profile');
   }, [router]);
 
+  const firstChar = ( currentUser.username || '?')[0].toUpperCase();
+  const bgColor = avatarColor(currentUser.username);
+
   const items: MenuProps['items'] = [
     {
+      key: 'user-info',
+      disabled: true,
+    },
+    {
       key: 'profile',
-      label: '个人信息',
+      label: '个人中心',
       icon: <UserOutlined />,
     },
-    {
-      type: 'divider',
-    },
+    { type: 'divider' },
     {
       key: 'logout',
-      label: '退出登录',
-      icon: <LogoutOutlined />,
+      label: <span style={{ color: '#ff4d4f' }}>退出</span>,
+      icon: <LogoutOutlined style={{ color: '#ff4d4f' }} />,
     },
   ];
 
@@ -67,18 +97,31 @@ export default function AdminHeader(props: AdminHeaderProps) {
           items,
           onClick: async ({ key }) => {
             if (key === 'logout') {
-              await fetch('/api/auth/logout', {
-                method: 'POST',
-              });
+              await fetch('/api/auth/logout', { method: 'POST' });
               window.location.href = '/login';
             }
             if (key === 'profile') {
-              router.push('/profile')
+              router.push('/profile');
             }
           },
         }}
+        placement="bottomRight"
+        arrow
       >
-        <Button type="text">管理员</Button>
+        <div
+          style={{ cursor: 'pointer', padding: '0 4px', borderRadius: 6 }}
+          className="hover:bg-slate-50 gap-x-2  flex items-center"
+        >
+          <Avatar
+            size={32}
+            style={{ backgroundColor: bgColor, fontWeight: 600, fontSize: 14, flexShrink: 0 }}
+          >
+            {firstChar}
+          </Avatar>
+          <Text style={{ fontSize: 14, maxWidth: 100 }} ellipsis>
+            {currentUser.username}
+          </Text>
+        </div>
       </Dropdown>
     </Header>
   );
