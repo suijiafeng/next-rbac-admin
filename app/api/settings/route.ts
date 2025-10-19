@@ -1,0 +1,96 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireAdminUser, requireRole } from '@/lib/permission';
+
+export const dynamic = 'force-dynamic';
+
+// 默认设置值
+const DEFAULTS: Record<string, string> = {
+  site_name: 'Next Admin',
+  site_description: '后台管理系统',
+  site_logo: '',
+  session_duration: '7',
+  max_login_attempts: '5',
+  allow_register: 'false',
+};
+
+export async function GET() {
+  try {
+    await requireAdminUser();
+
+    const records = await prisma.systemSetting.findMany();
+
+    const settings: Record<string, string> = { ...DEFAULTS };
+    for (const record of records) {
+      settings[record.key] = record.value;
+    }
+
+    return NextResponse.json({
+      code: 0,
+      data: settings,
+      message: 'success',
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === '未登录') {
+      return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
+    }
+    return NextResponse.json({ code: 1, data: null, message: '获取设置失败' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    await requireRole(['SUPER_ADMIN']);
+
+    const body = await request.json();
+    const allowedKeys = Object.keys(DEFAULTS);
+
+    // 校验数值字段
+    if (body.session_duration !== undefined) {
+      const v = Number(body.session_duration);
+      if (!Number.isInteger(v) || v < 1 || v > 30) {
+        return NextResponse.json({ code: 1, data: null, message: '会话时长须在 1~30 天之间' }, { status: 400 });
+      }
+    }
+    if (body.max_login_attempts !== undefined) {
+      const v = Number(body.max_login_attempts);
+      if (!Number.isInteger(v) || v < 1 || v > 20) {
+        return NextResponse.json({ code: 1, data: null, message: '最大登录尝试次数须在 1~20 之间' }, { status: 400 });
+      }
+    }
+
+    const upserts = allowedKeys
+      .filter((key) => body[key] !== undefined)
+      .map((key) =>
+        prisma.systemSetting.upsert({
+          where: { key },
+          update: { value: String(body[key]) },
+          create: { key, value: String(body[key]) },
+        }),
+      );
+
+    await prisma.$transaction(upserts);
+
+    const records = await prisma.systemSetting.findMany();
+    const settings: Record<string, string> = { ...DEFAULTS };
+    for (const record of records) {
+      settings[record.key] = record.value;
+    }
+
+    return NextResponse.json({
+      code: 0,
+      data: settings,
+      message: '保存成功',
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === '未登录') {
+        return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
+      }
+      if (error.message === '无权限') {
+        return NextResponse.json({ code: 1, data: null, message: '无权限' }, { status: 403 });
+      }
+    }
+    return NextResponse.json({ code: 1, data: null, message: '保存设置失败' }, { status: 500 });
+  }
+}
