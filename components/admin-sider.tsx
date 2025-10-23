@@ -73,7 +73,7 @@ export default function AdminSider(props: AdminSiderProps) {
     const matchedMenu = visibleMenus
       .filter((item) => pathname.startsWith(item.key))
       .sort((a, b) => b.key.length - a.key.length)[0];
-      
+
     return matchedMenu ? [matchedMenu.key] : [];
   }, [pathname, visibleMenus]);
 
@@ -86,7 +86,12 @@ export default function AdminSider(props: AdminSiderProps) {
   }, [visibleMenus]);
 
   return (
-    <Sider trigger={null} collapsible collapsed={collapsed}>
+    <Sider
+      trigger={null}
+      collapsible
+      collapsed={collapsed}
+      style={{ position: 'fixed', left: 0, top: 0, bottom: 0, height: '100vh', zIndex: 100, overflow: 'auto' }}
+    >
       <div
         style={{
           height: 56,
