@@ -119,9 +119,9 @@ const searchKeywords = Array.from({ length: 50 }, (_, i) => ({
   key: i + 1,
   rank: i + 1,
   keyword: `搜索关键词-${i}`,
-  users: Math.floor(Math.random() * 1000) + 10,
-  growth: Math.floor(Math.random() * 100),
-  up: Math.random() > 0.3,
+  users: 120 + ((i * 137) % 900),
+  growth: (i * 17) % 100,
+  up: i % 4 !== 0,
 }));
 
 

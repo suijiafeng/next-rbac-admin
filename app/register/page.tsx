@@ -79,7 +79,7 @@ export default function RegisterPage() {
               注册账号
             </Typography.Title>
 
-            <Form form={form} layout="vertical" onFinish={handleRegister}>
+            <Form form={form} layout="vertical" onFinish={handleRegister} autoComplete="off">
               <Form.Item
                 label="用户名"
                 name="username"
@@ -90,7 +90,7 @@ export default function RegisterPage() {
                   { pattern: /^[a-zA-Z0-9_]+$/, message: '用户名只能包含字母、数字和下划线' },
                 ]}
               >
-                <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
+                <Input prefix={<UserOutlined />} placeholder="请输入用户名" autoComplete="off" />
               </Form.Item>
 
               <Form.Item
@@ -101,7 +101,7 @@ export default function RegisterPage() {
                   { max: 20, message: '昵称最多 20 个字符' },
                 ]}
               >
-                <Input prefix={<UserOutlined />} placeholder="请输入昵称" />
+                <Input prefix={<UserOutlined />} placeholder="请输入昵称" autoComplete="off" />
               </Form.Item>
 
               <Form.Item
@@ -109,7 +109,7 @@ export default function RegisterPage() {
                 name="email"
                 rules={[{ type: 'email', message: '请输入正确的邮箱格式' }]}
               >
-                <Input prefix={<MailOutlined />} placeholder="请输入邮箱（可选）" />
+                <Input prefix={<MailOutlined />} placeholder="请输入邮箱（可选）" autoComplete="off" />
               </Form.Item>
 
               <Form.Item
@@ -120,7 +120,7 @@ export default function RegisterPage() {
                   { min: 6, message: '密码至少 6 位' },
                 ]}
               >
-                <Input.Password prefix={<LockOutlined />} placeholder="请输入密码（至少 6 位）" />
+                <Input.Password prefix={<LockOutlined />} placeholder="请输入密码（至少 6 位）" autoComplete="new-password" />
               </Form.Item>
 
               <Form.Item
@@ -139,7 +139,7 @@ export default function RegisterPage() {
                   }),
                 ]}
               >
-                <Input.Password prefix={<LockOutlined />} placeholder="请再次输入密码" />
+                <Input.Password prefix={<LockOutlined />} placeholder="请再次输入密码" autoComplete="new-password" />
               </Form.Item>
 
               <Form.Item style={{ marginBottom: 8 }}>

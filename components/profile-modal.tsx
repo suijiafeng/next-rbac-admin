@@ -25,6 +25,12 @@ import { request } from '@/lib/request';
 const { Text } = Typography;
 
 interface ProfileInfo {
+  user: userInfo,
+  role: string,
+  permissions: string[]
+}
+
+interface userInfo {
   id: number;
   username: string;
   nickname: string;
@@ -46,6 +52,10 @@ const AVATAR_COLORS = [
   '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16',
 ];
 function avatarColor(username: string) {
+  if (!username) {
+    return AVATAR_COLORS[0];
+  }
+
   let hash = 0;
   for (let i = 0; i < username.length; i++) hash += username.charCodeAt(i);
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
@@ -117,7 +127,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [editingField, setEditingField] = useState<EditableField | null>(null);
-  const [profile, setProfile] = useState<ProfileInfo | null>(null);
+  const [profile, setProfile] = useState<userInfo | null>(null);
   const [, forceUpdate] = useState(0);
   const [form] = Form.useForm<{ nickname: string; email: string }>();
 
@@ -125,7 +135,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     try {
       setLoading(true);
       const result = await request<ProfileInfo>('/api/profile');
-      const user = result.data;
+      const user = result.data.user;
       setProfile(user);
       form.setFieldsValue({ nickname: user.nickname, email: user.email ?? '' });
     } catch (error) {
@@ -159,7 +169,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
         nickname: field === 'nickname' ? values.nickname : (form.getFieldValue('nickname') || profile.nickname),
         email: field === 'email' ? (values.email || '') : (form.getFieldValue('email') || profile.email || ''),
       };
-      const result = await request<ProfileInfo>('/api/profile', { method: 'PUT', data: payload });
+      const result = await request<userInfo>('/api/profile', { method: 'PUT', data: payload });
       message.success('保存成功');
       const user = result.data;
       setProfile(user);
@@ -178,7 +188,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     onClose();
   };
 
-  const displayValue = (key: keyof ProfileInfo) => {
+  const displayValue = (key: keyof userInfo) => {
     if (!profile) return '—';
     const v = profile[key];
     if (v === null || v === undefined || v === '') return '—';
@@ -187,7 +197,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     return String(v);
   };
 
-  const rows: Array<{ label: string; key: keyof ProfileInfo; editable?: EditableField; rules?: Rule[] }> = [
+  const rows: Array<{ label: string; key: keyof userInfo; editable?: EditableField; rules?: Rule[] }> = [
     { label: '用户名', key: 'username' },
     { label: '昵称', key: 'nickname', editable: 'nickname', rules: [{ required: true, message: '请输入昵称' }] },
     { label: '邮箱', key: 'email', editable: 'email', rules: [{ type: 'email', message: '邮箱格式不正确' }] },
@@ -195,8 +205,9 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
     { label: '注册时间', key: 'createdAt' },
   ];
 
-  const bgColor = profile ? avatarColor(profile.username) : '#1677ff';
-  const firstChar = profile ? (profile.nickname || profile.username)[0].toUpperCase() : '?';
+  const displayName = profile ? (profile.nickname || profile.username || '?') : '?';
+  const bgColor = profile ? avatarColor(profile.username || displayName) : '#1677ff';
+  const firstChar = displayName[0]?.toUpperCase() || '?';
 
   return (
     <Modal

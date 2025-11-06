@@ -11,7 +11,7 @@ const { Content } = Layout;
 interface CurrentUser {
   id: number;
   username: string;
-  nickname: string;
+  nickname: string | null;
   email: string | null;
   role: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
   status: number;
