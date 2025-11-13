@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Card,
   Col,
@@ -13,6 +13,8 @@ import {
   Table,
   Badge,
   Tooltip,
+  Dropdown,
+  message,
 } from 'antd';
 import {
   InfoCircleOutlined,
@@ -115,6 +117,26 @@ const categoryData = [
   { name: '其他', value: 1231 },
 ];
 
+const categoryDataMap = {
+  all: categoryData,
+  online: [
+    { name: '家用电器', value: 5288 },
+    { name: '母婴产品', value: 1420 },
+    { name: '个护健康', value: 3550 },
+    { name: '服饰箱包', value: 2810 },
+    { name: '食用酒水', value: 2480 },
+    { name: '其他', value: 920 },
+  ],
+  store: [
+    { name: '家用电器', value: 2980 },
+    { name: '母婴产品', value: 1180 },
+    { name: '个护健康', value: 2640 },
+    { name: '服饰箱包', value: 1860 },
+    { name: '食用酒水', value: 3960 },
+    { name: '其他', value: 1310 },
+  ],
+} as const;
+
 const searchKeywords = Array.from({ length: 50 }, (_, i) => ({
   key: i + 1,
   rank: i + 1,
@@ -170,8 +192,22 @@ function MiniBarChart({ data }: { data: { v: number }[] }) {
 export default function DashboardContent() {
   const [chartTab, setChartTab] = useState('sales');
   const [period, setPeriod] = useState('year');
+  const [categoryChannel, setCategoryChannel] = useState<'all' | 'online' | 'store'>('all');
 
   const chartData = chartTab === 'sales' ? salesMonthly : visitMonthly;
+  const currentCategoryData = useMemo(() => categoryDataMap[categoryChannel], [categoryChannel]);
+
+  const searchDropdownItems = [
+    { key: 'refresh', label: '刷新数据' },
+    { key: 'export', label: '导出报表' },
+    { key: 'detail', label: '查看详情' },
+  ];
+
+  const categoryDropdownItems = [
+    { key: 'all', label: '切换到全部渠道' },
+    { key: 'online', label: '切换到线上' },
+    { key: 'store', label: '切换到门店' },
+  ];
 
   return (
     <div style={{ padding: 0 }}>
@@ -366,7 +402,21 @@ export default function DashboardContent() {
           <Card
             bordered={false}
             title={<Text strong>线上热门搜索</Text>}
-            extra={<EllipsisOutlined style={{ fontSize: 18, cursor: 'pointer' }} />}
+            extra={
+              <Dropdown
+                menu={{
+                  items: searchDropdownItems,
+                  onClick: ({ key }) => {
+                    if (key === 'refresh') message.success('热门搜索数据已刷新');
+                    if (key === 'export') message.success('已开始导出热门搜索报表');
+                    if (key === 'detail') message.info('可继续补充热门搜索详情页');
+                  },
+                }}
+                trigger={['click']}
+              >
+                <EllipsisOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
+              </Dropdown>
+            }
           >
             <Row gutter={16}>
               <Col span={12}>
@@ -456,10 +506,20 @@ export default function DashboardContent() {
                   <Badge
                     key={c}
                     count={c}
+                    onClick={() => setCategoryChannel(i === 0 ? 'all' : i === 1 ? 'online' : 'store')}
                     style={{
-                      backgroundColor: i === 0 ? '#1677ff' : 'transparent',
-                      color: i === 0 ? '#fff' : 'rgba(0,0,0,0.65)',
-                      border: i === 0 ? 'none' : '1px solid #d9d9d9',
+                      backgroundColor:
+                        categoryChannel === (i === 0 ? 'all' : i === 1 ? 'online' : 'store')
+                          ? '#1677ff'
+                          : 'transparent',
+                      color:
+                        categoryChannel === (i === 0 ? 'all' : i === 1 ? 'online' : 'store')
+                          ? '#fff'
+                          : 'rgba(0,0,0,0.65)',
+                      border:
+                        categoryChannel === (i === 0 ? 'all' : i === 1 ? 'online' : 'store')
+                          ? 'none'
+                          : '1px solid #d9d9d9',
                       borderRadius: 4,
                       padding: '0 8px',
                       fontSize: 12,
@@ -467,7 +527,17 @@ export default function DashboardContent() {
                     }}
                   />
                 ))}
-                <EllipsisOutlined style={{ fontSize: 18, cursor: 'pointer', marginLeft: 4 }} />
+                <Dropdown
+                  menu={{
+                    items: categoryDropdownItems,
+                    onClick: ({ key }) => {
+                      setCategoryChannel(key as 'all' | 'online' | 'store');
+                    },
+                  }}
+                  trigger={['click']}
+                >
+                  <EllipsisOutlined style={{ fontSize: 18, cursor: 'pointer', marginLeft: 4 }} />
+                </Dropdown>
               </Space>
             }
           >
@@ -475,7 +545,7 @@ export default function DashboardContent() {
             <ResponsiveContainer width="100%" height={390}>
               <PieChart>
                 <Pie
-                  data={categoryData}
+                  data={currentCategoryData}
                   cx="50%"
                   cy="50%"
                   innerRadius={70}
@@ -509,7 +579,7 @@ export default function DashboardContent() {
                   }}
                   labelLine={false}
                 >
-                  {categoryData.map((_, idx) => (
+                  {currentCategoryData.map((_, idx) => (
                     <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                   ))}
                 </Pie>

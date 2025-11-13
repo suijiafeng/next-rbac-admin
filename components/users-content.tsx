@@ -289,16 +289,14 @@ export default function UsersPage() {
     <>
       <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
         {/* ── 工具栏 ── */}
-        <div  ref={toolbarRef}>
+        <div ref={toolbarRef}>
           {/* 标题行 */}
-          <div className="pb-3.5 flex items-center justify-between">
-            <div>
-              <Typography.Title level={4} className="!m-0 !text-base !font-semibold !text-slate-900">
-                用户管理
-              </Typography.Title>
-              <Typography.Text type="secondary" className="mt-0.5 block text-xs">
-              </Typography.Text>
-            </div>
+          <div className="flex items-center justify-between">
+
+            <Typography.Title level={4} className="text-slate-900">
+              用户管理
+            </Typography.Title>
+
             <Button
               type="primary"
               icon={<PlusOutlined />}

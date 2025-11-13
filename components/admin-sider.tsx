@@ -3,6 +3,8 @@
 import { Layout, Menu } from 'antd';
 import {
   DashboardOutlined,
+  LineChartOutlined,
+  SafetyCertificateOutlined,
   UserOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
@@ -34,6 +36,12 @@ const menuConfig: MenuItemConfig[] = [
     roles: ['USER', 'ADMIN', 'SUPER_ADMIN'],
   },
   {
+    key: '/monitoring',
+    icon: <LineChartOutlined />,
+    label: '数据监控',
+    roles: ['USER', 'ADMIN', 'SUPER_ADMIN'],
+  },
+  {
     key: '/users',
     icon: <UserOutlined />,
     label: '用户管理',
@@ -43,6 +51,12 @@ const menuConfig: MenuItemConfig[] = [
     key: '/settings',
     icon: <SettingOutlined />,
     label: '系统设置',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
+    key: '/permissions',
+    icon: <SafetyCertificateOutlined />,
+    label: '权限管理',
     roles: ['SUPER_ADMIN'],
   },
 ];
