@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
+  Badge,
   Card,
   Col,
   Progress,
@@ -41,10 +42,70 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import styles from '@/components/monitoring-content.module.css';
 
 const { Text, Title } = Typography;
 
-type Period = '1h' | '24h' | '7d';
+type MonitoringPeriod = '1h' | '24h' | '7d';
+type KpiMetricKey = 'pv' | 'uv' | 'conversion' | 'latency' | 'errors' | 'availability';
+
+interface TrendDataPoint {
+  time: string;
+  traffic: number;
+  conversion: number;
+}
+
+interface TrafficSourceItem {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface RegionItem {
+  region: string;
+  visits: number;
+  orders: number;
+}
+
+interface WarningItem {
+  level: '高' | '中' | '低';
+  title: string;
+  desc: string;
+  status: string;
+}
+
+interface AuditItem {
+  key: number;
+  api: string;
+  qps: number;
+  p95: number;
+  errorRate: string;
+  status: string;
+}
+
+interface KpiCardConfig {
+  title: string;
+  metricKey: KpiMetricKey;
+  icon: ReactNode;
+  iconClassName: string;
+  up: boolean;
+  trend: string;
+  suffix: string;
+  decimal?: number;
+  progress?: boolean;
+}
+
+interface LegendItem {
+  label: string;
+  colorClassName: string;
+}
+
+interface TimelineEntry {
+  color: string;
+  title: string;
+  description: string;
+  dot?: ReactNode;
+}
 
 const kpiByPeriod = {
   '1h': { pv: 18234, uv: 4290, conversion: 6.8, latency: 182, errors: 12, availability: 99.98 },
@@ -52,9 +113,7 @@ const kpiByPeriod = {
   '7d': { pv: 1826540, uv: 328230, conversion: 7.1, latency: 203, errors: 316, availability: 99.9 },
 } as const;
 
-type KpiKey = keyof typeof kpiByPeriod['24h'];
-
-const trafficSourceData = [
+const trafficSourceData: TrafficSourceItem[] = [
   { name: '自然搜索', value: 38, color: '#1677ff' },
   { name: '活动投放', value: 24, color: '#9254de' },
   { name: '直接访问', value: 18, color: '#52c41a' },
@@ -62,7 +121,7 @@ const trafficSourceData = [
   { name: '外部链接', value: 8, color: '#ff7a45' },
 ];
 
-const regionData = [
+const regionData: RegionItem[] = [
   { region: '华东', visits: 98200, orders: 7420 },
   { region: '华南', visits: 86300, orders: 6580 },
   { region: '华北', visits: 73420, orders: 6010 },
@@ -71,7 +130,7 @@ const regionData = [
   { region: '东北', visits: 18620, orders: 1104 },
 ];
 
-const trendDataMap: Record<Period, { time: string; traffic: number; conversion: number }[]> = {
+const trendDataMap: Record<MonitoringPeriod, TrendDataPoint[]> = {
   '1h': [
     { time: '00', traffic: 320, conversion: 4.8 },
     { time: '10', traffic: 480, conversion: 5.4 },
@@ -100,62 +159,118 @@ const trendDataMap: Record<Period, { time: string; traffic: number; conversion: 
   ],
 };
 
-const warnings = [
+const warningList: WarningItem[] = [
   { level: '高', title: '支付回调波动', desc: '近 10 分钟支付回调失败率提升至 2.6%', status: '处理中' },
   { level: '中', title: '华北节点延迟升高', desc: '接口响应中位数提升到 240ms', status: '观察中' },
   { level: '低', title: '活动页跳出偏高', desc: '新首页活动页跳出率较昨日上升 4.2%', status: '待分析' },
 ];
 
-const auditData = [
+const auditData: AuditItem[] = [
   { key: 1, api: '/api/profile', qps: 182, p95: 124, errorRate: '0.03%', status: '稳定' },
   { key: 2, api: '/api/users', qps: 96, p95: 168, errorRate: '0.08%', status: '稳定' },
   { key: 3, api: '/api/settings', qps: 28, p95: 142, errorRate: '0.02%', status: '稳定' },
   { key: 4, api: '/api/auth/login', qps: 14, p95: 286, errorRate: '0.42%', status: '关注' },
 ];
 
-type LevelKey = '高' | '中' | '低';
-const LEVEL_CFG: Record<LevelKey, { color: string; bg: string; border: string; tagColor: 'error' | 'warning' | 'processing'; icon: ReactNode }> = {
-  '高': { color: '#ff4d4f', bg: '#fff1f0', border: '#ffccc7', tagColor: 'error', icon: <ExclamationCircleFilled style={{ color: '#ff4d4f' }} /> },
-  '中': { color: '#faad14', bg: '#fffbe6', border: '#ffe58f', tagColor: 'warning', icon: <WarningFilled style={{ color: '#faad14' }} /> },
-  '低': { color: '#1677ff', bg: '#e6f4ff', border: '#91caff', tagColor: 'processing', icon: <InfoCircleFilled style={{ color: '#1677ff' }} /> },
+const warningLevelConfig = {
+  高: {
+    cardClassName: styles.warningLevelHigh,
+    tagColor: 'error' as const,
+    icon: <ExclamationCircleFilled className={`${styles.smallIcon} ${styles.iconError}`} />,
+  },
+  中: {
+    cardClassName: styles.warningLevelMedium,
+    tagColor: 'warning' as const,
+    icon: <WarningFilled className={`${styles.smallIcon} ${styles.iconWarn}`} />,
+  },
+  低: {
+    cardClassName: styles.warningLevelLow,
+    tagColor: 'processing' as const,
+    icon: <InfoCircleFilled className={`${styles.smallIcon} ${styles.iconInfo}`} />,
+  },
 };
 
-type KpiCardConfig = {
-  title: string;
-  key: KpiKey;
-  icon: ReactNode;
-  color: string;
-  bg: string;
-  up: boolean;
-  trend: string;
-  suffix: string;
-  decimal?: number;
-  progress?: boolean;
-};
-
-const KPI_CARDS: KpiCardConfig[] = [
-  { title: 'PV', key: 'pv', icon: <GlobalOutlined />, color: '#1677ff', bg: '#e6f4ff', up: true, trend: '较上周期 8.2%', suffix: '' },
-  { title: 'UV', key: 'uv', icon: <AreaChartOutlined />, color: '#9254de', bg: '#f9f0ff', up: true, trend: '较上周期 5.4%', suffix: '' },
-  { title: '支付转化率', key: 'conversion', icon: <ThunderboltOutlined />, color: '#52c41a', bg: '#f6ffed', up: true, trend: '较上周期 +0.6%', suffix: '%', decimal: 1 },
-  { title: '接口 P95', key: 'latency', icon: <ClockCircleOutlined />, color: '#13c2c2', bg: '#e6fffb', up: false, trend: '较上周期 −12ms', suffix: 'ms' },
-  { title: '异常次数', key: 'errors', icon: <AlertOutlined />, color: '#ff4d4f', bg: '#fff1f0', up: true, trend: '较上周期 +3 次', suffix: '' },
-  { title: '系统可用性', key: 'availability', icon: <CheckCircleOutlined />, color: '#52c41a', bg: '#f6ffed', up: false, trend: '运行正常', suffix: '%', decimal: 2, progress: true },
+const kpiCardConfigList: KpiCardConfig[] = [
+  { title: 'PV', metricKey: 'pv', icon: <GlobalOutlined />, iconClassName: 'bg-blue-50 text-blue-600', up: true, trend: '较上周期 8.2%', suffix: '' },
+  { title: 'UV', metricKey: 'uv', icon: <AreaChartOutlined />, iconClassName: 'bg-violet-50 text-violet-600', up: true, trend: '较上周期 5.4%', suffix: '' },
+  { title: '支付转化率', metricKey: 'conversion', icon: <ThunderboltOutlined />, iconClassName: 'bg-green-50 text-green-600', up: true, trend: '较上周期 +0.6%', suffix: '%', decimal: 1 },
+  { title: '接口 P95', metricKey: 'latency', icon: <ClockCircleOutlined />, iconClassName: 'bg-cyan-50 text-cyan-600', up: false, trend: '较上周期 −12ms', suffix: 'ms' },
+  { title: '异常次数', metricKey: 'errors', icon: <AlertOutlined />, iconClassName: 'bg-red-50 text-red-500', up: true, trend: '较上周期 +3 次', suffix: '' },
+  { title: '系统可用性', metricKey: 'availability', icon: <CheckCircleOutlined />, iconClassName: 'bg-green-50 text-green-600', up: false, trend: '运行正常', suffix: '%', decimal: 2, progress: true },
 ];
 
-export default function MonitoringContent() {
-  const [period, setPeriod] = useState<Period>('24h');
-  const kpi = kpiByPeriod[period];
+const regionLegendItems: LegendItem[] = [
+  { label: '访问量', colorClassName: 'bg-[#1677ff]' },
+  { label: '订单量', colorClassName: 'bg-[#9254de]' },
+];
+
+const timelineItems: TimelineEntry[] = [
+  {
+    color: '#52c41a',
+    title: '活动页流量恢复正常',
+    description: '10:12 · 流量指标已回归基线水平',
+    dot: <CheckCircleOutlined className={`${styles.smallIcon} ${styles.iconInfo}`} />,
+  },
+  {
+    color: '#1677ff',
+    title: '登录接口发布完成',
+    description: '09:40 · P95 延迟下降 8ms',
+  },
+  {
+    color: '#ff4d4f',
+    title: '支付回调异常触发告警',
+    description: '08:56 · 支付失败率超过阈值',
+    dot: <ExclamationCircleFilled className={`${styles.smallIcon} ${styles.iconError}`} />,
+  },
+  {
+    color: '#d9d9d9',
+    title: '新一轮巡检任务开始执行',
+    description: '08:30 · 定时巡检任务启动',
+  },
+];
+
+const getMetricColorClassName = (value: number, warningThreshold: number, errorThreshold: number) => {
+  if (value > errorThreshold) {
+    return styles.metricError;
+  }
+
+  if (value > warningThreshold) {
+    return styles.metricWarn;
+  }
+
+  return styles.metricGood;
+};
+
+const MonitoringTrendLegend = () => {
+  return (
+    <Space size={16}>
+      <Space size={6}>
+        <span className={`${styles.legendSwatch} ${styles.legendBlue}`} />
+        <Text type="secondary" className="text-xs">流量 (PV)</Text>
+      </Space>
+      <Space size={6}>
+        <span className={`${styles.legendSwatch} ${styles.legendGreen}`} />
+        <Text type="secondary" className="text-xs">转化率 (%)</Text>
+      </Space>
+    </Space>
+  );
+};
+
+const MonitoringContent = () => {
+  const [period, setPeriod] = useState<MonitoringPeriod>('24h');
+
+  const periodMetrics = kpiByPeriod[period];
   const trendData = useMemo(() => trendDataMap[period], [period]);
 
   return (
-    <div style={{ padding: 0 }}>
-      <div className='flex justify-between align-items-center pb-2'>
-        <Typography.Title level={4} className="text-slate-900">
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <Title level={4} className="text-slate-900">
           数据监控
-        </Typography.Title>
+        </Title>
         <Segmented
           value={period}
-          onChange={(v) => setPeriod(v as Period)}
+          onChange={(value) => setPeriod(value as MonitoringPeriod)}
           options={[
             { label: '近 1 小时', value: '1h' },
             { label: '近 24 小时', value: '24h' },
@@ -163,41 +278,43 @@ export default function MonitoringContent() {
           ]}
         />
       </div>
-      <Row gutter={[16, 16]} style={{ alignItems: 'stretch' }}>
-        {KPI_CARDS.map((c) => {
-          const val = kpi[c.key] as number;
-          const display = c.decimal != null ? val.toFixed(c.decimal) : val.toLocaleString();
+
+      <Row gutter={[16, 16]} className={styles.stretchRow}>
+        {kpiCardConfigList.map((cardConfig) => {
+          const metricValue = periodMetrics[cardConfig.metricKey];
+          const displayValue = cardConfig.decimal != null
+            ? metricValue.toFixed(cardConfig.decimal)
+            : metricValue.toLocaleString();
+
           return (
-            <Col key={c.key} xs={24} sm={12} xl={4} style={{ display: 'flex', flexDirection: 'column' }}>
-              <Card bordered={false} style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Text type="secondary" style={{ fontSize: 13 }}>{c.title}</Text>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: 8,
-                    background: c.bg,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: c.color, fontSize: 15, flexShrink: 0,
-                  }}>
-                    {c.icon}
+            <Col key={cardConfig.metricKey} xs={24} sm={12} xl={4} className={styles.stretchCol}>
+              <Card bordered={false} className={styles.fillCard} style={{ height: '100%' }}>
+                <div className={styles.kpiCardHeader}>
+                  <Text type="secondary" className="text-[13px]">{cardConfig.title}</Text>
+                  <div className={`${styles.kpiIcon} ${cardConfig.iconClassName}`}>
+                    {cardConfig.icon}
                   </div>
                 </div>
-                <div style={{ margin: '10px 0 4px', fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>
-                  {display}
-                  {c.suffix && (
-                    <span style={{ fontSize: 13, fontWeight: 400, color: '#8c8c8c', marginLeft: 2 }}>{c.suffix}</span>
-                  )}
+
+                <div className={styles.kpiValue}>
+                  {displayValue}
+                  {cardConfig.suffix ? (
+                    <span className={styles.kpiSuffix}>{cardConfig.suffix}</span>
+                  ) : null}
                 </div>
-                {c.progress && (
+
+                {cardConfig.progress ? (
                   <Progress
-                    percent={Math.round(val)}
+                    percent={Math.round(metricValue)}
                     showInfo={false}
                     strokeColor="#52c41a"
                     size="small"
-                    style={{ marginBottom: 4 }}
+                    className="mb-1"
                   />
-                )}
-                <Text style={{ fontSize: 12, color: c.up ? '#cf1322' : '#389e0d' }}>
-                  {c.up ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {c.trend}
+                ) : null}
+
+                <Text className={cardConfig.up ? styles.trendTextUp : styles.trendTextDown}>
+                  {cardConfig.up ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {cardConfig.trend}
                 </Text>
               </Card>
             </Col>
@@ -205,25 +322,16 @@ export default function MonitoringContent() {
         })}
       </Row>
 
-      {/* ── Trend Chart + Traffic Source ───────────────────────── */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16, alignItems: 'stretch' }}>
-        <Col xs={24} xl={16} style={{ display: 'flex', flexDirection: 'column' }}>
+      <Row gutter={[16, 16]} className={`mt-4 ${styles.stretchRow}`}>
+        <Col xs={24} xl={16} className={styles.stretchCol}>
           <Card
             bordered={false}
-            style={{ flex: 1 }}
+            className={styles.fillCard}
+            style={{ height: '100%' }}
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div className={styles.trendTitle}>
                 <span>流量与转化趋势</span>
-                <Space size={16}>
-                  <Space size={6}>
-                    <span style={{ width: 14, height: 3, borderRadius: 2, background: '#1677ff', display: 'inline-block' }} />
-                    <Text type="secondary" style={{ fontSize: 12 }}>流量 (PV)</Text>
-                  </Space>
-                  <Space size={6}>
-                    <span style={{ width: 14, height: 3, borderRadius: 2, background: '#52c41a', display: 'inline-block' }} />
-                    <Text type="secondary" style={{ fontSize: 12 }}>转化率 (%)</Text>
-                  </Space>
-                </Space>
+                <MonitoringTrendLegend />
               </div>
             }
           >
@@ -271,8 +379,8 @@ export default function MonitoringContent() {
           </Card>
         </Col>
 
-        <Col xs={24} xl={8} style={{ display: 'flex', flexDirection: 'column' }}>
-          <Card bordered={false} title="流量来源" style={{ flex: 1 }}>
+        <Col xs={24} xl={8} className={styles.stretchCol}>
+          <Card bordered={false} title="流量来源" className={styles.fillCard} style={{ height: '100%' }}>
             <ResponsiveContainer width="100%" height={190}>
               <PieChart>
                 <Pie
@@ -283,35 +391,33 @@ export default function MonitoringContent() {
                   outerRadius={86}
                   paddingAngle={3}
                 >
-                  {trafficSourceData.map((item) => (
-                    <Cell key={item.name} fill={item.color} />
+                  {trafficSourceData.map((sourceItem) => (
+                    <Cell key={sourceItem.name} fill={sourceItem.color} />
                   ))}
                 </Pie>
                 <ReTooltip
                   contentStyle={{ borderRadius: 8, border: '1px solid #f0f0f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-                  formatter={(v) => [`${v}%`, '']}
+                  formatter={(value) => [`${value}%`, '']}
                 />
               </PieChart>
             </ResponsiveContainer>
-            <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: 10, marginTop: 4 }}>
-              {trafficSourceData.map((item) => (
-                <div
-                  key={item.name}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}
-                >
+
+            <div className={styles.sourceList}>
+              {trafficSourceData.map((sourceItem) => (
+                <div key={sourceItem.name} className={styles.sourceRow}>
                   <Space size={8}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color, display: 'inline-block', flexShrink: 0 }} />
-                    <Text style={{ fontSize: 13 }}>{item.name}</Text>
+                    <span className={styles.sourceDot} style={{ backgroundColor: sourceItem.color }} />
+                    <Text className="text-[13px]">{sourceItem.name}</Text>
                   </Space>
                   <Space size={12}>
                     <Progress
-                      percent={item.value}
+                      percent={sourceItem.value}
                       showInfo={false}
-                      strokeColor={item.color}
-                      style={{ width: 64, margin: 0 }}
+                      strokeColor={sourceItem.color}
+                      className={styles.progressTiny}
                       size="small"
                     />
-                    <Text strong style={{ fontSize: 13, minWidth: 32, textAlign: 'right' }}>{item.value}%</Text>
+                    <Text strong className="min-w-8 text-right text-[13px]">{sourceItem.value}%</Text>
                   </Space>
                 </div>
               ))}
@@ -320,10 +426,9 @@ export default function MonitoringContent() {
         </Col>
       </Row>
 
-      {/* ── Regional Distribution + API Audit ──────────────────── */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16, alignItems: 'stretch' }}>
-        <Col xs={24} xl={10} style={{ display: 'flex', flexDirection: 'column' }}>
-          <Card bordered={false} title="地区访问分布" style={{ flex: 1 }}>
+      <Row gutter={[16, 16]} className={`mt-4 ${styles.stretchRow}`}>
+        <Col xs={24} xl={10} className={styles.stretchCol}>
+          <Card bordered={false} title="地区访问分布" className={styles.fillCard} style={{ height: '100%' }}>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart
                 data={regionData}
@@ -340,19 +445,19 @@ export default function MonitoringContent() {
                 <Bar dataKey="orders" name="订单量" fill="#9254de" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 24, paddingTop: 8 }}>
-              {[{ label: '访问量', color: '#1677ff' }, { label: '订单量', color: '#9254de' }].map((l) => (
-                <Space key={l.label} size={6}>
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: l.color, display: 'inline-block' }} />
-                  <Text type="secondary" style={{ fontSize: 12 }}>{l.label}</Text>
+            <div className={styles.legendRow}>
+              {regionLegendItems.map((legendItem) => (
+                <Space key={legendItem.label} size={6}>
+                  <span className={`${styles.legendSquare} ${legendItem.colorClassName}`} />
+                  <Text type="secondary" className="text-xs">{legendItem.label}</Text>
                 </Space>
               ))}
             </div>
           </Card>
         </Col>
 
-        <Col xs={24} xl={14} style={{ display: 'flex', flexDirection: 'column' }}>
-          <Card bordered={false} title="接口巡检" style={{ flex: 1 }}>
+        <Col xs={24} xl={14} className={styles.stretchCol}>
+          <Card bordered={false} title="接口巡检" className={styles.fillCard} style={{ height: '100%' }}>
             <Table
               size="small"
               pagination={false}
@@ -361,26 +466,21 @@ export default function MonitoringContent() {
                 {
                   title: '接口',
                   dataIndex: 'api',
-                  render: (v: string) => (
-                    <Text style={{ fontFamily: 'monospace', fontSize: 13 }}>{v}</Text>
-                  ),
+                  render: (apiPath: string) => <Text className={styles.apiText}>{apiPath}</Text>,
                 },
                 {
                   title: 'QPS',
                   dataIndex: 'qps',
                   width: 68,
-                  render: (v: number) => <Text strong>{v}</Text>,
+                  render: (qpsValue: number) => <Text strong>{qpsValue}</Text>,
                 },
                 {
                   title: 'P95 延迟',
                   dataIndex: 'p95',
                   width: 90,
-                  render: (v: number) => (
-                    <Text style={{
-                      color: v > 250 ? '#ff4d4f' : v > 180 ? '#faad14' : '#52c41a',
-                      fontWeight: 500,
-                    }}>
-                      {v}ms
+                  render: (latencyValue: number) => (
+                    <Text className={getMetricColorClassName(latencyValue, 180, 250)}>
+                      {latencyValue}ms
                     </Text>
                   ),
                 },
@@ -388,14 +488,11 @@ export default function MonitoringContent() {
                   title: '错误率',
                   dataIndex: 'errorRate',
                   width: 76,
-                  render: (v: string) => {
-                    const n = parseFloat(v);
+                  render: (errorRateValue: string) => {
+                    const numericErrorRate = parseFloat(errorRateValue);
                     return (
-                      <Text style={{
-                        color: n > 0.3 ? '#ff4d4f' : n > 0.1 ? '#faad14' : '#52c41a',
-                        fontWeight: 500,
-                      }}>
-                        {v}
+                      <Text className={getMetricColorClassName(numericErrorRate, 0.1, 0.3)}>
+                        {errorRateValue}
                       </Text>
                     );
                   },
@@ -404,9 +501,9 @@ export default function MonitoringContent() {
                   title: '状态',
                   dataIndex: 'status',
                   width: 72,
-                  render: (v: string) => (
-                    <Tag color={v === '关注' ? 'gold' : 'success'} style={{ borderRadius: 4 }}>
-                      {v}
+                  render: (statusText: string) => (
+                    <Tag color={statusText === '关注' ? 'gold' : 'success'} className="rounded">
+                      {statusText}
                     </Tag>
                   ),
                 },
@@ -416,34 +513,27 @@ export default function MonitoringContent() {
         </Col>
       </Row>
 
-      {/* ── Alerts + Timeline ──────────────────────────────────── */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16, alignItems: 'stretch' }}>
-        <Col xs={24} xl={12} style={{ display: 'flex', flexDirection: 'column' }}>
-          <Card bordered={false} title="异常告警" style={{ flex: 1 }}>
-            <Space direction="vertical" size={10} style={{ width: '100%' }}>
-              {warnings.map((w) => {
-                const cfg = LEVEL_CFG[w.level as LevelKey];
+      <Row gutter={[16, 16]} className={`mt-4 ${styles.stretchRow}`}>
+        <Col xs={24} xl={12} className={styles.stretchCol}>
+          <Card bordered={false} title="异常告警" className={styles.fillCard} style={{ height: '100%' }}>
+            <Space direction="vertical" size={10} className="w-full">
+              {warningList.map((warningItem) => {
+                const levelConfig = warningLevelConfig[warningItem.level];
+
                 return (
                   <div
-                    key={w.title}
-                    style={{
-                      background: cfg.bg,
-                      border: `1px solid ${cfg.border}`,
-                      borderRadius: 8,
-                      padding: '12px 14px',
-                      display: 'flex',
-                      gap: 10,
-                    }}
+                    key={warningItem.title}
+                    className={`${styles.warningCard} ${levelConfig.cardClassName}`}
                   >
-                    <div style={{ flexShrink: 0, marginTop: 1 }}>{cfg.icon}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <Text strong style={{ fontSize: 13 }}>{w.title}</Text>
-                        <Tag color={cfg.tagColor} style={{ borderRadius: 10, fontSize: 11, margin: 0 }}>
-                          {w.status}
+                    <div className={styles.warningIcon}>{levelConfig.icon}</div>
+                    <div className={styles.warningContent}>
+                      <div className={styles.warningHeader}>
+                        <Text strong className="text-[13px]">{warningItem.title}</Text>
+                        <Tag color={levelConfig.tagColor} className={styles.statusTag}>
+                          {warningItem.status}
                         </Tag>
                       </div>
-                      <Text type="secondary" style={{ fontSize: 12 }}>{w.desc}</Text>
+                      <Text type="secondary" className="text-xs">{warningItem.desc}</Text>
                     </div>
                   </div>
                 );
@@ -452,63 +542,28 @@ export default function MonitoringContent() {
           </Card>
         </Col>
 
-        <Col xs={24} xl={12} style={{ display: 'flex', flexDirection: 'column' }}>
-          <Card bordered={false} title="监控时间线" style={{ flex: 1 }}>
+        <Col xs={24} xl={12} className={styles.stretchCol}>
+          <Card bordered={false} title="监控时间线" className={styles.fillCard} style={{ height: '100%' }}>
             <Timeline
-              style={{ marginTop: 8 }}
-              items={[
-                {
-                  color: '#52c41a',
-                  dot: <CheckCircleOutlined style={{ fontSize: 14, color: '#52c41a' }} />,
-                  children: (
-                    <div>
-                      <Text strong style={{ fontSize: 13 }}>活动页流量恢复正常</Text>
-                      <div style={{ marginTop: 2 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>10:12 · 流量指标已回归基线水平</Text>
-                      </div>
+              className="mt-2"
+              items={timelineItems.map((timelineItem) => ({
+                color: timelineItem.color,
+                dot: timelineItem.dot,
+                children: (
+                  <div>
+                    <Text strong className="text-[13px]">{timelineItem.title}</Text>
+                    <div className={styles.timelineText}>
+                      <Text type="secondary" className="text-xs">{timelineItem.description}</Text>
                     </div>
-                  ),
-                },
-                {
-                  color: '#1677ff',
-                  children: (
-                    <div>
-                      <Text strong style={{ fontSize: 13 }}>登录接口发布完成</Text>
-                      <div style={{ marginTop: 2 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>09:40 · P95 延迟下降 8ms</Text>
-                      </div>
-                    </div>
-                  ),
-                },
-                {
-                  color: '#ff4d4f',
-                  dot: <ExclamationCircleFilled style={{ fontSize: 14, color: '#ff4d4f' }} />,
-                  children: (
-                    <div>
-                      <Text strong style={{ fontSize: 13 }}>支付回调异常触发告警</Text>
-                      <div style={{ marginTop: 2 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>08:56 · 支付失败率超过阈值</Text>
-                      </div>
-                    </div>
-                  ),
-                },
-                {
-                  color: '#d9d9d9',
-                  children: (
-                    <div>
-                      <Text strong style={{ fontSize: 13 }}>新一轮巡检任务开始执行</Text>
-                      <div style={{ marginTop: 2 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>08:30 · 定时巡检任务启动</Text>
-                      </div>
-                    </div>
-                  ),
-                },
-              ]}
+                  </div>
+                ),
+              }))}
             />
           </Card>
         </Col>
       </Row>
-
     </div>
   );
-}
+};
+
+export default MonitoringContent;

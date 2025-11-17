@@ -288,15 +288,11 @@ export default function UsersPage() {
   return (
     <>
       <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
-        {/* ── 工具栏 ── */}
         <div ref={toolbarRef}>
-          {/* 标题行 */}
-          <div className="flex items-center justify-between">
-
+          <div className="mb-4 flex items-center justify-between">
             <Typography.Title level={4} className="text-slate-900">
               用户管理
             </Typography.Title>
-
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -307,8 +303,7 @@ export default function UsersPage() {
             </Button>
           </div>
 
-          {/* 搜索栏 */}
-          <div className="pb-3.5  border-b  px-3.5 py-2.5">
+          <div className="border-b px-3.5 pb-3.5 pt-1">
             <Form
               form={form}
               layout="inline"
@@ -363,7 +358,6 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* ── 表格 ── */}
         <div className="min-h-0 flex-1 mt-3.5">
           <Table
             className={styles.table}

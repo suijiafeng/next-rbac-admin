@@ -1,0 +1,141 @@
+.page {
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.layoutRow {
+  align-items: stretch;
+}
+
+.stretchCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.fillCard {
+  flex: 1;
+}
+
+.roleCard {
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 8px;
+}
+
+.roleCardSelected {
+  border-color: #1677ff;
+  background: #e6f4ff;
+}
+
+.roleCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.roleMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.roleTitleRow {
+  margin-bottom: 4px;
+}
+
+.roleTag {
+  border-radius: 10px;
+  font-size: 11px;
+  padding: 0 7px;
+}
+
+.mutedText {
+  font-size: 12px;
+}
+
+.roleStats {
+  margin-top: 6px;
+}
+
+.iconButton {
+  color: #8c8c8c;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 32px 0;
+}
+
+.permissionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.permissionHeaderSuffix {
+  font-size: 13px;
+  margin-left: 8px;
+}
+
+.permissionEmpty {
+  text-align: center;
+  padding: 64px 0;
+}
+
+.permissionEmptyIcon {
+  font-size: 40px;
+  color: #d9d9d9;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.moduleCard {
+  margin-bottom: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.moduleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.moduleBody {
+  padding: 12px 16px;
+}
+
+.codeText {
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.footerActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.modalForm {
+  margin-top: 16px;
+}
+
+.roleNameInput {
+  font-family: monospace;
+}

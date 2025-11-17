@@ -48,17 +48,18 @@ const menuConfig: MenuItemConfig[] = [
     roles: ['ADMIN', 'SUPER_ADMIN'],
   },
   {
-    key: '/settings',
-    icon: <SettingOutlined />,
-    label: '系统设置',
-    roles: ['SUPER_ADMIN'],
-  },
-  {
     key: '/permissions',
     icon: <SafetyCertificateOutlined />,
     label: '权限管理',
     roles: ['SUPER_ADMIN'],
   },
+  {
+    key: '/settings',
+    icon: <SettingOutlined />,
+    label: '系统设置',
+    roles: ['SUPER_ADMIN'],
+  },
+  
 ];
 
 export default function AdminSider(props: AdminSiderProps) {
