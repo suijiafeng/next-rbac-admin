@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { PERMISSIONS } from '../constants/permission';
 
 const prisma = new PrismaClient();
 
@@ -10,9 +11,9 @@ async function main() {
    * 1. 创建角色
    */
   const roles = [
-    { name: 'super_admin', description: '超级管理员' },
-    { name: 'admin', description: '管理员' },
-    { name: 'user', description: '普通用户' },
+    { name: 'SUPER_ADMIN', description: '超级管理员 - 拥有所有权限' },
+    { name: 'ADMIN', description: '管理员 - 拥有大部分管理权限' },
+    { name: 'USER', description: '普通用户 - 基本查看权限' },
   ];
 
   for (const role of roles) {
@@ -29,17 +30,21 @@ async function main() {
    * 2. 创建权限
    */
   const permissions = [
-    // 用户模块
-    { code: 'user.view', name: '查看用户' },
-    { code: 'user.create', name: '创建用户' },
-    { code: 'user.edit', name: '编辑用户' },
-    { code: 'user.delete', name: '删除用户' },
+    // 用户模块权限
+    { code: PERMISSIONS.USER_VIEW, name: '查看用户', description: '可以查看用户列表和详情' },
+    { code: PERMISSIONS.USER_CREATE, name: '创建用户', description: '可以创建新用户' },
+    { code: PERMISSIONS.USER_EDIT, name: '编辑用户', description: '可以编辑用户信息' },
+    { code: PERMISSIONS.USER_DELETE, name: '删除用户', description: '可以删除用户' },
 
-    // 角色模块
-    { code: 'role.view', name: '查看角色' },
-    { code: 'role.create', name: '创建角色' },
-    { code: 'role.edit', name: '编辑角色' },
-    { code: 'role.delete', name: '删除角色' },
+    // 设置模块权限
+    { code: PERMISSIONS.SETTINGS_VIEW, name: '查看设置', description: '可以查看系统设置' },
+    { code: PERMISSIONS.SETTINGS_EDIT, name: '编辑设置', description: '可以修改系统设置' },
+
+    // 角色模块权限
+    { code: PERMISSIONS.ROLE_VIEW, name: '查看角色', description: '可以查看角色列表和详情' },
+    { code: PERMISSIONS.ROLE_CREATE, name: '创建角色', description: '可以创建新角色' },
+    { code: PERMISSIONS.ROLE_EDIT, name: '编辑角色', description: '可以编辑角色信息和权限' },
+    { code: PERMISSIONS.ROLE_DELETE, name: '删除角色', description: '可以删除角色' },
   ];
 
   for (const permission of permissions) {
@@ -58,21 +63,21 @@ async function main() {
 
   // 查询角色
   const superAdminRole = await prisma.role.findUnique({
-    where: { name: 'super_admin' },
+    where: { name: 'SUPER_ADMIN' },
   });
 
   const adminRole = await prisma.role.findUnique({
-    where: { name: 'admin' },
+    where: { name: 'ADMIN' },
   });
 
   const userRole = await prisma.role.findUnique({
-    where: { name: 'user' },
+    where: { name: 'USER' },
   });
 
   // 查询所有权限
   const allPermissions = await prisma.permission.findMany();
 
-  // super_admin 拥有全部权限
+  // SUPER_ADMIN 拥有全部权限
   for (const permission of allPermissions) {
     await prisma.rolePermission.upsert({
       where: {
@@ -89,9 +94,9 @@ async function main() {
     });
   }
 
-  console.log('✅ super_admin 权限绑定完成');
+  console.log('✅ SUPER_ADMIN 权限绑定完成');
 
-  // admin 拥有部分权限（不含 delete）
+  // ADMIN 拥有除删除权限外的所有权限
   const adminPermissions = allPermissions.filter(
     (p) => !p.code.includes('delete'),
   );
@@ -112,9 +117,9 @@ async function main() {
     });
   }
 
-  console.log('✅ admin 权限绑定完成');
+  console.log('✅ ADMIN 权限绑定完成');
 
-  // user 只有查看权限
+  // USER 只有查看权限
   const userPermissions = allPermissions.filter((p) =>
     p.code.includes('view'),
   );
@@ -135,43 +140,194 @@ async function main() {
     });
   }
 
-  console.log('✅ user 权限绑定完成');
+  console.log('✅ USER 权限绑定完成');
 
   /**
-   * 4. 创建超级管理员用户
+   * 4. 创建默认用户
    */
 
-  const adminPassword = await bcrypt.hash('123456', 10);
+  const hashedPassword = await bcrypt.hash('123456', 10);
 
-
-  const adminUser = await prisma.user.upsert({
-    where: { username: 'admin' },
+  // 创建超级管理员用户
+  const superAdminUser = await prisma.user.upsert({
+    where: { username: 'super_admin' },
     update: {},
     create: {
-      username: 'admin',
-      password: adminPassword, // ⚠️ 后面要改成加密
+      username: 'super_admin',
+      password: hashedPassword,
       nickname: '超级管理员',
+      email: 'super_admin@example.com',
+      status: 1,
     },
   });
 
-  // 绑定 super_admin 角色
   await prisma.userRole.upsert({
     where: {
       userId_roleId: {
-        userId: adminUser.id,
+        userId: superAdminUser.id,
         roleId: superAdminRole!.id,
       },
     },
     update: {},
     create: {
-      userId: adminUser.id,
+      userId: superAdminUser.id,
       roleId: superAdminRole!.id,
     },
   });
 
-  console.log('✅ 超级管理员创建完成');
+  // 创建管理员用户
+  const adminUser = await prisma.user.upsert({
+    where: { username: 'admin' },
+    update: {},
+    create: {
+      username: 'admin',
+      password: hashedPassword,
+      nickname: '管理员',
+      email: 'admin@example.com',
+      status: 1,
+    },
+  });
+
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: adminUser.id,
+        roleId: adminRole!.id,
+      },
+    },
+    update: {},
+    create: {
+      userId: adminUser.id,
+      roleId: adminRole!.id,
+    },
+  });
+
+  // 创建普通用户
+  const normalUser = await prisma.user.upsert({
+    where: { username: 'user' },
+    update: {},
+    create: {
+      username: 'user',
+      password: hashedPassword,
+      nickname: '普通用户',
+      email: 'user@example.com',
+      status: 1,
+    },
+  });
+
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: normalUser.id,
+        roleId: userRole!.id,
+      },
+    },
+    update: {},
+    create: {
+      userId: normalUser.id,
+      roleId: userRole!.id,
+    },
+  });
+
+  /**
+   * 4.1 创建更多测试用户数据
+   */
+  const testUsers = [
+    // 管理员用户
+    { username: 'manager1', nickname: '张经理', email: 'manager1@company.com', role: 'ADMIN', status: 1 },
+    { username: 'manager2', nickname: '李主管', email: 'manager2@company.com', role: 'ADMIN', status: 1 },
+    { username: 'manager3', nickname: '王总监', email: 'manager3@company.com', role: 'ADMIN', status: 0 }, // 禁用状态
+
+    // 普通用户
+    { username: 'developer1', nickname: '赵开发', email: 'dev1@company.com', role: 'USER', status: 1 },
+    { username: 'developer2', nickname: '钱前端', email: 'dev2@company.com', role: 'USER', status: 1 },
+    { username: 'developer3', nickname: '孙后端', email: 'dev3@company.com', role: 'USER', status: 1 },
+    { username: 'developer4', nickname: '周测试', email: 'dev4@company.com', role: 'USER', status: 1 },
+    { username: 'developer5', nickname: '吴运维', email: 'dev5@company.com', role: 'USER', status: 0 }, // 禁用状态
+
+    { username: 'designer1', nickname: '郑设计师', email: 'design1@company.com', role: 'USER', status: 1 },
+    { username: 'designer2', nickname: '王UI', email: 'design2@company.com', role: 'USER', status: 1 },
+
+    { username: 'analyst1', nickname: '冯分析师', email: 'analyst1@company.com', role: 'USER', status: 1 },
+    { username: 'analyst2', nickname: '陈数据', email: 'analyst2@company.com', role: 'USER', status: 1 },
+
+    { username: 'hr1', nickname: '褚人事', email: 'hr1@company.com', role: 'USER', status: 1 },
+    { username: 'hr2', nickname: '卫招聘', email: 'hr2@company.com', role: 'USER', status: 1 },
+
+    { username: 'sales1', nickname: '蒋销售', email: 'sales1@company.com', role: 'USER', status: 1 },
+    { username: 'sales2', nickname: '沈业务', email: 'sales2@company.com', role: 'USER', status: 1 },
+    { username: 'sales3', nickname: '韩客户', email: 'sales3@company.com', role: 'USER', status: 0 }, // 禁用状态
+
+    { username: 'support1', nickname: '杨客服', email: 'support1@company.com', role: 'USER', status: 1 },
+    { username: 'support2', nickname: '朱技术支持', email: 'support2@company.com', role: 'USER', status: 1 },
+  ];
+
+  for (const userData of testUsers) {
+    const testUser = await prisma.user.upsert({
+      where: { username: userData.username },
+      update: {},
+      create: {
+        username: userData.username,
+        password: hashedPassword,
+        nickname: userData.nickname,
+        email: userData.email,
+        status: userData.status,
+      },
+    });
+
+    const roleToAssign = userData.role === 'ADMIN' ? adminRole : userRole;
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: testUser.id,
+          roleId: roleToAssign!.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: testUser.id,
+        roleId: roleToAssign!.id,
+      },
+    });
+  }
+
+  console.log('✅ 测试用户数据创建完成 (18个用户)');
+
+  /**
+   * 5. 创建系统设置
+   */
+  const systemSettings = [
+    { key: 'site_name', value: 'Next Admin Demo' },
+    { key: 'site_description', value: '基于 Next.js 的管理后台演示' },
+    { key: 'admin_email', value: 'admin@example.com' },
+    { key: 'allow_registration', value: 'true' },
+    { key: 'default_user_status', value: '1' },
+  ];
+
+  for (const setting of systemSettings) {
+    await prisma.systemSetting.upsert({
+      where: { key: setting.key },
+      update: {},
+      create: setting,
+    });
+  }
+
+  console.log('✅ 系统设置初始化完成');
 
   console.log('🎉 RBAC 初始化完成！');
+  console.log('');
+  console.log('📋 默认用户账户:');
+  console.log('   超级管理员: super_admin / 123456');
+  console.log('   管理员: admin / 123456');
+  console.log('   普通用户: user / 123456');
+  console.log('');
+  console.log('� 已创建 21 个测试用户 (包括3个默认用户 + 18个测试用户)');
+  console.log('   - 管理员用户: 4个 (包括默认admin)');
+  console.log('   - 普通用户: 17个 (包括默认user)');
+  console.log('   - 禁用用户: 3个 (用于测试状态筛选)');
+  console.log('');
+  console.log('🔗 访问地址: http://localhost:3000');
+  console.log('💡 建议: 使用 admin 或 super_admin 账户登录测试用户管理功能');
 }
 
 main()
