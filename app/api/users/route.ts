@@ -1,19 +1,52 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requirePermission } from '@/lib/permission';
+import { PERMISSIONS } from '@/constants/permission';
+import { resolveRoleFromNames } from '@/lib/user-role';
+import bcrypt from 'bcryptjs';
 
 const userSelect = {
   id: true,
   username: true,
   nickname: true,
   email: true,
-  role: true,
   status: true,
   createdAt: true,
   updatedAt: true,
+  userRoles: {
+    select: {
+      role: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  },
 } as const;
+
+function formatUser(user: {
+  id: number;
+  username: string;
+  nickname: string | null;
+  email: string | null;
+  status: number;
+  createdAt: Date;
+  updatedAt: Date;
+  userRoles: Array<{ role: { name: string } }>;
+}) {
+  const { userRoles, ...rest } = user;
+
+  return {
+    ...rest,
+    nickname: rest.nickname ?? '',
+    role: resolveRoleFromNames(userRoles.map((item) => item.role.name)),
+  };
+}
 
 export async function GET(request: Request) {
   try {
+    await requirePermission(PERMISSIONS.USER_VIEW);
+
     const { searchParams } = new URL(request.url);
 
     const page = Number(searchParams.get('page') || 1);
@@ -24,15 +57,15 @@ export async function GET(request: Request) {
     const where = {
       ...(username
         ? {
-          username: {
-            contains: username,
-          },
-        }
+            username: {
+              contains: username,
+            },
+          }
         : {}),
       ...(status !== null && status !== ''
         ? {
-          status: Number(status),
-        }
+            status: Number(status),
+          }
         : {}),
     };
 
@@ -54,7 +87,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       code: 0,
       data: {
-        list,
+        list: list.map(formatUser),
         total,
         page,
         pageSize,
@@ -63,6 +96,22 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('GET /api/users error:', error);
+
+    if (error instanceof Error) {
+      if (error.message === '未登录') {
+        return NextResponse.json(
+          { code: 1, data: null, message: '未登录' },
+          { status: 401 },
+        );
+      }
+
+      if (error.message === '无权限') {
+        return NextResponse.json(
+          { code: 1, data: null, message: '无权限' },
+          { status: 403 },
+        );
+      }
+    }
 
     return NextResponse.json(
       {
@@ -79,8 +128,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await requirePermission(PERMISSIONS.USER_CREATE);
+
     const body = await request.json();
-    const { username, nickname, email, status } = body;
+    const { username, nickname, email, status, role } = body;
 
     if (!username || !nickname) {
       return NextResponse.json(
@@ -117,23 +168,62 @@ export async function POST(request: Request) {
       );
     }
 
+    const targetRole = await prisma.role.findUnique({
+      where: { name: role || 'USER' },
+    });
+
+    if (!targetRole) {
+      return NextResponse.json(
+        {
+          code: 1,
+          data: null,
+          message: '角色不存在',
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
     const user = await prisma.user.create({
       data: {
         username,
         nickname,
         email: email || null,
+        password: await bcrypt.hash('123456', 10),
         status: Number(status ?? 1),
+        userRoles: {
+          create: {
+            roleId: targetRole.id,
+          },
+        },
       },
       select: userSelect,
     });
 
     return NextResponse.json({
       code: 0,
-      data: user,
+      data: formatUser(user),
       message: '新增成功',
     });
   } catch (error) {
     console.error('POST /api/users error:', error);
+
+    if (error instanceof Error) {
+      if (error.message === '未登录') {
+        return NextResponse.json(
+          { code: 1, data: null, message: '未登录' },
+          { status: 401 },
+        );
+      }
+
+      if (error.message === '无权限') {
+        return NextResponse.json(
+          { code: 1, data: null, message: '无权限' },
+          { status: 403 },
+        );
+      }
+    }
 
     return NextResponse.json(
       {

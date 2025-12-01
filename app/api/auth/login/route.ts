@@ -6,6 +6,8 @@ import {
   createAdminSessionToken,
   getAdminSessionCookieOptions,
 } from '@/lib/session';
+import { getPermissionsByRole, type Role } from '@/lib/permission';
+import { resolveRoleFromNames } from '@/lib/user-role';
 
 export async function POST(request: Request) {
   try {
@@ -25,7 +27,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const adminUser = await prisma.user.findFirst({ where: { username } });
+    const adminUser = await prisma.user.findFirst({
+      where: { username },
+      include: {
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
     if (!adminUser || !adminUser.password) {
       return NextResponse.json(
@@ -56,21 +71,26 @@ export async function POST(request: Request) {
       );
     }
 
+    const role = resolveRoleFromNames(adminUser.userRoles.map((item) => item.role.name)) as Role;
+    const permissions = getPermissionsByRole(role);
+
     const response = NextResponse.json({
       code: 0,
       data: {
         id: adminUser.id,
         username: adminUser.username,
         nickname: adminUser.nickname,
-        role: adminUser.role,
+        role,
+        permissions,
       },
       message: '登录成功',
     });
+
     const sessionToken = await createAdminSessionToken({
       userId: adminUser.id,
       username: adminUser.username,
-      nickname: adminUser.nickname,
-      role: adminUser.role,
+      nickname: adminUser.nickname ?? adminUser.username,
+      role,
     });
 
     response.cookies.set(

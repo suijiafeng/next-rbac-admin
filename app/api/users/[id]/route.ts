@@ -1,16 +1,44 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { resolveRoleFromNames } from '@/lib/user-role';
 
 const userSelect = {
   id: true,
   username: true,
   nickname: true,
   email: true,
-  role: true,
   status: true,
   createdAt: true,
   updatedAt: true,
+  userRoles: {
+    select: {
+      role: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  },
 } as const;
+
+function formatUser(user: {
+  id: number;
+  username: string;
+  nickname: string | null;
+  email: string | null;
+  status: number;
+  createdAt: Date;
+  updatedAt: Date;
+  userRoles: Array<{ role: { name: string } }>;
+}) {
+  const { userRoles, ...rest } = user;
+
+  return {
+    ...rest,
+    nickname: rest.nickname ?? '',
+    role: resolveRoleFromNames(userRoles.map((item) => item.role.name)),
+  };
+}
 
 interface RouteContext {
   params: {
@@ -47,7 +75,7 @@ export async function GET(
 
     return NextResponse.json({
       code: 0,
-      data: user,
+      data: formatUser(user),
       message: 'success',
     });
   } catch (error) {
@@ -156,7 +184,7 @@ const existedUser = await prisma.user.findFirst({
 
     return NextResponse.json({
       code: 0,
-      data: updatedUser,
+      data: formatUser(updatedUser),
       message: '编辑成功',
     });
   } catch (error) {

@@ -1,5 +1,6 @@
 import { getAdminSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { resolveRoleFromNames } from '@/lib/user-role';
 
 export async function getCurrentAdminUser() {
   const session = await getAdminSession();
@@ -17,10 +18,16 @@ export async function getCurrentAdminUser() {
       username: true,
       nickname: true,
       email: true,
-      role: true,
       status: true,
       createdAt: true,
       updatedAt: true,
+      userRoles: {
+        select: {
+          role: {
+            select: { name: true },
+          },
+        },
+      },
     },
   });
 
@@ -28,5 +35,8 @@ export async function getCurrentAdminUser() {
     return null;
   }
 
-  return user;
+  const role = resolveRoleFromNames(user.userRoles.map((ur) => ur.role.name));
+
+  const { userRoles: _, ...rest } = user;
+  return { ...rest, role };
 }

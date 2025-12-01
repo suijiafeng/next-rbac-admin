@@ -15,3 +15,16 @@ export const rolePageMap = {
     '/profile',
   ],
 };
+
+export const PERMISSIONS = {
+  USER_VIEW: 'user:view',
+  USER_CREATE: 'user:create',
+  USER_EDIT: 'user:edit',
+  USER_DELETE: 'user:delete',
+
+  SETTINGS_VIEW: 'settings:view',
+  SETTINGS_EDIT: 'settings:edit',
+} as const;
+
+export type PermissionValue =
+  (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

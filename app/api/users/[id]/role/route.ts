@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
+import { resolveRoleFromNames } from '@/lib/user-role';
 
 interface RouteContext {
   params: {
@@ -32,36 +33,115 @@ export async function PATCH(
       );
     }
 
-    const target = await prisma.user.findUnique({ where: { id } });
+    const targetWithRoles = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        username: true,
+        nickname: true,
+        email: true,
+        status: true,
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
-    if (!target) {
+    if (!targetWithRoles) {
       return NextResponse.json(
         { code: 1, data: null, message: '用户不存在' },
         { status: 404 },
       );
     }
 
-    if (target.role === 'SUPER_ADMIN') {
+    const currentTargetRole = resolveRoleFromNames(
+      targetWithRoles.userRoles.map((item) => item.role.name),
+    );
+
+    if (currentTargetRole === 'SUPER_ADMIN') {
       return NextResponse.json(
         { code: 1, data: null, message: '不能修改超级管理员的角色' },
         { status: 403 },
       );
     }
 
-    const updated = await prisma.user.update({
+    const targetRole = await prisma.role.findUnique({
+      where: { name: role },
+    });
+
+    if (!targetRole) {
+      return NextResponse.json(
+        { code: 1, data: null, message: '目标角色不存在' },
+        { status: 400 },
+      );
+    }
+
+    await prisma.$transaction([
+      prisma.userRole.deleteMany({
+        where: {
+          userId: id,
+          role: {
+            name: {
+              in: ['ADMIN', 'USER'],
+            },
+          },
+        },
+      }),
+      prisma.userRole.upsert({
+        where: {
+          userId_roleId: {
+            userId: id,
+            roleId: targetRole.id,
+          },
+        },
+        update: {},
+        create: {
+          userId: id,
+          roleId: targetRole.id,
+        },
+      }),
+    ]);
+
+    const updated = await prisma.user.findUnique({
       where: { id },
-      data: { role: role as 'ADMIN' | 'USER' },
       select: {
         id: true,
         username: true,
         nickname: true,
         email: true,
-        role: true,
         status: true,
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    return NextResponse.json({ code: 0, data: updated, message: '角色更新成功' });
+    return NextResponse.json({
+      code: 0,
+      data: updated
+        ? {
+            id: updated.id,
+            username: updated.username,
+            nickname: updated.nickname ?? '',
+            email: updated.email,
+            status: updated.status,
+            role: resolveRoleFromNames(updated.userRoles.map((item) => item.role.name)),
+          }
+        : null,
+      message: '角色更新成功',
+    });
   } catch (error) {
     console.error('PATCH /api/users/[id]/role error:', error);
 

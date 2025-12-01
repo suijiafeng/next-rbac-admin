@@ -11,22 +11,66 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  ADMIN
-  SUPER_ADMIN
+model User {
+  id         Int        @id @default(autoincrement())
+  username   String     @unique
+  password   String
+  nickname   String?
+  email      String?    @unique
+  status     Int        @default(1) // 1:启用 0:禁用
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  userRoles  UserRole[]
+
+  @@map("users")
 }
 
-model User {
+
+model Role {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique // 角色标识，例如 admin、user、super_admin
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique // 权限编码，例如 user.view
+  name            String           // 权限名称，例如 查看用户
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+  @@map("permissions")
+}
+
+model UserRole {
   id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String?
-  nickname  String
-  email     String?  @unique
-  role      Role     @default(USER)
-  status    Int      @default(1)
+  userId    Int
+  roleId    Int
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
 }
 
 model SystemSetting {
@@ -35,4 +79,5 @@ model SystemSetting {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@map("system_setting")
 }

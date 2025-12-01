@@ -58,6 +58,16 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userRole = await prisma.role.findUnique({
+      where: { name: 'USER' },
+    });
+
+    if (!userRole) {
+      return NextResponse.json(
+        { code: 1, data: null, message: '默认用户角色不存在' },
+        { status: 500 },
+      );
+    }
 
     // 新注册用户默认 status: 0，等待管理员审核后启用
     const user = await prisma.user.create({
@@ -66,15 +76,18 @@ export async function POST(request: Request) {
         nickname,
         email: email || null,
         password: hashedPassword,
-        role: 'USER',
         status: 0,
+        userRoles: {
+          create: {
+            roleId: userRole.id,
+          },
+        },
       },
       select: {
         id: true,
         username: true,
         nickname: true,
         email: true,
-        role: true,
       },
     });
 

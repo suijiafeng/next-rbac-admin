@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdminUser, requireRole } from '@/lib/permission';
+import { requirePermission, requireRole } from '@/lib/permission';
+import { PERMISSIONS } from '@/constants/permission';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +17,7 @@ const DEFAULTS: Record<string, string> = {
 
 export async function GET() {
   try {
-    await requireAdminUser();
+    await requirePermission(PERMISSIONS.SETTINGS_VIEW);
 
     const records = await prisma.systemSetting.findMany();
 
@@ -31,8 +32,13 @@ export async function GET() {
       message: 'success',
     });
   } catch (error) {
-    if (error instanceof Error && error.message === '未登录') {
-      return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
+    if (error instanceof Error) {
+      if (error.message === '未登录') {
+        return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
+      }
+      if (error.message === '无权限') {
+        return NextResponse.json({ code: 1, data: null, message: '无权限' }, { status: 403 });
+      }
     }
     return NextResponse.json({ code: 1, data: null, message: '获取设置失败' }, { status: 500 });
   }

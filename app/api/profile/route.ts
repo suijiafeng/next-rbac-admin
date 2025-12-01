@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdminUser } from '@/lib/permission';
+import { getCurrentAdminAuth, requireAdminUser } from '@/lib/permission';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const user = await requireAdminUser();
+    const authInfo = await getCurrentAdminAuth();
 
     return NextResponse.json({
       code: 0,
-      data: user,
+      data: authInfo,
       message: 'success',
     });
   } catch (error) {
@@ -99,9 +99,9 @@ export async function PUT(request: Request) {
         username: true,
         nickname: true,
         email: true,
-        role: true,
         status: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 
