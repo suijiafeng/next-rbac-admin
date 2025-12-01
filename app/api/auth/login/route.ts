@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import {
+  ADMIN_SESSION_COOKIE,
+  createAdminSessionToken,
+  getAdminSessionCookieOptions,
+} from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
@@ -64,24 +69,17 @@ export async function POST(request: Request) {
       },
       message: '登录成功',
     });
-    response.cookies.set('admin_token', String(adminUser.id), {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
+    const sessionToken = await createAdminSessionToken({
+      userId: adminUser.id,
+      username: adminUser.username,
+      nickname: adminUser.nickname,
+      role: adminUser.role,
     });
 
     response.cookies.set(
-      'admin_user',
-      JSON.stringify({
-        id: adminUser.id,
-        role: adminUser.role,
-      }),
-      {
-        httpOnly: true,
-        path: '/',
-      },
+      ADMIN_SESSION_COOKIE,
+      sessionToken,
+      getAdminSessionCookieOptions(),
     );
 
     return response;

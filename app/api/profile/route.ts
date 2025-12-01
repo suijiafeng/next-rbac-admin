@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
-import { getAdminUserId } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { requireAdminUser } from '@/lib/permission';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const adminUserId = await getAdminUserId();
+    const user = await requireAdminUser();
 
-    if (!adminUserId) {
+    return NextResponse.json({
+      code: 0,
+      data: user,
+      message: 'success',
+    });
+  } catch (error) {
+    console.error('GET /api/profile error:', error);
+
+    if (error instanceof Error && error.message === '未登录') {
       return NextResponse.json(
         {
           code: 1,
@@ -20,42 +28,6 @@ export async function GET() {
         },
       );
     }
-
-    const user = await prisma.user.findUnique({
-      where: {
-        id: adminUserId,
-      },
-      select: {
-        id: true,
-        username: true,
-        nickname: true,
-        email: true,
-        role: true,
-        status: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户不存在',
-        },
-        {
-          status: 404,
-        },
-      );
-    }
-
-    return NextResponse.json({
-      code: 0,
-      data: user,
-      message: 'success',
-    });
-  } catch (error) {
-    console.error('GET /api/profile error:', error);
 
     return NextResponse.json(
       {
@@ -72,20 +44,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const adminUserId = await getAdminUserId();
-
-    if (!adminUserId) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '未登录',
-        },
-        {
-          status: 401,
-        },
-      );
-    }
+    const currentUser = await requireAdminUser();
 
     const body = await request.json();
     const { nickname, email } = body;
@@ -108,7 +67,7 @@ export async function PUT(request: Request) {
           where: {
             email,
             NOT: {
-              id: adminUserId,
+              id: currentUser.id,
             },
           },
         })
@@ -129,7 +88,7 @@ export async function PUT(request: Request) {
 
     const user = await prisma.user.update({
       where: {
-        id: adminUserId,
+        id: currentUser.id,
       },
       data: {
         nickname,
@@ -153,6 +112,19 @@ export async function PUT(request: Request) {
     });
   } catch (error) {
     console.error('PUT /api/profile error:', error);
+
+    if (error instanceof Error && error.message === '未登录') {
+      return NextResponse.json(
+        {
+          code: 1,
+          data: null,
+          message: '未登录',
+        },
+        {
+          status: 401,
+        },
+      );
+    }
 
     return NextResponse.json(
       {
