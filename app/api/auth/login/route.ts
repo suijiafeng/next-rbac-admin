@@ -25,22 +25,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const adminUser = await prisma.user.findFirst({
-      where: {
-        username,
-        status: 1,
-      },
-    });
+    const adminUser = await prisma.user.findFirst({ where: { username } });
+
     if (!adminUser || !adminUser.password) {
       return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '该用户不存在',
-        },
-        {
-          status: 401,
-        },
+        { code: 1, data: null, message: '用户名或密码错误' },
+        { status: 401 },
+      );
+    }
+
+    if (adminUser.status !== 1) {
+      return NextResponse.json(
+        { code: 1, data: null, message: '账号待审核，请联系管理员' },
+        { status: 403 },
       );
     }
 
