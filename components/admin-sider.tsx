@@ -5,7 +5,6 @@ import {
   DashboardOutlined,
   UserOutlined,
   SettingOutlined,
-  ProfileOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -45,12 +44,6 @@ const menuConfig: MenuItemConfig[] = [
     icon: <SettingOutlined />,
     label: '系统设置',
     roles: ['SUPER_ADMIN'],
-  },
-  {
-    key: '/profile',
-    icon: <ProfileOutlined />,
-    label: '个人信息',
-    roles: ['USER', 'ADMIN', 'SUPER_ADMIN'],
   },
 ];
 

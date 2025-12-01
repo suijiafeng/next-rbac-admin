@@ -4,6 +4,7 @@ import { Layout } from 'antd';
 import { useState } from 'react';
 import AdminHeader from './admin-header';
 import AdminSider from './admin-sider';
+import ProfileModal from './profile-modal';
 
 const { Content } = Layout;
 
@@ -26,7 +27,7 @@ interface AdminLayoutProps {
 export default function AdminLayout(props: AdminLayoutProps) {
   const { children, currentUser } = props;
   const [collapsed, setCollapsed] = useState(false);
-
+    const [profileOpen, setProfileOpen] = useState(false);
   const siderWidth = collapsed ? 80 : 200;
 
   return (
@@ -40,6 +41,7 @@ export default function AdminLayout(props: AdminLayoutProps) {
           collapsed={collapsed}
           onToggleCollapse={() => setCollapsed((prev) => !prev)}
           currentUser={currentUser}
+          onOpenProfile={() => setProfileOpen(true)}
         />
 
         <Content
@@ -50,11 +52,14 @@ export default function AdminLayout(props: AdminLayoutProps) {
             padding: 16,
             background: '#f5f6f8',
             borderRadius: 8,
+            minHeight: 'calc(100vh - 96px)',
           }}
         >
           {children}
         </Content>
       </Layout>
+
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
     </Layout>
   );
 }
