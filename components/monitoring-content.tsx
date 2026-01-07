@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
-  Badge,
   Card,
   Col,
   Progress,

@@ -27,12 +27,6 @@ interface AdminHeaderProps {
   onOpenProfile: () => void;
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  SUPER_ADMIN: '超级管理员',
-  ADMIN: '管理员',
-  USER: '普通用户',
-};
-
 // 根据用户名生成固定颜色
 const AVATAR_COLORS = [
   '#1677ff', '#52c41a', '#faad14', '#f5222d',

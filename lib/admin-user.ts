@@ -37,6 +37,7 @@ export async function getCurrentAdminUser() {
 
   const role = resolveRoleFromNames(user.userRoles.map((ur) => ur.role.name));
 
-  const { userRoles: _, ...rest } = user;
+  const { userRoles, ...rest } = user;
+  void userRoles;
   return { ...rest, role };
 }
