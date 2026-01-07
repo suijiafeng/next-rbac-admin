@@ -7,11 +7,13 @@ export const rolePageMap = {
   [Role.SUPER_ADMIN]: ['*'],
   [Role.ADMIN]: [
     '/dashboard',
+    '/monitoring',
     '/users',
     '/profile',
   ],
   [Role.USER]: [
     '/dashboard',
+    '/monitoring',
     '/profile',
   ],
 };
@@ -24,6 +26,11 @@ export const PERMISSIONS = {
 
   SETTINGS_VIEW: 'settings:view',
   SETTINGS_EDIT: 'settings:edit',
+
+  ROLE_VIEW: 'role:view',
+  ROLE_CREATE: 'role:create',
+  ROLE_EDIT: 'role:edit',
+  ROLE_DELETE: 'role:delete',
 } as const;
 
 export type PermissionValue =
