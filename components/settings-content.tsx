@@ -528,7 +528,7 @@ export default function SettingsContent() {
 
   return (
     <>
-      <Typography.Title level={4} className="!mb-4 !text-base !font-semibold !text-slate-900">
+      <Typography.Title level={4} className="text-slate-900">
         系统设置
       </Typography.Title>
       <Tabs items={tabs} onChange={handleTabChange} />
