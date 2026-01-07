@@ -32,10 +32,8 @@ export default function AdminLayout(props: AdminLayoutProps) {
 
   return (
     <Layout hasSider style={{ height: '100vh', overflow: 'hidden' }}>
-      {/* 固定左侧菜单 */}
       <AdminSider collapsed={collapsed} role={currentUser.role} />
 
-      {/* 右侧：header 固定 + 内容区可滚动 */}
       <Layout style={{ marginLeft: siderWidth, transition: 'margin-left 0.2s', display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         <AdminHeader
           collapsed={collapsed}

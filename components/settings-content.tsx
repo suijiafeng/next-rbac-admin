@@ -8,7 +8,6 @@ import {
   Input,
   InputNumber,
   message,
-  Modal,
   Popconfirm,
   Select,
   Space,
@@ -22,6 +21,7 @@ import {
 import {
   GlobalOutlined,
   InfoCircleOutlined,
+  KeyOutlined,
   LockOutlined,
   PlusOutlined,
   SaveOutlined,
@@ -30,6 +30,9 @@ import {
 import { request } from '@/lib/request';
 import type { UserItem } from '@/types/user';
 import type { PageResponse } from '@/types/request';
+import type { TabsProps } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import styles from '@/components/settings-content.module.css';
 
 interface SystemSettings {
   site_name: string;
@@ -40,41 +43,118 @@ interface SystemSettings {
   allow_register: string;
 }
 
-export default function SettingsContent() {
+const settingsLabelClassName = 'inline-block w-[110px]';
+
+const getAdminColumns = (options: {
+  operatingId: number | null;
+  currentUserId: number | null;
+  onToggleStatus: (user: UserItem) => void;
+  onRemoveAdmin: (user: UserItem) => void;
+}): ColumnsType<UserItem> => {
+  const { operatingId, currentUserId, onToggleStatus, onRemoveAdmin } = options;
+
+  return [
+    {
+      title: '用户名',
+      dataIndex: 'username',
+      key: 'username',
+    },
+    {
+      title: '昵称',
+      dataIndex: 'nickname',
+      key: 'nickname',
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+      key: 'email',
+      render: (email: string | null) => email || '-',
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: number) =>
+        status === 1 ? (
+          <Tag color="success">正常</Tag>
+        ) : (
+          <Space size={4}>
+            <Tag color="warning">暂停</Tag>
+            <Tooltip title="该用户已被暂停，管理员权限已自动撤销">
+              <InfoCircleOutlined className="cursor-default text-slate-400" />
+            </Tooltip>
+          </Space>
+        ),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_value: unknown, user: UserItem) => {
+        const isBusy = operatingId === user.id;
+        const isSelf = user.id === currentUserId;
+
+        return (
+          <Space size="small">
+            <Popconfirm
+              title={user.status === 1 ? '确认暂停该管理员？' : '确认启用该管理员？'}
+              onConfirm={() => onToggleStatus(user)}
+              okText="确认"
+              cancelText="取消"
+            >
+              <Button type="link" size="small" disabled={isBusy || isSelf}>
+                {user.status === 1 ? '暂停' : '启用'}
+              </Button>
+            </Popconfirm>
+            <Popconfirm
+              title="确认撤销该管理员权限？"
+              description="该用户将降为普通用户，账号本身不受影响"
+              onConfirm={() => onRemoveAdmin(user)}
+              okText="确认"
+              cancelText="取消"
+              okButtonProps={{ danger: true }}
+            >
+              <Button type="link" size="small" danger disabled={isBusy || isSelf}>
+                撤销
+              </Button>
+            </Popconfirm>
+          </Space>
+        );
+      },
+    },
+  ];
+};
+
+const SettingsContent = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [siteForm] = Form.useForm();
   const [securityForm] = Form.useForm();
+  const [passwordForm] = Form.useForm();
   const [currentRole, setCurrentRole] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-  // 管理员设置相关状态
   const [adminUsers, setAdminUsers] = useState<UserItem[]>([]);
   const [normalUsers, setNormalUsers] = useState<UserItem[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | undefined>();
   const [addingAdmin, setAddingAdmin] = useState(false);
   const [operatingId, setOperatingId] = useState<number | null>(null);
-
-  // 编辑弹窗
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
-  const [editForm] = Form.useForm();
-  const [editSaving, setEditSaving] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
       const result = await request<SystemSettings>('/api/settings');
-      const s = result.data;
+      const settings = result.data;
       siteForm.setFieldsValue({
-        site_name: s.site_name,
-        site_description: s.site_description,
-        site_logo: s.site_logo,
+        site_name: settings.site_name,
+        site_description: settings.site_description,
+        site_logo: settings.site_logo,
       });
       securityForm.setFieldsValue({
-        session_duration: Number(s.session_duration),
-        max_login_attempts: Number(s.max_login_attempts),
-        allow_register: s.allow_register === 'true',
+        session_duration: Number(settings.session_duration),
+        max_login_attempts: Number(settings.max_login_attempts),
+        allow_register: settings.allow_register === 'true',
       });
     } catch (error) {
       message.error(error instanceof Error ? error.message : '获取设置失败');
@@ -87,8 +167,8 @@ export default function SettingsContent() {
     try {
       const result = await request<UserItem>('/api/profile');
       setCurrentRole(result.data.role);
+      setCurrentUserId(result.data.id);
     } catch {
-      // ignore
     }
   }, []);
 
@@ -117,7 +197,6 @@ export default function SettingsContent() {
     }
   };
 
-  // 添加管理员
   const handleAddAdmin = async () => {
     if (!selectedUserId) return;
     try {
@@ -138,7 +217,6 @@ export default function SettingsContent() {
     }
   };
 
-  // 删除管理员（降为普通用户）
   const handleRemoveAdmin = async (user: UserItem) => {
     try {
       setOperatingId(user.id);
@@ -146,7 +224,7 @@ export default function SettingsContent() {
         method: 'PATCH',
         data: { role: 'USER' },
       });
-      message.success('已移除管理员权限');
+      message.success('已撤销管理员权限');
       setAdminUsers((prev) => prev.filter((u) => u.id !== user.id));
       setNormalUsers((prev) => [...prev, { ...user, role: 'USER' }]);
     } catch (error) {
@@ -156,13 +234,11 @@ export default function SettingsContent() {
     }
   };
 
-  // 暂停 / 启用
   const handleToggleStatus = async (user: UserItem) => {
     const isSuspending = user.status === 1;
     const newStatus = isSuspending ? 0 : 1;
     try {
       setOperatingId(user.id);
-      // 更新状态
       await request(`/api/users/${user.id}`, {
         method: 'PUT',
         data: {
@@ -172,7 +248,6 @@ export default function SettingsContent() {
           status: newStatus,
         },
       });
-      // 暂停时同步降为普通用户
       if (isSuspending) {
         await request(`/api/users/${user.id}/role`, {
           method: 'PATCH',
@@ -192,46 +267,6 @@ export default function SettingsContent() {
       message.error(error instanceof Error ? error.message : '操作失败');
     } finally {
       setOperatingId(null);
-    }
-  };
-
-  // 打开编辑弹窗
-  const handleEdit = (user: UserItem) => {
-    setEditingUser(user);
-    editForm.setFieldsValue({ nickname: user.nickname, email: user.email });
-    setEditModalOpen(true);
-  };
-
-  // 保存编辑
-  const handleEditSave = async () => {
-    if (!editingUser) return;
-    try {
-      const values = await editForm.validateFields();
-      setEditSaving(true);
-      await request(`/api/users/${editingUser.id}`, {
-        method: 'PUT',
-        data: {
-          username: editingUser.username,
-          nickname: values.nickname,
-          email: values.email || null,
-          status: editingUser.status,
-        },
-      });
-      message.success('编辑成功');
-      setAdminUsers((prev) =>
-        prev.map((u) =>
-          u.id === editingUser.id
-            ? { ...u, nickname: values.nickname, email: values.email || null }
-            : u,
-        ),
-      );
-      setEditModalOpen(false);
-    } catch (error) {
-      if (error instanceof Error) {
-        message.error(error.message);
-      }
-    } finally {
-      setEditSaving(false);
     }
   };
 
@@ -271,85 +306,33 @@ export default function SettingsContent() {
     }
   };
 
-  const labelStyle = { width: 110, display: 'inline-block' };
+  const handleChangePassword = async () => {
+    try {
+      const values = await passwordForm.validateFields();
+      setPasswordSaving(true);
+      await request('/api/profile/password', {
+        method: 'PUT',
+        data: { oldPassword: values.oldPassword, newPassword: values.newPassword },
+      });
+      message.success('密码已修改，请重新登录');
+      passwordForm.resetFields();
+    } catch (error) {
+      if (error instanceof Error) {
+        message.error(error.message);
+      }
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
 
-  const adminColumns = [
-    {
-      title: '用户名',
-      dataIndex: 'username',
-      key: 'username',
-    },
-    {
-      title: '昵称',
-      dataIndex: 'nickname',
-      key: 'nickname',
-    },
-    {
-      title: '邮箱',
-      dataIndex: 'email',
-      key: 'email',
-      render: (v: string | null) => v || '-',
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: number) =>
-        status === 1 ? (
-          <Tag color="success">正常</Tag>
-        ) : (
-          <Space size={4}>
-            <Tag color="warning">暂停</Tag>
-            <Tooltip title="该用户已被暂停，管理员权限已自动撤销">
-              <InfoCircleOutlined className="text-slate-400 cursor-default" />
-            </Tooltip>
-          </Space>
-        ),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: unknown, record: UserItem) => {
-        const busy = operatingId === record.id;
-        return (
-          <Space size="small">
-            <Button
-              type="link"
-              size="small"
-              disabled={busy}
-              onClick={() => handleEdit(record)}
-            >
-              编辑
-            </Button>
-            <Popconfirm
-              title={record.status === 1 ? '确认暂停该管理员？' : '确认启用该管理员？'}
-              onConfirm={() => handleToggleStatus(record)}
-              okText="确认"
-              cancelText="取消"
-            >
-              <Button type="link" size="small" disabled={busy}>
-                {record.status === 1 ? '暂停' : '启用'}
-              </Button>
-            </Popconfirm>
-            <Popconfirm
-              title="确认移除该管理员权限？"
-              description="该用户将降为普通用户"
-              onConfirm={() => handleRemoveAdmin(record)}
-              okText="确认"
-              cancelText="取消"
-              okButtonProps={{ danger: true }}
-            >
-              <Button type="link" size="small" danger disabled={busy}>
-                删除
-              </Button>
-            </Popconfirm>
-          </Space>
-        );
-      },
-    },
-  ];
+  const adminColumns = getAdminColumns({
+    operatingId,
+    currentUserId,
+    onToggleStatus: handleToggleStatus,
+    onRemoveAdmin: handleRemoveAdmin,
+  });
 
-  const tabs = [
+  const tabItems: TabsProps['items'] = [
     {
       key: 'site',
       label: (
@@ -360,16 +343,16 @@ export default function SettingsContent() {
       ),
       children: (
         <Card loading={loading} variant="borderless">
-          <Form form={siteForm} layout="vertical" style={{ maxWidth: 520 }}>
+          <Form form={siteForm} layout="vertical" className={styles.form}>
             <Form.Item
-              label={<span style={labelStyle}>站点名称</span>}
+              label={<span className={settingsLabelClassName}>站点名称</span>}
               name="site_name"
               rules={[{ required: true, message: '请输入站点名称' }]}
             >
               <Input placeholder="请输入站点名称" />
             </Form.Item>
             <Form.Item
-              label={<span style={labelStyle}>站点描述</span>}
+              label={<span className={settingsLabelClassName}>站点描述</span>}
               name="site_description"
             >
               <Input.TextArea
@@ -378,13 +361,27 @@ export default function SettingsContent() {
               />
             </Form.Item>
             <Form.Item
-              label={<span style={labelStyle}>Logo URL</span>}
+              label={<span className={settingsLabelClassName}>Logo URL</span>}
               name="site_logo"
               rules={[{ type: 'url', message: '请输入合法的 URL' }]}
             >
               <Input placeholder="https://example.com/logo.png" />
             </Form.Item>
-            <Form.Item style={{ marginBottom: 0 }}>
+            <Form.Item shouldUpdate={(prev, curr) => prev.site_logo !== curr.site_logo} noStyle>
+              {({ getFieldValue, getFieldError }) => {
+                const url = getFieldValue('site_logo');
+                const hasError = getFieldError('site_logo').length > 0;
+                if (!url || hasError) return null;
+                return (
+                  <Form.Item>
+                    <div className={styles.logoPreview}>
+                      <img src={url} alt="Logo 预览" className={styles.logoPreviewImg} />
+                    </div>
+                  </Form.Item>
+                );
+              }}
+            </Form.Item>
+            <Form.Item className="mb-0">
               <Button
                 type="primary"
                 icon={<SaveOutlined />}
@@ -408,57 +405,50 @@ export default function SettingsContent() {
       ),
       children: (
         <Card loading={loading} variant="borderless">
-          <Form form={securityForm} layout="vertical" style={{ maxWidth: 520 }}>
+          <Form form={securityForm} layout="vertical" className={styles.form}>
             <Form.Item
-              label={<span style={labelStyle}>会话时长（天）</span>}
+              label={<span className={settingsLabelClassName}>会话时长（天）</span>}
               name="session_duration"
+              extra="用户登录后 Token 的有效期，超时后需重新登录"
               rules={[
                 { required: true, message: '请输入会话时长' },
-                {
-                  type: 'number',
-                  min: 1,
-                  max: 30,
-                  message: '请输入 1~30 之间的整数',
-                },
+                { type: 'number', min: 1, max: 30, message: '请输入 1~30 之间的整数' },
               ]}
             >
               <InputNumber
                 min={1}
                 max={30}
                 precision={0}
-                style={{ width: 160 }}
+                className={styles.narrowNumberInput}
                 addonAfter="天"
               />
             </Form.Item>
             <Form.Item
-              label={<span style={labelStyle}>最大登录尝试次数</span>}
+              label={<span className={settingsLabelClassName}>最大登录尝试次数</span>}
               name="max_login_attempts"
+              extra="密码连续错误达到上限后，账号将被临时锁定"
               rules={[
                 { required: true, message: '请输入最大登录尝试次数' },
-                {
-                  type: 'number',
-                  min: 1,
-                  max: 20,
-                  message: '请输入 1~20 之间的整数',
-                },
+                { type: 'number', min: 1, max: 20, message: '请输入 1~20 之间的整数' },
               ]}
             >
               <InputNumber
                 min={1}
                 max={20}
                 precision={0}
-                style={{ width: 160 }}
+                className={styles.narrowNumberInput}
                 addonAfter="次"
               />
             </Form.Item>
             <Form.Item
-              label={<span style={labelStyle}>允许用户注册</span>}
+              label={<span className={settingsLabelClassName}>允许用户注册</span>}
               name="allow_register"
               valuePropName="checked"
+              extra="关闭后新用户将无法自行注册，仅可由管理员手动添加"
             >
               <Switch checkedChildren="开启" unCheckedChildren="关闭" />
             </Form.Item>
-            <Form.Item style={{ marginBottom: 0 }}>
+            <Form.Item className="mb-0">
               <Button
                 type="primary"
                 icon={<SaveOutlined />}
@@ -466,6 +456,66 @@ export default function SettingsContent() {
                 onClick={handleSaveSecurity}
               >
                 保存设置
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
+      ),
+    },
+    {
+      key: 'password',
+      label: (
+        <span>
+          <KeyOutlined className="mr-1.5" />
+          修改密码
+        </span>
+      ),
+      children: (
+        <Card variant="borderless">
+          <Form form={passwordForm} layout="vertical" className={styles.form}>
+            <Form.Item
+              label={<span className={settingsLabelClassName}>当前密码</span>}
+              name="oldPassword"
+              rules={[{ required: true, message: '请输入当前密码' }]}
+            >
+              <Input.Password placeholder="请输入当前密码" />
+            </Form.Item>
+            <Form.Item
+              label={<span className={settingsLabelClassName}>新密码</span>}
+              name="newPassword"
+              rules={[
+                { required: true, message: '请输入新密码' },
+                { min: 6, message: '密码长度不少于 6 位' },
+              ]}
+            >
+              <Input.Password placeholder="请输入新密码" />
+            </Form.Item>
+            <Form.Item
+              label={<span className={settingsLabelClassName}>确认新密码</span>}
+              name="confirmPassword"
+              dependencies={['newPassword']}
+              rules={[
+                { required: true, message: '请再次输入新密码' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('newPassword') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error('两次输入的密码不一致'));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password placeholder="请再次输入新密码" />
+            </Form.Item>
+            <Form.Item className="mb-0">
+              <Button
+                type="primary"
+                icon={<KeyOutlined />}
+                loading={passwordSaving}
+                onClick={handleChangePassword}
+              >
+                确认修改
               </Button>
             </Form.Item>
           </Form>
@@ -484,11 +534,11 @@ export default function SettingsContent() {
             ),
             children: (
               <Card variant="borderless">
-                <Space className="mb-4">
+                <Space className={styles.adminToolbar}>
                   <Select
                     showSearch
                     placeholder="选择用户添加为管理员"
-                    style={{ width: 260 }}
+                    className={styles.adminUserSelect}
                     value={selectedUserId}
                     onChange={setSelectedUserId}
                     filterOption={(input, option) =>
@@ -528,38 +578,12 @@ export default function SettingsContent() {
 
   return (
     <>
-      <Typography.Title level={4} className="text-slate-900">
+      <Typography.Title level={4} className={styles.title}>
         系统设置
       </Typography.Title>
-      <Tabs items={tabs} onChange={handleTabChange} />
-
-      <Modal
-        title="编辑管理员信息"
-        open={editModalOpen}
-        onOk={handleEditSave}
-        onCancel={() => setEditModalOpen(false)}
-        confirmLoading={editSaving}
-        okText="保存"
-        cancelText="取消"
-        destroyOnHidden
-      >
-        <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item
-            label="昵称"
-            name="nickname"
-            rules={[{ required: true, message: '请输入昵称' }]}
-          >
-            <Input placeholder="请输入昵称" />
-          </Form.Item>
-          <Form.Item
-            label="邮箱"
-            name="email"
-            rules={[{ type: 'email', message: '请输入合法的邮箱' }]}
-          >
-            <Input placeholder="请输入邮箱" />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <Tabs items={tabItems} onChange={handleTabChange} />
     </>
   );
-}
+};
+
+export default SettingsContent;
