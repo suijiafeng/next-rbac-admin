@@ -15,7 +15,7 @@ const { Text } = Typography;
 const { Header } = Layout;
 
 interface CurrentUser {
-  nickname: string;
+  nickname: string | null;
   username: string;
   role: string;
 }
@@ -39,6 +39,10 @@ const AVATAR_COLORS = [
   '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16',
 ];
 function avatarColor(username: string) {
+  if (!username) {
+    return AVATAR_COLORS[0];
+  }
+
   let hash = 0;
   for (let i = 0; i < username.length; i++) hash += username.charCodeAt(i);
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
@@ -52,8 +56,9 @@ export default function AdminHeader(props: AdminHeaderProps) {
     router.prefetch('/profile');
   }, [router]);
 
-  const firstChar = ( currentUser.username || '?')[0].toUpperCase();
-  const bgColor = avatarColor(currentUser.username);
+  const displayName = currentUser.username || currentUser.nickname || '?';
+  const firstChar = displayName[0]?.toUpperCase() || '?';
+  const bgColor = avatarColor(currentUser.username || displayName);
 
   const items: MenuProps['items'] = [
     {

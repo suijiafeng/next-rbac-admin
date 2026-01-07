@@ -118,16 +118,16 @@ function getUserTableColumns(options: UserTableColumnsOptions): ColumnsType<User
     {
       title: '操作',
       key: 'action',
-      width: 110,
+      width: 130,
       fixed: 'right',
       render: (_value, record) => (
-        <Space size={2}>
+        <Space size={0}>
           <Tooltip title="编辑">
             <Button
               type="text"
               size="small"
               icon={<EditOutlined />}
-              className="rounded-[5px] px-2 py-[3px] text-[13px] !text-indigo-600"
+              className="text-[13px] !text-indigo-600"
               onClick={() => onEdit(record)}
             >
               编辑
@@ -147,7 +147,7 @@ function getUserTableColumns(options: UserTableColumnsOptions): ColumnsType<User
               size="small"
               danger
               icon={<DeleteOutlined />}
-              className="rounded-[5px] px-2 py-[3px] text-[13px]"
+              className="text-[13px]"
             >
               删除
             </Button>

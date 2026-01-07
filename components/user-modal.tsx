@@ -53,7 +53,7 @@ export default function UserModal(props: UserModalProps) {
             confirmLoading={loading}
             destroyOnHidden
         >
-            <Form form={form} layout="vertical">
+            <Form form={form} layout="vertical" autoComplete="off">
                 <Item
                     label="用户名"
                     name="username"
@@ -64,7 +64,7 @@ export default function UserModal(props: UserModalProps) {
                         },
                     ]}
                 >
-                    <Input placeholder="请输入用户名" />
+                    <Input placeholder="请输入用户名" autoComplete="off" />
                 </Item>
 
                 <Item
@@ -77,11 +77,11 @@ export default function UserModal(props: UserModalProps) {
                         },
                     ]}
                 >
-                    <Input placeholder="请输入昵称" />
+                    <Input placeholder="请输入昵称" autoComplete="off" />
                 </Item>
 
                 <Item label="邮箱" name="email">
-                    <Input placeholder="请输入邮箱" />
+                    <Input placeholder="请输入邮箱" autoComplete="off" />
                 </Item>
 
                 <Item label="状态" name="status">

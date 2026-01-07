@@ -2,8 +2,9 @@
 
 import { Button, Card, Form, Input, Typography, message } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthContext } from '@/components/providers/AuthProvider';
 interface LoginFormValues {
   username: string;
   password: string;
@@ -12,34 +13,31 @@ interface LoginFormValues {
 export default function LoginPage() {
   const [form] = Form.useForm<LoginFormValues>();
   const router = useRouter();
+  const { refreshAuth } = useAuthContext();
 
-  const handleLogin = async (values: LoginFormValues) => {
+  const handleLogin = async (values: { username: string; password: string }) => {
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(values),
       });
-
       const result = await response.json();
-
       if (result.code !== 0) {
-        message.error(result.message || '登录失败');
-        return;
+        throw new Error(result.message);
       }
-
-      message.success('登录成功');
-      // window.location.href = '/dashboard';
-      router.push('/dashboard');
+      await refreshAuth();
+      router.replace('/');
       router.refresh();
+
     } catch (error) {
-      console.error(error);
-      message.error('登录失败');
+      message.error(error instanceof Error ? error.message : '登录失败');
     }
   };
-
   return (
     <div
       style={{
@@ -48,7 +46,7 @@ export default function LoginPage() {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundImage: " linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),url('assets/bg.jpg')",
-        objectFit:'fill',
+        objectFit: 'fill',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
       }}
@@ -57,7 +55,7 @@ export default function LoginPage() {
         style={{
           width: 420,
           boxShadow: '0 8px 80px rgba(0,0,0,1)',
-          marginTop:  'clamp(-15vh,-50%,-200px)'
+          marginTop: 'clamp(-15vh,-50%,-200px)'
         }}
       >
         <Typography.Title
@@ -71,6 +69,7 @@ export default function LoginPage() {
           form={form}
           layout="vertical"
           onFinish={handleLogin}
+          autoComplete="off"
           initialValues={{
             username: 'admin',
             password: '123456',
@@ -89,6 +88,7 @@ export default function LoginPage() {
             <Input
               prefix={<UserOutlined />}
               placeholder="请输入用户名"
+              autoComplete="off"
             />
           </Form.Item>
 
@@ -105,6 +105,7 @@ export default function LoginPage() {
             <Input.Password
               prefix={<LockOutlined />}
               placeholder="请输入密码"
+              autoComplete="new-password"
             />
           </Form.Item>
 
@@ -114,7 +115,7 @@ export default function LoginPage() {
             </Button>
           </Form.Item>
 
-          <div style={{ textAlign: 'right',marginTop:'20px' }}>
+          <div style={{ textAlign: 'right', marginTop: '20px' }}>
             <Typography.Text type="secondary" style={{ fontSize: 13 }}>
               还没有账号？{' '}
               <Link href="/register" style={{ color: '#1677ff' }}>
