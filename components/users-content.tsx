@@ -5,6 +5,8 @@ import {
   Button,
   Form,
   Input,
+  Modal,
+  Radio,
   Select,
   message,
   Popconfirm,
@@ -16,12 +18,16 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
-  PlusOutlined,
-  SearchOutlined,
-  ReloadOutlined,
-  EditOutlined,
+  CheckCircleOutlined,
   DeleteOutlined,
+  DownloadOutlined,
+  EditOutlined,
   MailOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+  StopOutlined,
+  UserSwitchOutlined,
 } from '@ant-design/icons';
 import { request } from '@/lib/request';
 import type { PageResponse } from '@/types/request';
@@ -166,8 +172,15 @@ export default function UsersPage() {
   const [currentRow, setCurrentRow] = useState<UserItem | null>(null);
   const [tableScrollY, setTableScrollY] = useState(400);
 
+  // —— 批量操作 —— //
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkRoleModalOpen, setBulkRoleModalOpen] = useState(false);
+  const [bulkTargetRole, setBulkTargetRole] = useState<'ADMIN' | 'USER'>('USER');
+
   const containerRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const bulkBarRef = useRef<HTMLDivElement>(null);
 
   const isEdit = useMemo(() => Boolean(currentRow), [currentRow]);
   const [searchParams, setSearchParams] = useState<SearchParams>({ username: '' });
@@ -188,11 +201,12 @@ export default function UsersPage() {
     if (!containerRef.current || !toolbarRef.current) return;
     const containerH = containerRef.current.clientHeight;
     const toolbarH = toolbarRef.current.offsetHeight;
+    const bulkH = bulkBarRef.current?.offsetHeight ?? 0;
     const TABLE_HEADER = 38;
     const TABLE_GAP_TOP = 14;
     const PAGINATION = 44;
     const BOTTOM_BUFFER = 4;
-    const scrollY = containerH - toolbarH - TABLE_HEADER - TABLE_GAP_TOP - PAGINATION - BOTTOM_BUFFER;
+    const scrollY = containerH - toolbarH - bulkH - TABLE_HEADER - TABLE_GAP_TOP - PAGINATION - BOTTOM_BUFFER;
     setTableScrollY(Math.max(scrollY, 200));
   }, []);
 
@@ -207,6 +221,11 @@ export default function UsersPage() {
       window.removeEventListener('resize', calcHeight);
     };
   }, [calcHeight]);
+
+  // 批量浮条出现/消失时重算
+  useEffect(() => {
+    calcHeight();
+  }, [selectedKeys.length, calcHeight]);
 
   const getList = useCallback(async (
     params?: Partial<SearchParams>,
@@ -294,6 +313,138 @@ export default function UsersPage() {
     }
   };
 
+  // ─── 批量操作 ──────────────────────────────────────────────
+  const selectedRows = useMemo(
+    () => list.filter((u) => selectedKeys.includes(u.id)),
+    [list, selectedKeys],
+  );
+
+  /**
+   * 通用批量执行：并行调用 + 汇总成功/失败
+   */
+  const runBulk = async (
+    actionName: string,
+    fn: (user: UserItem) => Promise<unknown>,
+    targets: UserItem[],
+  ) => {
+    if (targets.length === 0) return;
+    setBulkLoading(true);
+    const results = await Promise.allSettled(targets.map(fn));
+    const fulfilled = results.filter((r) => r.status === 'fulfilled').length;
+    const rejected = results.length - fulfilled;
+    if (rejected === 0) {
+      message.success(`${actionName} 成功，共 ${fulfilled} 条`);
+    } else if (fulfilled === 0) {
+      message.error(`${actionName} 全部失败，共 ${rejected} 条`);
+    } else {
+      message.warning(`${actionName} 完成：成功 ${fulfilled} 条，失败 ${rejected} 条`);
+    }
+    setBulkLoading(false);
+    setSelectedKeys([]);
+    getList();
+  };
+
+  const handleBulkToggleStatus = (targetStatus: 0 | 1) => {
+    const targets = selectedRows.filter((u) => u.status !== targetStatus);
+    if (targets.length === 0) {
+      message.info(targetStatus === 1 ? '所选用户已是启用状态' : '所选用户已是禁用状态');
+      return;
+    }
+    runBulk(
+      targetStatus === 1 ? '批量启用' : '批量禁用',
+      (u) =>
+        request(`/api/users/${u.id}`, {
+          method: 'PUT',
+          data: {
+            username: u.username,
+            nickname: u.nickname,
+            email: u.email,
+            status: targetStatus,
+          },
+        }),
+      targets,
+    );
+  };
+
+  const handleBulkDelete = () => {
+    Modal.confirm({
+      title: `确认删除选中的 ${selectedRows.length} 个用户？`,
+      content: '删除后不可恢复',
+      okText: '确认删除',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: () =>
+        runBulk(
+          '批量删除',
+          (u) => request(`/api/users/${u.id}`, { method: 'DELETE' }),
+          selectedRows,
+        ),
+    });
+  };
+
+  const handleBulkAssignRole = () => {
+    // 过滤掉 SUPER_ADMIN（后端 PATCH 拒绝）
+    const targets = selectedRows.filter((u) => u.role !== 'SUPER_ADMIN' && u.role !== bulkTargetRole);
+    if (targets.length === 0) {
+      message.info(`所选用户已经是 ${bulkTargetRole === 'ADMIN' ? '管理员' : '普通用户'}（或为超管，不可改）`);
+      setBulkRoleModalOpen(false);
+      return;
+    }
+    runBulk(
+      `批量分配为${bulkTargetRole === 'ADMIN' ? '管理员' : '普通用户'}`,
+      (u) =>
+        request(`/api/users/${u.id}/role`, {
+          method: 'PATCH',
+          data: { role: bulkTargetRole },
+        }),
+      targets,
+    );
+    setBulkRoleModalOpen(false);
+  };
+
+  /**
+   * CSV 导出（客户端实现，仅导出选中行；若未选中则导出当前页）
+   */
+  const handleExportCsv = () => {
+    const rows = selectedRows.length > 0 ? selectedRows : list;
+    if (rows.length === 0) {
+      message.info('暂无数据可导出');
+      return;
+    }
+    const headers = ['ID', '用户名', '昵称', '邮箱', '角色', '状态', '创建时间'];
+    const escape = (v: unknown) => {
+      const s = v == null ? '' : String(v);
+      // CSV 字段转义：含 , " \n 时用双引号包裹，内部 " 替换为 ""
+      if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+    const lines = [
+      headers.join(','),
+      ...rows.map((u) =>
+        [
+          u.id,
+          u.username,
+          u.nickname,
+          u.email,
+          u.role,
+          u.status === 1 ? '启用' : '禁用',
+          new Date(u.createdAt).toLocaleString('zh-CN'),
+        ]
+          .map(escape)
+          .join(','),
+      ),
+    ];
+    // Excel 兼容：加 UTF-8 BOM
+    const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    message.success(`已导出 ${rows.length} 条`);
+  };
+
   const columns = getUserTableColumns({
     onEdit: handleEdit,
     onDelete: handleDelete,
@@ -372,6 +523,76 @@ export default function UsersPage() {
           </div>
         </div>
 
+        {/* 批量操作浮条：选中后出现 */}
+        {selectedKeys.length > 0 && (
+          <div
+            ref={bulkBarRef}
+            style={{
+              marginTop: 12,
+              padding: '8px 12px',
+              borderRadius: 6,
+              background: 'var(--bg-active)',
+              border: '1px solid var(--color-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+              <span style={{ color: 'var(--color-primary)', fontWeight: 500 }}>
+                已选 {selectedKeys.length} 项
+              </span>
+              <Button type="link" size="small" onClick={() => setSelectedKeys([])}>
+                取消选择
+              </Button>
+            </div>
+            <Space size={4} wrap>
+              <Button
+                size="small"
+                icon={<CheckCircleOutlined />}
+                onClick={() => handleBulkToggleStatus(1)}
+                loading={bulkLoading}
+              >
+                批量启用
+              </Button>
+              <Button
+                size="small"
+                icon={<StopOutlined />}
+                onClick={() => handleBulkToggleStatus(0)}
+                loading={bulkLoading}
+              >
+                批量禁用
+              </Button>
+              <Button
+                size="small"
+                icon={<UserSwitchOutlined />}
+                onClick={() => setBulkRoleModalOpen(true)}
+                loading={bulkLoading}
+              >
+                分配角色
+              </Button>
+              <Button
+                size="small"
+                icon={<DownloadOutlined />}
+                onClick={handleExportCsv}
+              >
+                导出 CSV
+              </Button>
+              <Button
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={handleBulkDelete}
+                loading={bulkLoading}
+              >
+                批量删除
+              </Button>
+            </Space>
+          </div>
+        )}
+
         <div className="min-h-0 flex-1 mt-3.5">
           <Table
             className={styles.table}
@@ -379,6 +600,11 @@ export default function UsersPage() {
             loading={tableLoading}
             dataSource={list}
             scroll={{ x: 800, y: tableScrollY }}
+            rowSelection={{
+              selectedRowKeys: selectedKeys,
+              onChange: (keys) => setSelectedKeys(keys),
+              preserveSelectedRowKeys: true,
+            }}
             pagination={{
               current: pagination.current,
               pageSize: pagination.pageSize,
@@ -407,6 +633,32 @@ export default function UsersPage() {
         onCancel={() => { setModalOpen(false); setCurrentRow(null); }}
         onOk={handleSubmit}
       />
+
+      {/* 批量分配角色弹窗 */}
+      <Modal
+        title={<><UserSwitchOutlined /> 批量分配角色</>}
+        open={bulkRoleModalOpen}
+        onCancel={() => setBulkRoleModalOpen(false)}
+        onOk={handleBulkAssignRole}
+        okText="确认分配"
+        okButtonProps={{ loading: bulkLoading }}
+        destroyOnHidden
+      >
+        <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--text-secondary)' }}>
+          将对所选 <b style={{ color: 'var(--color-primary)' }}>{selectedKeys.length}</b> 个用户分配角色
+          （超级管理员将被自动跳过）
+        </div>
+        <Radio.Group
+          value={bulkTargetRole}
+          onChange={(e) => setBulkTargetRole(e.target.value)}
+          options={[
+            { label: '管理员 (ADMIN)', value: 'ADMIN' },
+            { label: '普通用户 (USER)', value: 'USER' },
+          ]}
+          optionType="button"
+          buttonStyle="solid"
+        />
+      </Modal>
     </>
   );
 }
