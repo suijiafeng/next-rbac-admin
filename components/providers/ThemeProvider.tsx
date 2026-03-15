@@ -97,10 +97,12 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     [mode, resolved, setMode, toggle],
   );
 
-  // 数据密集风：紧凑算法 + 主题算法
+  // 主题算法：仅明暗，不再叠加 compactAlgorithm
+  // —— compactAlgorithm 会把 fontSize 一并缩小（×0.75），
+  //    与我们想要的"间距紧凑、字号正常"目标相悖。
+  //    这里改用 defaultAlgorithm + 组件级 token 单独控制密度。
   const algorithm = useMemo(() => {
-    const base = resolved === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm;
-    return [base, antdTheme.compactAlgorithm];
+    return resolved === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm;
   }, [resolved]);
 
   return (
@@ -112,7 +114,12 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
           token: {
             colorPrimary: '#1677ff',
             borderRadius: 6,
-            fontSize: 13,
+            // 基础字号回归 antd 默认 14；不再被算法压成 10
+            fontSize: 14,
+            fontSizeSM: 12,
+            fontSizeLG: 16,
+            fontSizeHeading4: 18,
+            fontSizeHeading5: 16,
             wireframe: false,
             colorBgLayout: resolved === 'dark' ? '#0f1115' : '#f2f3f5',
             colorBgContainer: resolved === 'dark' ? '#181a20' : '#ffffff',
@@ -136,18 +143,39 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
               itemHeight: 38,
               itemMarginInline: 8,
               itemBorderRadius: 6,
+              fontSize: 14,
             },
             Card: {
               borderRadiusLG: 8,
               paddingLG: 16,
+              headerFontSize: 15,
             },
             Table: {
               headerBg: resolved === 'dark' ? '#1f2128' : '#fafafa',
               headerColor: resolved === 'dark' ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.88)',
               rowHoverBg: resolved === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+              fontSize: 13,
+              cellPaddingBlock: 10,
+              cellPaddingInline: 12,
             },
             Button: {
               controlHeight: 32,
+              fontSize: 14,
+            },
+            Tabs: {
+              fontSize: 14,
+            },
+            Pagination: {
+              fontSize: 13,
+            },
+            Form: {
+              labelFontSize: 14,
+            },
+            Input: {
+              fontSize: 14,
+            },
+            Select: {
+              fontSize: 14,
             },
           },
         }}
