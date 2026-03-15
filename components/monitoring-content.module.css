@@ -67,7 +67,7 @@
 .kpiSuffix {
   font-size: 13px;
   font-weight: 400;
-  color: #8c8c8c;
+  color: var(--text-tertiary);
   margin-left: 2px;
 }
 
@@ -104,7 +104,8 @@
 
 .tooltipCard {
   border-radius: 8px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
@@ -114,7 +115,7 @@
 }
 
 .sourceList {
-  border-top: 1px solid #f5f5f5;
+  border-top: 1px solid var(--border-subtle);
   padding-top: 10px;
   margin-top: 4px;
 }
@@ -161,6 +162,22 @@
 .warningLevelLow {
   border: 1px solid #91caff;
   background: #e6f4ff;
+}
+
+/* 暗色主题：换成低饱和度深色 + 半透明 */
+:global(html[data-theme='dark']) .warningLevelHigh {
+  border-color: rgba(255, 77, 79, 0.35);
+  background: rgba(255, 77, 79, 0.08);
+}
+
+:global(html[data-theme='dark']) .warningLevelMedium {
+  border-color: rgba(250, 173, 20, 0.35);
+  background: rgba(250, 173, 20, 0.08);
+}
+
+:global(html[data-theme='dark']) .warningLevelLow {
+  border-color: rgba(22, 119, 255, 0.4);
+  background: rgba(22, 119, 255, 0.1);
 }
 
 .warningCard {

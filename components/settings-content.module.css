@@ -3,7 +3,7 @@
 }
 
 .title {
-  color: #0f172a;
+  color: var(--text-primary);
   margin-bottom: 20px !important;
 }
 
@@ -32,10 +32,10 @@
   height: 40px;
   max-width: 200px;
   object-fit: contain;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 4px 8px;
-  background: #fafafa;
+  background: var(--bg-subtle);
 }
 
 .dirtyBadge {

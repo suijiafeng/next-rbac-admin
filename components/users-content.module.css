@@ -1,21 +1,23 @@
+/* 全部颜色使用 CSS 变量，明暗主题自动适配 */
+
 .table :global(.ant-table-thead > tr > th) {
-  background: #f8f9fc !important;
+  background: var(--bg-subtle) !important;
   font-weight: 600;
   font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #6b7280 !important;
-  border-bottom: 1px solid #e5e7eb !important;
+  color: var(--text-secondary) !important;
+  border-bottom: 1px solid var(--border-base) !important;
   padding: 10px 16px !important;
   white-space: nowrap;
 }
 
 .table :global(.ant-table-thead > tr > th:hover) {
-  background: #f8f9fc !important;
+  background: var(--bg-subtle) !important;
 }
 
 .table :global(.ant-table-tbody > tr > td) {
-  border-bottom: 1px solid #f3f4f6 !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
   padding: 13px 16px !important;
   transition: background 0.12s ease;
   font-size: 13px;
@@ -23,15 +25,15 @@
 }
 
 .table :global(.ant-table-tbody > tr:hover > td) {
-  background: #f5f7ff !important;
+  background: var(--bg-hover) !important;
 }
 
 .table :global(.ant-table-tbody > tr:nth-child(even) > td) {
-  background: #fafbfd;
+  background: var(--bg-subtle);
 }
 
 .table :global(.ant-table-tbody > tr:nth-child(even):hover > td) {
-  background: #f5f7ff !important;
+  background: var(--bg-hover) !important;
 }
 
 .table :global(.ant-table-cell-fix-right-first::after) {
@@ -53,7 +55,7 @@
 }
 
 .table :global(.ant-table-body::-webkit-scrollbar-thumb) {
-  background: #d1d5db;
+  background: var(--border-strong);
   border-radius: 3px;
 }
 
