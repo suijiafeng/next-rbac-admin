@@ -17,7 +17,6 @@ import {
   LogoutOutlined,
   MenuOutlined,
   MoonOutlined,
-  SearchOutlined,
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons';
@@ -169,29 +168,22 @@ export default function AdminHeader(props: AdminHeaderProps) {
         />
       </div>
 
-      {/* 右侧：搜索 + 主题 + 消息 + 用户（图标语义已足够，不再加 tooltip） */}
+      {/* 右侧：主题 + 消息 + 用户 */}
       <Space size={4} align="center">
-        <Button
-          type="text"
-          aria-label="全局搜索"
-          icon={<SearchOutlined />}
-          style={{ width: 32, height: 32 }}
-        />
-
         <Button
           type="text"
           aria-label={resolved === 'dark' ? '切换为亮色' : '切换为暗色'}
           icon={resolved === 'dark' ? <SunOutlined /> : <MoonOutlined />}
           onClick={toggle}
-          style={{ width: 32, height: 32 }}
+          style={{ width: 36, height: 36, fontSize: 17 }}
         />
 
-        <Badge dot offset={[-6, 6]}>
+        <Badge dot offset={[-7, 7]}>
           <Button
             type="text"
             aria-label="消息"
             icon={<BellOutlined />}
-            style={{ width: 32, height: 32 }}
+            style={{ width: 36, height: 36, fontSize: 17 }}
           />
         </Badge>
 
