@@ -37,3 +37,13 @@
   padding: 4px 8px;
   background: #fafafa;
 }
+
+.dirtyBadge {
+  margin-left: 8px;
+  color: #f59e0b;
+  font-size: 12px;
+}
+
+.maintenanceAlert {
+  margin-bottom: 16px;
+}

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
 import { resolveRoleFromNames } from '@/lib/user-role';
+import { writeAuditLog } from '@/lib/audit-log';
 
 interface RouteContext {
   params: {
@@ -126,6 +127,16 @@ export async function PATCH(
           },
         },
       },
+    });
+
+    await writeAuditLog({
+      actorId: currentUser.id,
+      actorUsername: currentUser.username,
+      action: role === 'ADMIN' ? 'role.grant_admin' : 'role.revoke_admin',
+      targetType: 'user',
+      targetId: id,
+      targetLabel: targetWithRoles.username,
+      detail: { from: currentTargetRole, to: role },
     });
 
     return NextResponse.json({

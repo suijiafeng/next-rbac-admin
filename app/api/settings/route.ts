@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requirePermission, requireRole } from '@/lib/permission';
 import { PERMISSIONS } from '@/constants/permission';
+import { writeAuditLog } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,7 @@ const DEFAULTS: Record<string, string> = {
   session_duration: '7',
   max_login_attempts: '5',
   allow_register: 'false',
+  maintenance_mode: 'false',
 };
 
 export async function GET() {
@@ -46,7 +48,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    await requireRole(['SUPER_ADMIN']);
+    const currentUser = await requireRole(['SUPER_ADMIN']);
 
     const body = await request.json();
     const allowedKeys = Object.keys(DEFAULTS);
@@ -81,6 +83,18 @@ export async function PUT(request: Request) {
     const settings: Record<string, string> = { ...DEFAULTS };
     for (const record of records) {
       settings[record.key] = record.value;
+    }
+
+    const updatedKeys = allowedKeys.filter((key) => body[key] !== undefined);
+    if (updatedKeys.length > 0) {
+      await writeAuditLog({
+        actorId: currentUser.id,
+        actorUsername: currentUser.username,
+        action: 'settings.update',
+        targetType: 'settings',
+        targetLabel: updatedKeys.join(', '),
+        detail: Object.fromEntries(updatedKeys.map((k) => [k, settings[k]])),
+      });
     }
 
     return NextResponse.json({

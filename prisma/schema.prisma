@@ -81,3 +81,19 @@ model SystemSetting {
   updatedAt DateTime @updatedAt
   @@map("system_setting")
 }
+
+model AuditLog {
+  id              Int      @id @default(autoincrement())
+  actorId         Int?
+  actorUsername   String
+  action          String   // role.grant_admin / role.revoke_admin / user.suspend / user.unsuspend / user.reset_password / settings.update
+  targetType      String   // user / settings
+  targetId        String?
+  targetLabel     String?
+  detail          String?  // JSON 字符串
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}

@@ -232,6 +232,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     getList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreate = useCallback(() => {

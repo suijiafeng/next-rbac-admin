@@ -74,6 +74,16 @@ export async function POST(request: Request) {
     const role = resolveRoleFromNames(adminUser.userRoles.map((item) => item.role.name)) as Role;
     const permissions = getPermissionsByRole(role);
 
+    const maintenanceSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'maintenance_mode' },
+    });
+    if (maintenanceSetting?.value === 'true' && role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { code: 1, data: null, message: '系统处于维护模式，仅超级管理员可登录' },
+        { status: 503 },
+      );
+    }
+
     const response = NextResponse.json({
       code: 0,
       data: {
