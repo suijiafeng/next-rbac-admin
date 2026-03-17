@@ -1,247 +1,232 @@
-# Next Admin Demo
+# Next Admin Template
 
-## 概述
-一个生产就绪的 Next.js 14 管理后台模板，具有全面的基于角色的访问控制 (RBAC)、用户管理和权限系统。
+一个基于 **Next.js 14 App Router + Antd 5 + Prisma** 的中后台模板。
+
+不是又一个 "Hello Admin"——这个模板把"做后台真正会遇到的问题"都给了答案：渲染模式怎么选、权限怎么落、多标签怎么 keep-alive、请求反馈怎么做、主题怎么切不闪屏。
+
+---
+
+## 亮点速览
+
+| 亮点 | 怎么做的 |
+|---|---|
+| **全 CSR 渲染** | 后台所有页面 `'use client'`，服务端只留 metadata + middleware + API |
+| **多标签 keep-alive** | 注册表 + `display` 切换 + 版本号刷新，state/滚动/筛选全保留 |
+| **RBAC 三层守卫** | middleware 边缘拦截 + 客户端 PermissionGuard + API `requirePermission` |
+| **请求反馈完整** | 每个触发请求的按钮都有 loading；表格/卡片有 loading 占位 |
+| **主题切换零闪屏** | 根 layout 注入阻塞式脚本，在 hydration 之前把 `data-theme` 同步好 |
+| **响应式布局** | `<992px` 自动切 Drawer 侧栏；Tailwind + Antd Grid 双管齐下 |
+| **自签 Session** | 不依赖 NextAuth 等第三方，HMAC + HTTP-only Cookie，可读可控 |
+
+---
+
+## 实现方式
+
+### 1. 渲染模式：全 CSR
+
+> **为什么**：管理后台没有 SEO 需求，登录态强、数据动态，SSR 带来的"首屏 HTML"价值很低，反而引入服务端鉴权、cookie 透传、`router.refresh()` 等额外复杂度。索性放弃。
+
+服务端只保留三件事：
+- `app/layout.tsx` —— `metadata` + 主题反闪烁脚本
+- `middleware.ts` —— 校验 session cookie，未登录拦截到 `/login`
+- `app/api/**` —— Route Handlers 作为 BFF
+
+后台页面外壳：
+
+```tsx
+// app/(admin)/users/page.tsx
+'use client';
+export default function UsersPage() {
+  return null;  // 内容由注册表渲染
+}
+```
+
+页面真正内容在 `components/users-content.tsx`，由下面的注册表统一挂载。
+
+---
+
+### 2. 多标签 keep-alive
+
+> **痛点**：Next App Router 没有官方 `keep-alive`。路由切换会卸载页面组件，state/滚动/筛选条件全丢——和"点菜单切换"无差别，多标签栏沦为装饰。
+
+**核心思路**：所有已打开 tab 的页面组件**常驻挂载**，用 `display: none/block` 切换可见性。
+
+```
+lib/page-registry.tsx  →  tab key 映射到组件 + 权限要求
+        ↓
+components/tab-pages-host.tsx
+        ↓
+  tabs.map(tab => (
+    <div style={{ display: isActive ? 'flex' : 'none' }}>
+      {renderRegistryPage(tab.key)}
+    </div>
+  ))
+```
+
+**刷新 tab 不丢其它**：`TabsProvider` 给每个 tab 维护一个版本号 `versions[key]`，刷新时自增，把 `${tab.key}-${version}` 作为 React key——只重挂载该 tab，其它 tab 状态完全保留。比 `window.location.reload()` 这种"核武器"友好得多。
+
+**关闭 tab** 才真正卸载，释放内存。
+
+---
+
+### 3. RBAC 三层守卫
+
+```
+请求路径                  守卫层
+─────────────────────────────────────────────
+浏览器访问 /users    →    middleware.ts        ← session cookie 必须有效
+    ↓
+admin-layout 渲染   →    AuthProvider         ← /api/profile 拿用户 + 权限
+    ↓
+TabPagesHost 选页    →    PermissionGuard      ← 角色/权限不符显示 403
+    ↓
+点按钮触发请求       →    /api/* requirePermission  ← 真正的数据访问拦截
+```
+
+三层各有职责：
+- **middleware**：边缘拦截，避免未登录用户下载整个后台 bundle
+- **AuthProvider + PermissionGuard**：客户端 UX 层，不渲染没权限的页面，避免 401 弹窗骚扰
+- **API requirePermission**：**唯一真实防线**——前端守卫只是用户体验，权限校验必须在服务端
+
+权限定义在 `constants/permission.ts`，10 个细粒度权限码（`user:*` / `role:*` / `settings:*`），角色→权限映射在 `lib/permission-map.ts`。
+
+---
+
+### 4. 请求反馈
+
+每一处会发请求的交互都有视觉反馈，分三层：
+
+- **按钮级**：所有提交/删除/重置按钮 `loading={...}` + `disabled` 防重复点击
+- **表格/区域级**：Antd `<Table loading>`、`<Card loading>`、`<Spin>`
+- **行级**：批量操作有 `bulkLoading`，行内操作（暂停/改角色/重置密码）用 `operatingId` 精确到行
+
+**细节**：登录按钮在成功路径不重置 loading 状态——因为紧接着 `router.replace('/dashboard')` 会卸载组件，重置会让按钮闪一下"已完成"再消失，体验不连贯。
+
+---
+
+### 5. 主题切换零闪屏
+
+```html
+<!-- app/layout.tsx 注入到 <head> 内的阻塞式脚本 -->
+<script>
+  // hydration 之前同步执行
+  var mode = localStorage.getItem('next-admin-theme') || 'light';
+  var resolved = mode === 'system'
+    ? (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light')
+    : mode;
+  document.documentElement.setAttribute('data-theme', resolved);
+</script>
+```
+
+CSS 变量驱动主题，HTML 一渲染就带正确的 `data-theme`，React 还没接手就先把颜色定好。**没有任何"先白后黑"的瞬间**。
+
+---
+
+### 6. 自签 Session
+
+`lib/session.ts` —— 不依赖 NextAuth、Iron Session、Lucia 等第三方：
+
+```
+登录 → 服务端用 AUTH_SECRET 对 { userId, exp } 做 HMAC-SHA256
+     → 拼成 token 写入 HTTP-only Cookie
+请求 → middleware/route handler 拿 cookie，验签 + 过期检查
+```
+
+好处：依赖少、可读、可控；缺点：没有第三方那么多开箱即用的 OAuth/SAML，但管理后台用不上。
+
+---
+
+## 技术栈
+
+| | |
+|---|---|
+| 框架 | Next.js 14 (App Router) |
+| UI | Ant Design 5 + Tailwind CSS |
+| ORM | Prisma + PostgreSQL |
+| 认证 | HMAC 自签 Session + HTTP-only Cookie |
+| 图表 | Recharts |
+| 类型 | TypeScript 严格模式 |
+
+---
+
+## 目录结构
+
+```
+app/
+├── (admin)/                # 后台分组（带鉴权 layout）
+│   ├── layout.tsx          # AuthProvider 校验 + AdminLayout 外壳
+│   └── */page.tsx          # ← 全部 return null，内容由注册表渲染
+├── api/                    # Route Handlers (BFF)
+├── login/  register/
+└── layout.tsx              # 根 layout（metadata + 主题反闪烁脚本）
+
+components/
+├── admin-layout.tsx        # 侧栏 + Header + PageTabs + TabPagesHost
+├── tab-pages-host.tsx      # ★ keep-alive 容器
+├── page-tabs.tsx           # 标签栏
+├── providers/
+│   ├── AuthProvider.tsx    # 鉴权 + 权限上下文
+│   └── TabsProvider.tsx    # 多标签状态（含 versions + refreshTab）
+├── permission-guard.tsx    # 客户端守卫
+└── *-content.tsx           # 每个页面的实际内容
+
+lib/
+├── page-registry.tsx       # ★ tab key → 组件 + 权限映射
+├── page-meta.ts            # tab 标题/可关闭性
+├── session.ts              # 自签 session token
+├── permission.ts           # 服务端 requirePermission
+├── permission-map.ts       # 角色→权限映射
+└── request.ts              # 客户端 fetch 封装
+
+middleware.ts               # 边缘鉴权（第一道防线）
+prisma/schema.prisma
+```
+
+---
+
+## 新增一个后台页面
+
+机械五步，无须思考：
+
+1. `components/xxx-content.tsx` —— 业务内容
+2. `app/(admin)/xxx/page.tsx` —— `return null`（让路由生效）
+3. `lib/page-meta.ts` —— 加 tab 标题
+4. `lib/page-registry.tsx` —— 加路径→组件映射 + 权限要求
+5. `components/admin-sider.tsx` —— 加菜单项
+
+---
 
 ## 快速开始
 
-### 1. 环境准备
-确保你已安装以下软件：
-- **Node.js 18+** - [下载地址](https://nodejs.org/)
-- **PostgreSQL 数据库** - [下载地址](https://www.postgresql.org/)
-
-### 2. 克隆项目
 ```bash
-git clone <your-repo-url>
-cd next-admin-demo
-```
-
-### 3. 安装依赖
-```bash
+# 1. 依赖
 npm install
-```
 
-### 4. 配置环境变量
-创建 `.env.local` 文件：
-```bash
-# 数据库连接
-DATABASE_URL="postgresql://username:password@localhost:5432/admin_demo"
+# 2. .env.local
+DATABASE_URL="postgresql://user:pass@localhost:5432/admin_demo"
+AUTH_SECRET="任意 32+ 字符随机串"
 
-# 认证密钥（生成随机字符串）
-AUTH_SECRET="your-random-secret-key-here"
-```
+# 3. 数据库
+npm run db:push && npm run db:generate && npm run db:seed
 
-### 5. 初始化数据库
-```bash
-# 同步数据库结构
-npm run db:push
-
-# 生成 Prisma 客户端
-npm run db:generate
-
-# 初始化数据（角色、权限、用户）
-npx tsx scripts/seed.ts
-```
-
-### 6. 启动开发服务器
-```bash
+# 4. 启动
 npm run dev
 ```
 
-打开浏览器访问 [http://localhost:3000](http://localhost:3000)
+打开 http://localhost:3000，用 `super_admin / 123456` 登录。
 
-### 7. 登录测试
-使用以下账户登录测试：
+种子数据：21 个测试用户，3 个角色梯度。
 
-| 用户名 | 密码 | 角色 | 权限说明 |
-|--------|------|------|----------|
-| `super_admin` | `123456` | 超级管理员 | 完全系统访问 |
-| `admin` | `123456` | 管理员 | 用户管理、设置查看 |
-| `user` | `123456` | 普通用户 | 只读权限 |
+| 用户名 | 角色 | 能看到的页面 |
+|---|---|---|
+| `super_admin` | 超级管理员 | 全部 |
+| `admin` | 管理员 | 仪表盘 / 监控 / 用户 / 个人 |
+| `user` | 普通用户 | 仪表盘 / 监控 / 个人 |
 
-## 功能特性
-- ✅ 多角色系统 (超级管理员、管理员、用户)
-- ✅ 细粒度权限控制 (8 种权限类型)
-- ✅ 用户 CRUD，支持远程分页和过滤
-- ✅ 角色和权限管理 UI
-- ✅ Bcrypt 密码哈希
-- ✅ 基于会话的认证 (HTTP-only cookies)
-- ✅ 带有图表和监控的仪表板
-- ✅ 系统设置管理
-- ✅ TypeScript 和严格类型安全
+---
 
-## 测试数据说明
-项目已预创建 **21 个测试用户**：
-- **管理员用户**: 4个 (包括默认admin)
-- **普通用户**: 17个 (包括默认user)
-- **禁用用户**: 3个 (用于测试状态筛选)
+## 已知权衡
 
-所有测试用户密码均为 `123456`。
-
-### 认证流程
-1. 用户在 `/login` 或 `/register` 输入凭据
-2. 密码根据 bcrypt 哈希验证
-3. 创建会话令牌并存储在 HTTP-only cookie 中
-4. 中间件在受保护路由上验证令牌
-5. 用户权限加载到 AuthProvider 上下文中
-
-### 管理角色和权限
-- 导航到 `/dashboard/permissions` 查看/管理权限
-- 在数据库中将权限分配给角色
-- 通过 API 创建新角色：`POST /api/roles`
-
-### API 使用示例
-
-**登录**
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"123456"}'
-```
-
-**列出用户 (需要认证)**
-```bash
-curl http://localhost:3000/api/users \
-  -H "Cookie: admin_session=<token>"
-```
-
-**创建用户 (需要管理员角色)**
-```bash
-curl -X POST http://localhost:3000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"username":"newuser","password":"hash","nickname":"User"}'
-```
-
-## 数据库模式
-
-### 用户
-- id, username (唯一), password (bcrypt 哈希), nickname, email, status (1=活跃, 0=不活跃)
-- 通过 user_roles 表链接到角色
-
-### 角色
-- id, name (唯一: super_admin|admin|user), description
-- 通过 role_permissions 表链接到权限
-
-### 权限
-- id, code (唯一: user:view|user:create|user:edit|user:delete|role:*|settings:*)
-- name (显示), description
-
-### 系统设置
-- id, key (唯一), value - 用于应用范围配置
-
-## 项目结构
-```
-app/
-├── (admin)/              # 受保护的管理页面
-│   ├── dashboard/        # 主仪表板
-│   ├── users/            # 用户管理
-│   ├── permissions/      # 权限管理
-│   ├── settings/         # 设置页面
-│   └── profile/          # 用户资料
-├── api/                  # API 路由
-│   ├── auth/             # 认证端点
-│   ├── users/            # 用户 CRUD
-│   ├── roles/            # 角色 CRUD
-│   └── permissions/      # 权限 CRUD
-├── login/                # 认证页面
-└── register/
-
-components/
-├── admin-layout.tsx      # 主管理布局包装器
-├── permission-guard.tsx  # 基于权限的渲染
-├── admin-sider.tsx       # 侧边栏导航
-├── user-modal.tsx        # 用户创建/编辑模态框
-└── ...
-
-lib/
-├── auth.ts               # 认证工具
-├── permission.ts         # 权限检查
-├── prisma.ts             # 数据库客户端
-├── request.ts            # HTTP 请求包装器
-└── session.ts            # 会话管理
-
-prisma/
-├── schema.prisma         # 数据库模式
-└── migrations/           # 数据库迁移
-
-scripts/
-├── seed.ts               # 初始化数据库
-└── hash-password.ts      # 密码哈希工具
-```
-
-## 部署
-
-### 构建
-```bash
-npm run build
-npm start
-```
-
-### 环境变量 (生产)
-- DATABASE_URL: 生产 PostgreSQL URL
-- AUTH_SECRET: 强随机密钥 (32+ 字符)
-- NODE_ENV: "production"
-
-## 关键配置文件
-
-**next.config.mjs**
-- 基本 Next.js 配置 (reactStrictMode: false)
-
-**tailwind.config.ts**
-- Tailwind CSS 配置
-
-**tsconfig.json**
-- 路径别名: @/* 用于根导入
-- 启用严格 TypeScript 检查
-
-**prisma/schema.prisma**
-- 数据库模型和关系
-- 提供者: PostgreSQL
-
-## 开发命令
-
-```bash
-# 启动开发服务器
-npm run dev
-
-# 构建生产版本
-npm run build
-
-# 启动生产服务器
-npm start
-
-# 代码检查
-npm run lint
-
-# 数据库操作
-npm run db:push       # 同步数据库结构
-npm run db:migrate    # 创建迁移
-npm run db:generate   # 生成客户端
-npm run db:studio     # 打开数据库管理界面
-```
-
-## 故障排除
-
-### 常见问题
-
-**数据库连接失败**
-```bash
-# 检查 PostgreSQL 是否运行
-brew services list | grep postgresql
-
-# 检查 DATABASE_URL 格式
-# 正确格式: postgresql://username:password@localhost:5432/database_name
-```
-
-**登录失败**
-- 确认用户状态为启用 (status = 1)
-- 检查密码是否正确哈希
-- 验证 AUTH_SECRET 是否设置
-
-**权限不足**
-- 确认用户已分配相应角色
-- 检查角色权限绑定是否正确
-- 重启应用服务器
-
-
-
+- **隐藏 tab 仍挂载**：当前 6 个菜单页可控；将来如果有动态详情页（`/users/:id` 这种），需要 LRU 控制 tab 数量
+- **Antd Modal Portal**：modal 渲染到 `document.body`，切 tab 时若 modal 未关会浮在新 tab 上——低频场景，未处理
+- **根路径首屏**：`/` 是 CSR 跳 `/dashboard`，已加 Spin 兜底；想要瞬时跳转可在 middleware 里加服务端 redirect
