@@ -320,7 +320,7 @@ export default function DashboardContent() {
                       padding: '2px 10px',
                       borderRadius: 4,
                       fontSize: 13,
-                      color: period === p ? '#1677ff' : 'rgba(0,0,0,0.65)',
+                      color: period === p ? 'var(--color-primary)' : 'var(--text-secondary)',
                       fontWeight: period === p ? 600 : 400,
                     }}
                   >
@@ -501,16 +501,16 @@ export default function DashboardContent() {
                     style={{
                       backgroundColor:
                         categoryChannel === (i === 0 ? 'all' : i === 1 ? 'online' : 'store')
-                          ? '#1677ff'
+                          ? 'var(--color-primary)'
                           : 'transparent',
                       color:
                         categoryChannel === (i === 0 ? 'all' : i === 1 ? 'online' : 'store')
                           ? '#fff'
-                          : 'rgba(0,0,0,0.65)',
+                          : 'var(--text-secondary)',
                       border:
                         categoryChannel === (i === 0 ? 'all' : i === 1 ? 'online' : 'store')
                           ? 'none'
-                          : '1px solid #d9d9d9',
+                          : '1px solid var(--border-base)',
                       borderRadius: 4,
                       padding: '0 8px',
                       fontSize: 12,
