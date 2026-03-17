@@ -5,10 +5,12 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from 'react';
 import { ConfigProvider, theme as antdTheme } from 'antd';
+import type { ThemeConfig } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -24,19 +26,43 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 const STORAGE_KEY = 'next-admin-theme';
 
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === 'undefined') return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-function applyTheme(resolved: ResolvedTheme, animate = true) {
+function isThemeMode(value: string | null): value is ThemeMode {
+  return value === 'light' || value === 'dark' || value === 'system';
+}
+
+function resolveTheme(mode: ThemeMode, systemTheme: ResolvedTheme): ResolvedTheme {
+  return mode === 'system' ? systemTheme : mode;
+}
+
+function getStoredThemeMode(): ThemeMode {
+  if (typeof window === 'undefined') return 'light';
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return isThemeMode(stored) ? stored : 'light';
+  } catch {
+    return 'light';
+  }
+}
+
+function saveThemeMode(mode: ThemeMode) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, mode);
+  } catch {
+    // localStorage 可能在隐私模式或受限环境不可用，主题仍按内存状态生效。
+  }
+}
+
+function applyTheme(resolved: ResolvedTheme) {
   if (typeof document === 'undefined') return;
   const html = document.documentElement;
-  if (animate) {
-    html.classList.add('theme-transition');
-    // 与 globals.css 中 0.22s 过渡时长对齐，留 60ms 缓冲
-    window.setTimeout(() => html.classList.remove('theme-transition'), 280);
-  }
   html.setAttribute('data-theme', resolved);
   html.style.colorScheme = resolved;
 }
@@ -52,14 +78,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   // 初始化：读取本地 + 系统偏好
   useEffect(() => {
-    const stored = (typeof window !== 'undefined'
-      ? (localStorage.getItem(STORAGE_KEY) as ThemeMode | null)
-      : null) ?? 'light';
+    const stored = getStoredThemeMode();
     const sys = getSystemTheme();
     setModeState(stored);
     setSystemTheme(sys);
-    const resolved = stored === 'system' ? sys : stored;
-    applyTheme(resolved, false);
+    applyTheme(resolveTheme(stored, sys));
     setMounted(true);
   }, []);
 
@@ -68,26 +91,25 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (typeof window === 'undefined') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = (e: MediaQueryListEvent) => {
-      const next: ResolvedTheme = e.matches ? 'dark' : 'light';
-      setSystemTheme(next);
-      if (mode === 'system') {
-        applyTheme(next);
-      }
+      setSystemTheme(e.matches ? 'dark' : 'light');
     };
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
-  }, [mode]);
+  }, []);
+
+  const resolved: ResolvedTheme = resolveTheme(mode, systemTheme);
+
+  // 把 data-theme / colorScheme 同步落到 <html>；antd cssVar 模式下
+  // 切换只需翻转 CSS 变量，无需 flushSync 或 ViewTransition，即时且干脆。
+  useIsomorphicLayoutEffect(() => {
+    if (!mounted) return;
+    applyTheme(resolved);
+  }, [mounted, resolved]);
 
   const setMode = useCallback((next: ThemeMode) => {
     setModeState(next);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, next);
-    }
-    const resolved: ResolvedTheme = next === 'system' ? getSystemTheme() : next;
-    applyTheme(resolved);
+    saveThemeMode(next);
   }, []);
-
-  const resolved: ResolvedTheme = mode === 'system' ? systemTheme : mode;
 
   const toggle = useCallback(() => {
     setMode(resolved === 'dark' ? 'light' : 'dark');
@@ -106,83 +128,89 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     return resolved === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm;
   }, [resolved]);
 
+  const themeConfig = useMemo<ThemeConfig>(() => ({
+    algorithm,
+    cssVar: {
+      key: 'next-admin-theme',
+      prefix: 'ant',
+    },
+    token: {
+      colorPrimary: '#1677ff',
+      borderRadius: 6,
+      // 基础字号回归 antd 默认 14；不再被算法压成 10
+      fontSize: 14,
+      fontSizeSM: 12,
+      fontSizeLG: 16,
+      fontSizeHeading4: 18,
+      fontSizeHeading5: 16,
+      wireframe: false,
+      colorBgLayout: resolved === 'dark' ? '#0f1115' : '#f2f3f5',
+      colorBgContainer: resolved === 'dark' ? '#181a20' : '#ffffff',
+      colorBgElevated: resolved === 'dark' ? '#1f2128' : '#ffffff',
+      colorBorder: resolved === 'dark' ? '#2a2d36' : '#e5e7eb',
+      colorBorderSecondary: resolved === 'dark' ? '#23262e' : '#f0f0f0',
+    },
+    components: {
+      Layout: {
+        headerBg: resolved === 'dark' ? '#181a20' : '#ffffff',
+        headerHeight: 52,
+        headerPadding: '0 16px',
+        siderBg: resolved === 'dark' ? '#0a0c10' : '#001529',
+        bodyBg: resolved === 'dark' ? '#0f1115' : '#f2f3f5',
+      },
+      Menu: {
+        darkItemBg: resolved === 'dark' ? '#0a0c10' : '#001529',
+        darkSubMenuItemBg: resolved === 'dark' ? '#0a0c10' : '#000c17',
+        darkItemSelectedBg: '#1677ff',
+        darkItemHoverBg: 'rgba(255, 255, 255, 0.06)',
+        itemHeight: 38,
+        itemMarginInline: 8,
+        itemBorderRadius: 6,
+        fontSize: 14,
+      },
+      Card: {
+        borderRadiusLG: 8,
+        paddingLG: 16,
+        headerFontSize: 15,
+      },
+      Table: {
+        headerBg: resolved === 'dark' ? '#1f2128' : '#fafafa',
+        headerColor: resolved === 'dark' ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.88)',
+        rowHoverBg: resolved === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+        fontSize: 13,
+        cellPaddingBlock: 10,
+        cellPaddingInline: 12,
+      },
+      Button: {
+        controlHeight: 32,
+        fontSize: 14,
+      },
+      Tabs: {
+        fontSize: 14,
+      },
+      Pagination: {
+        fontSize: 13,
+      },
+      Form: {
+        labelFontSize: 14,
+      },
+      Input: {
+        fontSize: 14,
+      },
+      Select: {
+        fontSize: 14,
+      },
+    },
+  }), [algorithm, resolved]);
+
   return (
     <ThemeContext.Provider value={value}>
       <ConfigProvider
         locale={zhCN}
-        theme={{
-          algorithm,
-          token: {
-            colorPrimary: '#1677ff',
-            borderRadius: 6,
-            // 基础字号回归 antd 默认 14；不再被算法压成 10
-            fontSize: 14,
-            fontSizeSM: 12,
-            fontSizeLG: 16,
-            fontSizeHeading4: 18,
-            fontSizeHeading5: 16,
-            wireframe: false,
-            colorBgLayout: resolved === 'dark' ? '#0f1115' : '#f2f3f5',
-            colorBgContainer: resolved === 'dark' ? '#181a20' : '#ffffff',
-            colorBgElevated: resolved === 'dark' ? '#1f2128' : '#ffffff',
-            colorBorder: resolved === 'dark' ? '#2a2d36' : '#e5e7eb',
-            colorBorderSecondary: resolved === 'dark' ? '#23262e' : '#f0f0f0',
-          },
-          components: {
-            Layout: {
-              headerBg: resolved === 'dark' ? '#181a20' : '#ffffff',
-              headerHeight: 52,
-              headerPadding: '0 16px',
-              siderBg: resolved === 'dark' ? '#0a0c10' : '#001529',
-              bodyBg: resolved === 'dark' ? '#0f1115' : '#f2f3f5',
-            },
-            Menu: {
-              darkItemBg: resolved === 'dark' ? '#0a0c10' : '#001529',
-              darkSubMenuItemBg: resolved === 'dark' ? '#0a0c10' : '#000c17',
-              darkItemSelectedBg: '#1677ff',
-              darkItemHoverBg: 'rgba(255, 255, 255, 0.06)',
-              itemHeight: 38,
-              itemMarginInline: 8,
-              itemBorderRadius: 6,
-              fontSize: 14,
-            },
-            Card: {
-              borderRadiusLG: 8,
-              paddingLG: 16,
-              headerFontSize: 15,
-            },
-            Table: {
-              headerBg: resolved === 'dark' ? '#1f2128' : '#fafafa',
-              headerColor: resolved === 'dark' ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.88)',
-              rowHoverBg: resolved === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-              fontSize: 13,
-              cellPaddingBlock: 10,
-              cellPaddingInline: 12,
-            },
-            Button: {
-              controlHeight: 32,
-              fontSize: 14,
-            },
-            Tabs: {
-              fontSize: 14,
-            },
-            Pagination: {
-              fontSize: 13,
-            },
-            Form: {
-              labelFontSize: 14,
-            },
-            Input: {
-              fontSize: 14,
-            },
-            Select: {
-              fontSize: 14,
-            },
-          },
-        }}
+        theme={themeConfig}
       >
-        {/* 避免 SSR 闪烁：未挂载前不渲染主题色相关内容也行；这里允许首屏轻微闪烁以换更小代码 */}
-        {mounted ? children : <div style={{ visibility: 'hidden' }}>{children}</div>}
+        {/* 始终渲染同一棵子树，避免挂载后整树重挂载；首屏在读取本地偏好前允许轻微闪烁 */}
+        {children}
       </ConfigProvider>
     </ThemeContext.Provider>
   );

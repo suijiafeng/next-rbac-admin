@@ -190,12 +190,12 @@ const warningLevelConfig = {
 };
 
 const kpiCardConfigList: KpiCardConfig[] = [
-  { title: 'PV', metricKey: 'pv', icon: <GlobalOutlined />, iconClassName: 'bg-blue-50 text-blue-600', up: true, trend: '较上周期 8.2%', suffix: '' },
-  { title: 'UV', metricKey: 'uv', icon: <AreaChartOutlined />, iconClassName: 'bg-violet-50 text-violet-600', up: true, trend: '较上周期 5.4%', suffix: '' },
-  { title: '支付转化率', metricKey: 'conversion', icon: <ThunderboltOutlined />, iconClassName: 'bg-green-50 text-green-600', up: true, trend: '较上周期 +0.6%', suffix: '%', decimal: 1 },
-  { title: '接口 P95', metricKey: 'latency', icon: <ClockCircleOutlined />, iconClassName: 'bg-cyan-50 text-cyan-600', up: false, trend: '较上周期 −12ms', suffix: 'ms' },
-  { title: '异常次数', metricKey: 'errors', icon: <AlertOutlined />, iconClassName: 'bg-red-50 text-red-500', up: true, trend: '较上周期 +3 次', suffix: '' },
-  { title: '系统可用性', metricKey: 'availability', icon: <CheckCircleOutlined />, iconClassName: 'bg-green-50 text-green-600', up: false, trend: '运行正常', suffix: '%', decimal: 2, progress: true },
+  { title: 'PV', metricKey: 'pv', icon: <GlobalOutlined />, iconClassName: styles.kpiIconBlue, up: true, trend: '较上周期 8.2%', suffix: '' },
+  { title: 'UV', metricKey: 'uv', icon: <AreaChartOutlined />, iconClassName: styles.kpiIconViolet, up: true, trend: '较上周期 5.4%', suffix: '' },
+  { title: '支付转化率', metricKey: 'conversion', icon: <ThunderboltOutlined />, iconClassName: styles.kpiIconGreen, up: true, trend: '较上周期 +0.6%', suffix: '%', decimal: 1 },
+  { title: '接口 P95', metricKey: 'latency', icon: <ClockCircleOutlined />, iconClassName: styles.kpiIconCyan, up: false, trend: '较上周期 −12ms', suffix: 'ms' },
+  { title: '异常次数', metricKey: 'errors', icon: <AlertOutlined />, iconClassName: styles.kpiIconRed, up: true, trend: '较上周期 +3 次', suffix: '' },
+  { title: '系统可用性', metricKey: 'availability', icon: <CheckCircleOutlined />, iconClassName: styles.kpiIconGreen, up: false, trend: '运行正常', suffix: '%', decimal: 2, progress: true },
 ];
 
 const regionLegendItems: LegendItem[] = [
@@ -264,7 +264,7 @@ const MonitoringContent = () => {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <Title level={4} className="text-slate-900">
+        <Title level={4} style={{ color: 'var(--text-primary)' }}>
           数据监控
         </Title>
         <Segmented
@@ -364,6 +364,7 @@ const MonitoringContent = () => {
                   fill="url(#trafficGrad)"
                   dot={false}
                   activeDot={{ r: 5 }}
+                  isAnimationActive={false}
                 />
                 <Area
                   yAxisId="conversion"
@@ -375,6 +376,7 @@ const MonitoringContent = () => {
                   fill="url(#conversionGrad)"
                   dot={false}
                   activeDot={{ r: 5 }}
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -392,6 +394,7 @@ const MonitoringContent = () => {
                   innerRadius={56}
                   outerRadius={86}
                   paddingAngle={3}
+                  isAnimationActive={false}
                 >
                   {trafficSourceData.map((sourceItem) => (
                     <Cell key={sourceItem.name} fill={sourceItem.color} />
@@ -447,8 +450,20 @@ const MonitoringContent = () => {
                   cursor={{ fill: 'rgba(22,119,255,0.06)' }}
                   contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                 />
-                <Bar dataKey="visits" name="访问量" fill="#1677ff" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="orders" name="订单量" fill="#9254de" radius={[0, 4, 4, 0]} />
+                <Bar
+                  dataKey="visits"
+                  name="访问量"
+                  fill="#1677ff"
+                  radius={[0, 4, 4, 0]}
+                  isAnimationActive={false}
+                />
+                <Bar
+                  dataKey="orders"
+                  name="订单量"
+                  fill="#9254de"
+                  radius={[0, 4, 4, 0]}
+                  isAnimationActive={false}
+                />
               </BarChart>
             </ResponsiveContainer>
             <div className={styles.legendRow}>

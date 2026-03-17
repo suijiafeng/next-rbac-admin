@@ -35,6 +35,31 @@
   flex-shrink: 0;
 }
 
+.kpiIconBlue {
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.1);
+}
+
+.kpiIconViolet {
+  color: #9254de;
+  background: rgba(146, 84, 222, 0.1);
+}
+
+.kpiIconGreen {
+  color: #52c41a;
+  background: rgba(82, 196, 26, 0.12);
+}
+
+.kpiIconCyan {
+  color: #13c2c2;
+  background: rgba(19, 194, 194, 0.12);
+}
+
+.kpiIconRed {
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
+}
+
 .smallIcon {
   font-size: 14px;
 }

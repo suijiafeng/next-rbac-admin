@@ -116,13 +116,13 @@ const RoleCard = ({
           <div className={styles.roleStats}>
             <Space size={12}>
               <Space size={4}>
-                <KeyOutlined className="text-xs text-slate-400" />
+                <KeyOutlined className="text-xs" style={{ color: 'var(--text-tertiary)' }} />
                 <Text type="secondary" className={styles.mutedText}>
                   {role.permissions.length} 个权限
                 </Text>
               </Space>
               <Space size={4}>
-                <TeamOutlined className="text-xs text-slate-400" />
+                <TeamOutlined className="text-xs" style={{ color: 'var(--text-tertiary)' }} />
                 <Text type="secondary" className={styles.mutedText}>
                   {role.userCount} 位用户
                 </Text>
@@ -367,7 +367,7 @@ const PermissionsContent = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <Title level={4} className="text-slate-900">
+          <Title level={4} style={{ color: 'var(--text-primary)' }}>
             权限管理
           </Title>
           <Text type="secondary" className={styles.mutedText}>
