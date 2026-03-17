@@ -17,9 +17,6 @@ interface CurrentUser {
   nickname: string | null;
   email: string | null;
   role: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
-  status: number;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 interface AdminLayoutProps {
