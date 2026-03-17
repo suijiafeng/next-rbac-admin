@@ -155,10 +155,27 @@ a {
   }
 }
 
-/* 主题切换平滑过渡 */
+/* ============================================================
+ * 主题切换平滑过渡 —— 统一所有相关属性的节奏
+ *
+ * 关键：必须把所有"会跟着主题变"的属性都列出来，否则没列上的会瞬变，
+ * 跟正在 0.2s 过渡的元素拉开节奏 —— 这就是肉眼上"鼓点不齐"的来源。
+ *
+ * 选用 timing-function: cubic-bezier(.4,0,.2,1) ——
+ * material/tailwind 默认的"加速后减速"曲线，比 ease 更接近"软切换"感。
+ * ============================================================ */
 html.theme-transition,
 html.theme-transition *,
 html.theme-transition *::before,
 html.theme-transition *::after {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
+  transition:
+    background-color 0.22s cubic-bezier(.4, 0, .2, 1),
+    background 0.22s cubic-bezier(.4, 0, .2, 1),
+    color 0.22s cubic-bezier(.4, 0, .2, 1),
+    border-color 0.22s cubic-bezier(.4, 0, .2, 1),
+    outline-color 0.22s cubic-bezier(.4, 0, .2, 1),
+    fill 0.22s cubic-bezier(.4, 0, .2, 1),
+    stroke 0.22s cubic-bezier(.4, 0, .2, 1),
+    box-shadow 0.22s cubic-bezier(.4, 0, .2, 1)
+  !important;
 }

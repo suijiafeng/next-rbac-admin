@@ -350,7 +350,10 @@ const MonitoringContent = () => {
                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} />
                 <YAxis yAxisId="traffic" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }} />
                 <YAxis yAxisId="conversion" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }} />
-                <ReTooltip contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
+                <ReTooltip
+                  cursor={{ fill: 'rgba(22,119,255,0.06)' }}
+                  contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                />
                 <Area
                   yAxisId="traffic"
                   type="monotone"
@@ -395,6 +398,7 @@ const MonitoringContent = () => {
                   ))}
                 </Pie>
                 <ReTooltip
+                  cursor={{ fill: 'rgba(22,119,255,0.06)' }}
                   contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                   formatter={(value) => [`${value}%`, '']}
                 />
@@ -439,7 +443,10 @@ const MonitoringContent = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" horizontal={false} />
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} />
                 <YAxis dataKey="region" type="category" axisLine={false} tickLine={false} width={44} tick={{ fontSize: 13 }} />
-                <ReTooltip contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
+                <ReTooltip
+                  cursor={{ fill: 'rgba(22,119,255,0.06)' }}
+                  contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                />
                 <Bar dataKey="visits" name="访问量" fill="#1677ff" radius={[0, 4, 4, 0]} />
                 <Bar dataKey="orders" name="订单量" fill="#9254de" radius={[0, 4, 4, 0]} />
               </BarChart>

@@ -34,7 +34,8 @@ function applyTheme(resolved: ResolvedTheme, animate = true) {
   const html = document.documentElement;
   if (animate) {
     html.classList.add('theme-transition');
-    window.setTimeout(() => html.classList.remove('theme-transition'), 250);
+    // 与 globals.css 中 0.22s 过渡时长对齐，留 60ms 缓冲
+    window.setTimeout(() => html.classList.remove('theme-transition'), 280);
   }
   html.setAttribute('data-theme', resolved);
   html.style.colorScheme = resolved;
