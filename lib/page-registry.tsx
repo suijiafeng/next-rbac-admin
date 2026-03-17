@@ -7,6 +7,7 @@ import UsersContent from '@/components/users-content';
 import PermissionsContent from '@/components/permissions-content';
 import SettingsContent from '@/components/settings-content';
 import ProfileContent from '@/components/profile-content';
+import FeedbackContent from '@/components/feedback-content';
 import PermissionGuard from '@/components/permission-guard';
 import NoPermission from '@/components/403/page';
 import { Role, PERMISSIONS, type PermissionValue } from '@/constants/permission';
@@ -44,6 +45,11 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   '/profile': {
     Component: ProfileContent,
     guard: { allowedRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.USER] },
+  },
+  '/feedback': {
+    Component: FeedbackContent,
+    // 仅非顶层角色可提交反馈；超级管理员通过顶部通知查看，无需此页
+    guard: { allowedRoles: [Role.ADMIN, Role.USER], fallback: <NoPermission /> },
   },
 };
 

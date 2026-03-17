@@ -97,3 +97,40 @@ model AuditLog {
   @@index([action])
   @@map("audit_logs")
 }
+
+/// 意见反馈：数据自底层向上层流动
+/// 提交者只能是 USER / ADMIN；可见者为「严格高于」提交者角色的人
+model Feedback {
+  id                Int      @id @default(autoincrement())
+  submitterId       Int
+  submitterUsername String
+  submitterNickname String?
+  submitterRole     String   // USER / ADMIN —— 决定谁能看到
+  type              String   // bug / feature / experience / other
+  priority          String   // low / medium / high
+  title             String
+  content           String
+  contact           String?
+  satisfaction      Int?
+  createdAt         DateTime @default(now())
+
+  reads             FeedbackRead[]
+
+  @@index([submitterRole])
+  @@index([createdAt])
+  @@map("feedbacks")
+}
+
+/// 每个接收者对某条反馈的已读记录（未读角标按接收者维度计算）
+model FeedbackRead {
+  id         Int      @id @default(autoincrement())
+  feedbackId Int
+  userId     Int
+  createdAt  DateTime @default(now())
+
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  @@unique([feedbackId, userId])
+  @@index([userId])
+  @@map("feedback_reads")
+}

@@ -1,3 +1,8 @@
+import { config as loadEnv } from 'dotenv';
+// tsx 不会自动加载 .env.local，这里显式加载，确保 DATABASE_URL 可用
+loadEnv({ path: '.env.local' });
+loadEnv({ path: '.env' });
+
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { PERMISSIONS } from '../constants/permission';
@@ -313,6 +318,54 @@ async function main() {
   }
 
   console.log('✅ 系统设置初始化完成');
+
+  /**
+   * 6. 创建示例反馈数据（仅当当前没有任何反馈时）
+   *    数据自底向上流动：USER 的反馈 ADMIN + SUPER_ADMIN 可见；ADMIN 的反馈仅 SUPER_ADMIN 可见
+   */
+  const feedbackCount = await prisma.feedback.count();
+  if (feedbackCount === 0) {
+    await prisma.feedback.createMany({
+      data: [
+        {
+          submitterId: normalUser.id,
+          submitterUsername: 'user',
+          submitterNickname: '普通用户',
+          submitterRole: 'USER',
+          type: 'feature',
+          priority: 'medium',
+          title: '希望用户表格支持列宽拖拽',
+          content: '在用户管理页面，列比较多的时候希望能手动拖拽调整列宽，方便查看完整内容。',
+          contact: 'user@example.com',
+          satisfaction: 4,
+        },
+        {
+          submitterId: normalUser.id,
+          submitterUsername: 'user',
+          submitterNickname: '普通用户',
+          submitterRole: 'USER',
+          type: 'bug',
+          priority: 'high',
+          title: '深色模式下部分文字看不清',
+          content: '切换到深色主题后，个人中心页面的次要说明文字颜色太浅，几乎看不见，麻烦调一下对比度。',
+          satisfaction: 3,
+        },
+        {
+          submitterId: adminUser.id,
+          submitterUsername: 'admin',
+          submitterNickname: '管理员',
+          submitterRole: 'ADMIN',
+          type: 'feature',
+          priority: 'low',
+          title: '建议增加批量导出用户为 Excel',
+          content: '管理用户时经常需要把筛选结果导出给其他部门，希望能一键导出当前筛选条件下的用户列表。',
+          contact: 'admin@example.com',
+          satisfaction: 5,
+        },
+      ],
+    });
+    console.log('✅ 示例反馈数据创建完成 (3 条)');
+  }
 
   console.log('🎉 RBAC 初始化完成！');
   console.log('');

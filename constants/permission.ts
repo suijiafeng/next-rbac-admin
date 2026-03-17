@@ -10,12 +10,16 @@ export const rolePageMap = {
     '/monitoring',
     '/users',
     '/profile',
+    '/feedback',
   ],
   [Role.USER]: [
     '/dashboard',
     '/monitoring',
     '/profile',
+    '/feedback',
   ],
+  // 注：超级管理员为顶层，无需提交反馈，故 rolePageMap 中其使用 '*' 通配
+  // 但 page-registry 的 /feedback 守卫限定为 [ADMIN, USER]，超管访问该页将看到 403
 };
 
 export const PERMISSIONS = {
