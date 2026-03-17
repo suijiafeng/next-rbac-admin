@@ -16,8 +16,10 @@ interface RegisterFormValues {
 export default function RegisterPage() {
   const [form] = Form.useForm<RegisterFormValues>();
   const [registered, setRegistered] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleRegister = async (values: RegisterFormValues) => {
+    setSubmitting(true);
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -36,6 +38,8 @@ export default function RegisterPage() {
     } catch (error) {
       console.error(error);
       message.error('注册失败');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -143,7 +147,7 @@ export default function RegisterPage() {
               </Form.Item>
 
               <Form.Item style={{ marginBottom: 8 }}>
-                <Button type="primary" htmlType="submit" block>
+                <Button type="primary" htmlType="submit" block loading={submitting}>
                   注册
                 </Button>
               </Form.Item>

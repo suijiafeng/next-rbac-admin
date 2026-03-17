@@ -536,12 +536,14 @@ export default function UsersPage() {
                     htmlType="submit"
                     icon={<SearchOutlined />}
                     className="rounded-md"
+                    loading={tableLoading}
                   >
                     查询
                   </Button>
                   <Button
                     icon={<ReloadOutlined />}
                     className="rounded-md"
+                    disabled={tableLoading}
                     onClick={() => {
                       form.resetFields();
                       getList({ username: '', status: undefined }, { current: 1 });
