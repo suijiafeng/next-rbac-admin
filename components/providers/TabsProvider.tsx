@@ -26,12 +26,15 @@ export interface TabItem {
 interface TabsContextValue {
   tabs: TabItem[];
   activeKey: string;
+  /** 每个 tab 的版本号，刷新时自增，用于强制重挂载对应页面（不影响其它 tab 状态） */
+  versions: Record<string, number>;
   openTab: (path: string) => void;
   closeTab: (key: string) => void;
   closeOthers: (key: string) => void;
   closeRight: (key: string) => void;
   closeAll: () => void;
   switchTab: (key: string) => void;
+  refreshTab: (key: string) => void;
 }
 
 const TabsContext = createContext<TabsContextValue | null>(null);
@@ -65,6 +68,7 @@ export function TabsProvider({ children }: { children: React.ReactNode }) {
 
   const [tabs, setTabs] = useState<TabItem[]>([HOME_TAB]);
   const [activeKey, setActiveKey] = useState<string>(HOME_TAB.key);
+  const [versions, setVersions] = useState<Record<string, number>>({});
   const inited = useRef(false);
 
   // 初始化：从 localStorage 恢复
@@ -168,6 +172,10 @@ export function TabsProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const refreshTab = useCallback((key: string) => {
+    setVersions((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
+  }, []);
+
   const closeAll = useCallback(() => {
     setTabs((prev) => {
       const next = prev.filter((t) => !t.closable);
@@ -182,14 +190,16 @@ export function TabsProvider({ children }: { children: React.ReactNode }) {
     () => ({
       tabs,
       activeKey,
+      versions,
       openTab,
       closeTab,
       closeOthers,
       closeRight,
       closeAll,
       switchTab,
+      refreshTab,
     }),
-    [tabs, activeKey, openTab, closeTab, closeOthers, closeRight, closeAll, switchTab],
+    [tabs, activeKey, versions, openTab, closeTab, closeOthers, closeRight, closeAll, switchTab, refreshTab],
   );
 
   return <TabsContext.Provider value={value}>{children}</TabsContext.Provider>;
