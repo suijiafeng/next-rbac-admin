@@ -222,7 +222,7 @@ const timelineItems: TimelineEntry[] = [
     dot: <ExclamationCircleFilled className={`${styles.smallIcon} ${styles.iconError}`} />,
   },
   {
-    color: '#d9d9d9',
+    color: 'var(--text-disabled)',
     title: '新一轮巡检任务开始执行',
     description: '08:30 · 定时巡检任务启动',
   },
@@ -346,11 +346,11 @@ const MonitoringContent = () => {
                     <stop offset="95%" stopColor="#52c41a" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#8c8c8c' }} />
-                <YAxis yAxisId="traffic" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8c8c8c' }} />
-                <YAxis yAxisId="conversion" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8c8c8c' }} />
-                <ReTooltip contentStyle={{ borderRadius: 8, border: '1px solid #f0f0f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" vertical={false} />
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} />
+                <YAxis yAxisId="traffic" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }} />
+                <YAxis yAxisId="conversion" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }} />
+                <ReTooltip contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
                 <Area
                   yAxisId="traffic"
                   type="monotone"
@@ -395,7 +395,7 @@ const MonitoringContent = () => {
                   ))}
                 </Pie>
                 <ReTooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #f0f0f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                  contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                   formatter={(value) => [`${value}%`, '']}
                 />
               </PieChart>
@@ -436,10 +436,10 @@ const MonitoringContent = () => {
                 barGap={4}
                 margin={{ top: 4, right: 16, left: 16, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#8c8c8c' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" horizontal={false} />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} />
                 <YAxis dataKey="region" type="category" axisLine={false} tickLine={false} width={44} tick={{ fontSize: 13 }} />
-                <ReTooltip contentStyle={{ borderRadius: 8, border: '1px solid #f0f0f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
+                <ReTooltip contentStyle={{ borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
                 <Bar dataKey="visits" name="访问量" fill="#1677ff" radius={[0, 4, 4, 0]} />
                 <Bar dataKey="orders" name="订单量" fill="#9254de" radius={[0, 4, 4, 0]} />
               </BarChart>

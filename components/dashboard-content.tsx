@@ -217,7 +217,7 @@ export default function DashboardContent() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text type="secondary" style={{ fontSize: 13 }}>总销售额</Text>
               <Tooltip title="总销售额是当前所有订单金额之和">
-                <InfoCircleOutlined style={{ color: '#bfbfbf' }} />
+                <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
               </Tooltip>
             </div>
             <div style={{ fontSize: 28, fontWeight: 700, margin: '12px 0 4px' }}>
@@ -227,7 +227,7 @@ export default function DashboardContent() {
               <span><Text type="secondary" style={{ fontSize: 12 }}>周同比</Text> <TrendTag value="12%" up /></span>
               <span><Text type="secondary" style={{ fontSize: 12 }}>日同比</Text> <TrendTag value="11%" up={false} /></span>
             </Space>
-            <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 12, paddingTop: 12 }}>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 12, paddingTop: 12 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>日销售额</Text>
               <Text strong style={{ marginLeft: 8, fontSize: 12 }}>¥ 12,423</Text>
             </div>
@@ -239,14 +239,14 @@ export default function DashboardContent() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text type="secondary" style={{ fontSize: 13 }}>访问量</Text>
               <Tooltip title="最近30天的网站总访问量">
-                <InfoCircleOutlined style={{ color: '#bfbfbf' }} />
+                <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
               </Tooltip>
             </div>
             <div style={{ fontSize: 28, fontWeight: 700, margin: '12px 0 4px' }}>
               8,846
             </div>
             <Sparkline data={visitSparkline} />
-            <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 8, paddingTop: 10 }}>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 8, paddingTop: 10 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>日访问量</Text>
               <Text strong style={{ marginLeft: 8, fontSize: 12 }}>1,234</Text>
             </div>
@@ -258,14 +258,14 @@ export default function DashboardContent() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text type="secondary" style={{ fontSize: 13 }}>支付笔数</Text>
               <Tooltip title="当前已成功支付的订单数量">
-                <InfoCircleOutlined style={{ color: '#bfbfbf' }} />
+                <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
               </Tooltip>
             </div>
             <div style={{ fontSize: 28, fontWeight: 700, margin: '12px 0 4px' }}>
               6,560
             </div>
             <MiniBarChart data={paymentBars} />
-            <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 8, paddingTop: 10 }}>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 8, paddingTop: 10 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>转化率</Text>
               <Text strong style={{ marginLeft: 8, fontSize: 12 }}>60%</Text>
             </div>
@@ -277,7 +277,7 @@ export default function DashboardContent() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text type="secondary" style={{ fontSize: 13 }}>运营活动效果</Text>
               <Tooltip title="当前运营活动整体效果评分">
-                <InfoCircleOutlined style={{ color: '#bfbfbf' }} />
+                <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
               </Tooltip>
             </div>
             <div style={{ fontSize: 28, fontWeight: 700, margin: '12px 0 8px' }}>
@@ -337,7 +337,7 @@ export default function DashboardContent() {
 
             <ResponsiveContainer width="100%" height={260} style={{ marginTop: 16 }}>
               <BarChart data={chartData} barSize={28} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" vertical={false} />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
                 <ReTooltip cursor={{ fill: 'rgba(22,119,255,0.06)' }} />
@@ -365,8 +365,8 @@ export default function DashboardContent() {
                       width: 22,
                       height: 22,
                       borderRadius: '50%',
-                      background: item.rank <= 3 ? '#262626' : '#f0f0f0',
-                      color: item.rank <= 3 ? '#fff' : '#8c8c8c',
+                      background: item.rank <= 3 ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                      color: item.rank <= 3 ? 'var(--bg-container)' : 'var(--text-tertiary)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -379,7 +379,7 @@ export default function DashboardContent() {
                     {item.rank}
                   </span>
                   <Text style={{ flex: 1, fontSize: 13 }}>{item.name}</Text>
-                  <Text style={{ fontSize: 13, color: '#595959' }}>
+                  <Text style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                     {item.value.toLocaleString()}
                   </Text>
                 </div>
@@ -413,7 +413,7 @@ export default function DashboardContent() {
             <Row gutter={16}>
               <Col span={12}>
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  搜索用户数 <InfoCircleOutlined style={{ color: '#bfbfbf' }} />
+                  搜索用户数 <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
                 </Text>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
                   <span style={{ fontSize: 22, fontWeight: 700 }}>17.1</span>
@@ -423,7 +423,7 @@ export default function DashboardContent() {
               </Col>
               <Col span={12}>
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  人均搜索次数 <InfoCircleOutlined style={{ color: '#bfbfbf' }} />
+                  人均搜索次数 <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
                 </Text>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
                   <span style={{ fontSize: 22, fontWeight: 700 }}>26.2</span>
@@ -454,8 +454,8 @@ export default function DashboardContent() {
                     <span>
                       用户数{' '}
                       <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1, verticalAlign: 'middle', marginLeft: 2 }}>
-                        <CaretUpOutlined style={{ fontSize: 10, color: '#bfbfbf' }} />
-                        <CaretDownOutlined style={{ fontSize: 10, color: '#bfbfbf' }} />
+                        <CaretUpOutlined style={{ fontSize: 10, color: 'var(--text-tertiary)' }} />
+                        <CaretDownOutlined style={{ fontSize: 10, color: 'var(--text-tertiary)' }} />
                       </span>
                     </span>
                   ),
@@ -467,8 +467,8 @@ export default function DashboardContent() {
                     <span>
                       周涨幅{' '}
                       <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1, verticalAlign: 'middle', marginLeft: 2 }}>
-                        <CaretUpOutlined style={{ fontSize: 10, color: '#bfbfbf' }} />
-                        <CaretDownOutlined style={{ fontSize: 10, color: '#bfbfbf' }} />
+                        <CaretUpOutlined style={{ fontSize: 10, color: 'var(--text-tertiary)' }} />
+                        <CaretDownOutlined style={{ fontSize: 10, color: 'var(--text-tertiary)' }} />
                       </span>
                     </span>
                   ),
@@ -557,12 +557,12 @@ export default function DashboardContent() {
                     const textAnchor = cos >= 0 ? 'start' : 'end';
                     return (
                       <g>
-                        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#bfbfbf" fill="none" strokeWidth={1} />
-                        <circle cx={ex} cy={ey} r={2} fill="#bfbfbf" />
-                        <text x={ex + (cos >= 0 ? 4 : -4)} y={ey} textAnchor={textAnchor} fill="#595959" fontSize={12}>
+                        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="rgba(128,128,128,0.5)" fill="none" strokeWidth={1} />
+                        <circle cx={ex} cy={ey} r={2} fill="rgba(128,128,128,0.5)" />
+                        <text x={ex + (cos >= 0 ? 4 : -4)} y={ey} textAnchor={textAnchor} fill="rgba(128,128,128,0.9)" fontSize={12}>
                           {name}:{' '}
                         </text>
-                        <text x={ex + (cos >= 0 ? 4 : -4)} y={ey} dy={14} textAnchor={textAnchor} fill="#8c8c8c" fontSize={11}>
+                        <text x={ex + (cos >= 0 ? 4 : -4)} y={ey} dy={14} textAnchor={textAnchor} fill="rgba(128,128,128,0.7)" fontSize={11}>
                           {value.toLocaleString()}
                         </text>
                       </g>

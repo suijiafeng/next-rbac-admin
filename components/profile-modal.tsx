@@ -110,7 +110,7 @@ function ReadonlyRow({ label, value, onEdit }: { label: string; value: string; o
         <Text style={{ fontSize: 14 }}>{value || '—'}</Text>
         {onEdit && (
           <Button type="text" size="small"
-            icon={<EditOutlined style={{ fontSize: 12, color: '#8c8c8c' }} />}
+            icon={<EditOutlined style={{ fontSize: 12, color: 'var(--text-tertiary)' }} />}
             style={{ padding: '0 4px', height: 22 }} onClick={onEdit} />
         )}
       </Space>
@@ -225,7 +225,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
             </Avatar>
             <div>
               <div style={{ fontWeight: 600, fontSize: 15, lineHeight: 1.4 }}>{profile.nickname}</div>
-              <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
                 @{profile.username} · {ROLE_LABEL[profile.role] ?? profile.role}
               </div>
             </div>

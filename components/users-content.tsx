@@ -468,7 +468,7 @@ export default function UsersPage() {
             </Button>
           </div>
 
-          <div className="border-b px-3.5 pb-3.5 pt-1">
+          <div className="border-b border-slate-200 dark:border-slate-700 px-3.5 pb-3.5 pt-1">
             <Form
               form={form}
               layout="inline"

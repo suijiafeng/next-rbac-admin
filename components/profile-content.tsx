@@ -58,7 +58,7 @@ function ReadonlyRow({
           <Button
             type="text"
             size="small"
-            icon={<EditOutlined style={{ fontSize: 13, color: '#8c8c8c' }} />}
+            icon={<EditOutlined style={{ fontSize: 13, color: 'var(--text-tertiary)' }} />}
             style={{ padding: '0 4px', height: 22 }}
             onClick={onEdit}
           />
