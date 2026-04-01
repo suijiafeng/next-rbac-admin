@@ -2,7 +2,7 @@
 
 import { Button, Card, Form, Input, Typography, message } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-
+import { useRouter } from 'next/navigation';
 interface LoginFormValues {
   username: string;
   password: string;
@@ -10,6 +10,7 @@ interface LoginFormValues {
 
 export default function LoginPage() {
   const [form] = Form.useForm<LoginFormValues>();
+  const router = useRouter();
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
@@ -29,7 +30,9 @@ export default function LoginPage() {
       }
 
       message.success('登录成功');
-      window.location.href = '/dashboard';
+      // window.location.href = '/dashboard';
+      router.push('/dashboard');
+      router.refresh();
     } catch (error) {
       console.error(error);
       message.error('登录失败');

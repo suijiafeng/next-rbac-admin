@@ -26,6 +26,8 @@ model AdminUser {
   username  String   @unique
   password  String
   nickname  String
+  email     String?  @unique
+  role      String   @default("admin")
   status    Int      @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
