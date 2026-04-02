@@ -3,6 +3,7 @@
 import { Button, Card, Form, Input, Typography, message } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 interface LoginFormValues {
   username: string;
   password: string;
@@ -46,13 +47,17 @@ export default function LoginPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f5f5f5',
+        backgroundImage: " linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),url('assets/bg.jpg')",
+        objectFit:'fill',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
       }}
     >
       <Card
         style={{
           width: 420,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+          boxShadow: '0 8px 80px rgba(0,0,0,1)',
+          marginTop:  'clamp(-15vh,-50%,-200px)'
         }}
       >
         <Typography.Title
@@ -103,11 +108,20 @@ export default function LoginPage() {
             />
           </Form.Item>
 
-          <Form.Item style={{ marginBottom: 0 }}>
+          <Form.Item style={{ marginBottom: 8 }}>
             <Button type="primary" htmlType="submit" block>
               登录
             </Button>
           </Form.Item>
+
+          <div style={{ textAlign: 'right',marginTop:'20px' }}>
+            <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+              还没有账号？{' '}
+              <Link href="/register" style={{ color: '#1677ff' }}>
+                立即注册
+              </Link>
+            </Typography.Text>
+          </div>
         </Form>
       </Card>
     </div>
