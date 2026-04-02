@@ -1,11 +1,23 @@
+import { redirect } from 'next/navigation';
 import AdminLayout from '@/components/admin-layout';
+import { getCurrentAdminUser } from '@/lib/admin-user';
 
 interface AdminGroupLayoutProps {
   children: React.ReactNode;
 }
 
-export default function AdminGroupLayout(props: AdminGroupLayoutProps) {
+export default async function AdminGroupLayout(props: AdminGroupLayoutProps) {
   const { children } = props;
 
-  return <AdminLayout>{children}</AdminLayout>;
+  const currentUser = await getCurrentAdminUser();
+
+  if (!currentUser) {
+    redirect('/login');
+  }
+
+  return (
+    <AdminLayout currentUser={currentUser}>
+      {children}
+    </AdminLayout>
+  );
 }
