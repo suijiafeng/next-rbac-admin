@@ -40,13 +40,14 @@ export default function AdminLayout(props: AdminLayoutProps) {
           onToggleCollapse={() => {
             setCollapsed((prev) => !prev);
           }}
+          currentUser={currentUser}
         />
 
         <Content
           style={{
             margin: 16,
             padding: 16,
-            background: '#fff',
+            background: '#f5f6f8',
             borderRadius: 8,
             minHeight: 'calc(100vh - 96px)',
           }}
