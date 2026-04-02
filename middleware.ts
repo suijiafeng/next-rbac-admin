@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const publicPaths = ['/login', '/api/auth/login'];
+const publicPaths = ['/login', '/api/auth/login','/api/profile',];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -13,14 +12,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const adminToken = request.cookies.get('admin_token')?.value;
+  // const adminToken = request.cookies.get('admin_token')?.value;
+  const adminUser = request.cookies.get('admin_user')?.value;
 
-  if (!adminToken) {
+
+
+
+  if (!adminUser) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (adminToken && pathname === '/login') {
+  if (adminUser && pathname === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -28,5 +31,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/users/:path*', '/settings/:path*','/profile/:path*','/api/profile/:path*', '/'],
+  matcher: ['/dashboard/:path*', '/users/:path*', '/settings/:path*', '/profile/:path*', '/'],
 };
