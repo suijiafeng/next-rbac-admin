@@ -1,0 +1,70 @@
+.table :global(.ant-table-thead > tr > th) {
+  background: #f8f9fc !important;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  padding: 10px 16px !important;
+  white-space: nowrap;
+}
+
+.table :global(.ant-table-thead > tr > th:hover) {
+  background: #f8f9fc !important;
+}
+
+.table :global(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid #f3f4f6 !important;
+  padding: 13px 16px !important;
+  transition: background 0.12s ease;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.table :global(.ant-table-tbody > tr:hover > td) {
+  background: #f5f7ff !important;
+}
+
+.table :global(.ant-table-tbody > tr:nth-child(even) > td) {
+  background: #fafbfd;
+}
+
+.table :global(.ant-table-tbody > tr:nth-child(even):hover > td) {
+  background: #f5f7ff !important;
+}
+
+.table :global(.ant-table-cell-fix-right-first::after) {
+  box-shadow: inset -6px 0 8px -4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.table :global(.ant-table-cell-fix-left-last::after) {
+  box-shadow: inset 6px 0 8px -4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.table :global(.ant-pagination) {
+  margin: 12px 0 0 0 !important;
+  padding: 0 4px;
+}
+
+.table :global(.ant-table-body::-webkit-scrollbar) {
+  width: 6px;
+  height: 6px;
+}
+
+.table :global(.ant-table-body::-webkit-scrollbar-thumb) {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.table :global(.ant-table-body::-webkit-scrollbar-track) {
+  background: transparent;
+}
+
+.table :global(.ant-spin-nested-loading > div > .ant-spin) {
+  max-height: unset;
+}
+
+.formItemInline {
+  margin-bottom: 0 !important;
+}

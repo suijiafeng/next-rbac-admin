@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+const userSelect = {
+  id: true,
+  username: true,
+  nickname: true,
+  email: true,
+  role: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
 interface RouteContext {
   params: {
     id: string;
@@ -18,6 +29,7 @@ export async function GET(
       where: {
         id,
       },
+      select: userSelect,
     });
 
     if (!user) {
@@ -138,6 +150,7 @@ const existedUser = await prisma.user.findFirst({
         email: email || null,
         status: Number(status ?? 1),
       },
+      select: userSelect,
     });
 
 

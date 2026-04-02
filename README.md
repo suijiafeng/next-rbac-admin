@@ -24,7 +24,7 @@ AUTH_SECRET=replace-with-a-random-secret
 
 ## 密码加密
 
-管理员密码必须以 bcrypt hash 存入 `AdminUser.password`，不要存明文。
+管理员密码必须以 bcrypt hash 存入 `User.password`，不要存明文。
 
 生成 hash：
 
@@ -32,7 +32,12 @@ AUTH_SECRET=replace-with-a-random-secret
 npm run password:hash -- 123456
 ```
 
-新增 `AdminUser.role` 字段后，需要执行 Prisma 迁移或 `db push` 同步数据库结构。
+当前已改为普通用户和管理员共用 `User` 表，通过 `role` 区分身份：
+
+- `user`：普通用户
+- `admin` / `super_admin`：可登录后台的管理用户
+
+调整 Prisma 结构后，需要执行迁移或 `db push` 同步数据库结构。
 
 ## Getting Started
 
@@ -49,4 +54,3 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-

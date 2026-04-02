@@ -4,8 +4,8 @@ type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 interface RequestOptions {
   method?: RequestMethod;
-  params?: Record<string, any>;
-  data?: Record<string, any>;
+  params?: Record<string, unknown>;
+  data?: object;
   headers?: HeadersInit;
 }
 

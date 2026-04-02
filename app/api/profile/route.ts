@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
+import { getAdminUserId } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // 第一版先写死，后面再替换成真实登录态解析
-    const adminUserId = 1;
+    const adminUserId = await getAdminUserId();
 
-    const user = await prisma.adminUser.findUnique({
+    if (!adminUserId) {
+      return NextResponse.json(
+        {
+          code: 1,
+          data: null,
+          message: '未登录',
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    const user = await prisma.user.findUnique({
       where: {
         id: adminUserId,
       },
@@ -57,7 +72,21 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const adminUserId = 1;
+    const adminUserId = await getAdminUserId();
+
+    if (!adminUserId) {
+      return NextResponse.json(
+        {
+          code: 1,
+          data: null,
+          message: '未登录',
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
     const body = await request.json();
     const { nickname, email } = body;
 
@@ -75,7 +104,7 @@ export async function PUT(request: Request) {
     }
 
     const existedUser = email
-      ? await prisma.adminUser.findFirst({
+      ? await prisma.user.findFirst({
           where: {
             email,
             NOT: {
@@ -98,7 +127,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    const user = await prisma.adminUser.update({
+    const user = await prisma.user.update({
       where: {
         id: adminUserId,
       },
