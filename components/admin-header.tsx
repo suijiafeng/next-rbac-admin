@@ -24,6 +24,7 @@ interface AdminHeaderProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   currentUser: CurrentUser;
+  onOpenProfile: () => void;
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -44,7 +45,7 @@ function avatarColor(username: string) {
 }
 
 export default function AdminHeader(props: AdminHeaderProps) {
-  const { collapsed, onToggleCollapse, currentUser } = props;
+  const { collapsed, onToggleCollapse, currentUser, onOpenProfile } = props;
   const router = useRouter();
 
   useEffect(() => {
@@ -101,7 +102,7 @@ export default function AdminHeader(props: AdminHeaderProps) {
               window.location.href = '/login';
             }
             if (key === 'profile') {
-              router.push('/profile');
+              onOpenProfile();
             }
           },
         }}
