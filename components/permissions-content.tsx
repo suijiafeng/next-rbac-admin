@@ -8,7 +8,6 @@ import {
   Col,
   Form,
   Input,
-  message,
   Modal,
   Popconfirm,
   Row,
@@ -16,6 +15,7 @@ import {
   Tag,
   Tooltip,
   Typography,
+  message,
 } from 'antd';
 import {
   DeleteOutlined,
@@ -26,10 +26,9 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 import { request } from '@/lib/request';
+import styles from '@/components/permissions-content.module.css';
 
 const { Text, Title } = Typography;
-
-// ── Types ────────────────────────────────────────────────────
 
 interface PermissionItem {
   id: number;
@@ -46,104 +45,103 @@ interface RoleItem {
   permissions: PermissionItem[];
 }
 
-// ── Constants ────────────────────────────────────────────────
-
-// Groups permission codes by their module prefix (before the dot)
-const MODULE_LABELS: Record<string, string> = {
-  user: '用户管理',
-  role: '角色管理',
-};
-
-// System roles that are always present – name column is read-only for these
-const SYSTEM_ROLES = new Set(['SUPER_ADMIN', 'ADMIN', 'USER']);
-
-const ROLE_TAG_COLOR: Record<string, string> = {
-  SUPER_ADMIN: 'red',
-  ADMIN: 'blue',
-  USER: 'default',
-};
-
-// ── Helper ───────────────────────────────────────────────────
-
-function groupPermissions(permissions: PermissionItem[]) {
-  const groups: Record<string, PermissionItem[]> = {};
-  for (const p of permissions) {
-    const module = p.code.split(/[:.]/)[0] ?? p.code;
-    if (!groups[module]) groups[module] = [];
-    groups[module].push(p);
-  }
-  return groups;
-}
-
-// ── Sub-components ───────────────────────────────────────────
-
-function RoleCard({
-  role,
-  selected,
-  onSelect,
-  onEdit,
-  onDelete,
-}: {
+interface RoleCardProps {
   role: RoleItem;
   selected: boolean;
   onSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
-}) {
+}
+
+type RoleModalValues = {
+  name: string;
+  description?: string;
+};
+
+const moduleLabels: Record<string, string> = {
+  user: '用户管理',
+  role: '角色管理',
+};
+
+const systemRoles = new Set(['SUPER_ADMIN', 'ADMIN', 'USER']);
+
+const roleTagColorMap: Record<string, string> = {
+  SUPER_ADMIN: 'red',
+  ADMIN: 'blue',
+  USER: 'default',
+};
+
+const groupPermissionsByModule = (permissionList: PermissionItem[]) => {
+  return permissionList.reduce<Record<string, PermissionItem[]>>((permissionGroupMap, permissionItem) => {
+    const moduleKey = permissionItem.code.split(/[:.]/)[0] ?? permissionItem.code;
+
+    if (!permissionGroupMap[moduleKey]) {
+      permissionGroupMap[moduleKey] = [];
+    }
+
+    permissionGroupMap[moduleKey].push(permissionItem);
+    return permissionGroupMap;
+  }, {});
+};
+
+const RoleCard = ({
+  role,
+  selected,
+  onSelect,
+  onEdit,
+  onDelete,
+}: RoleCardProps) => {
   const normalizedRoleName = role.name.toUpperCase();
-  const isSystem = SYSTEM_ROLES.has(normalizedRoleName);
-  const tagColor = ROLE_TAG_COLOR[normalizedRoleName] ?? 'geekblue';
+  const isSystemRole = systemRoles.has(normalizedRoleName);
+  const roleTagColor = roleTagColorMap[normalizedRoleName] ?? 'geekblue';
 
   return (
     <div
       onClick={onSelect}
-      style={{
-        padding: '14px 16px',
-        borderRadius: 8,
-        border: `1px solid ${selected ? '#1677ff' : '#f0f0f0'}`,
-        background: selected ? '#e6f4ff' : '#fff',
-        cursor: 'pointer',
-        transition: 'all 0.15s',
-        marginBottom: 8,
-      }}
+      className={`${styles.roleCard} ${selected ? styles.roleCardSelected : ''}`}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Space size={8} style={{ marginBottom: 4 }}>
-            <Text strong style={{ fontSize: 14 }}>{role.name}</Text>
-            <Tag color={tagColor} style={{ borderRadius: 10, fontSize: 11, padding: '0 7px' }}>
-              {isSystem ? '系统角色' : '自定义'}
+      <div className={styles.roleCardHeader}>
+        <div className={styles.roleMeta}>
+          <Space size={8} className={styles.roleTitleRow}>
+            <Text strong className="text-sm">
+              {role.name}
+            </Text>
+            <Tag color={roleTagColor} className={styles.roleTag}>
+              {isSystemRole ? '系统角色' : '自定义'}
             </Tag>
           </Space>
-          <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {role.description || '暂无描述'}
-            </Text>
-          </div>
-          <div style={{ marginTop: 6 }}>
+          <Text type="secondary" className={styles.mutedText}>
+            {role.description || '暂无描述'}
+          </Text>
+          <div className={styles.roleStats}>
             <Space size={12}>
               <Space size={4}>
-                <KeyOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
-                <Text type="secondary" style={{ fontSize: 12 }}>{role.permissions.length} 个权限</Text>
+                <KeyOutlined className="text-xs text-slate-400" />
+                <Text type="secondary" className={styles.mutedText}>
+                  {role.permissions.length} 个权限
+                </Text>
               </Space>
               <Space size={4}>
-                <TeamOutlined style={{ color: '#8c8c8c', fontSize: 12 }} />
-                <Text type="secondary" style={{ fontSize: 12 }}>{role.userCount} 位用户</Text>
+                <TeamOutlined className="text-xs text-slate-400" />
+                <Text type="secondary" className={styles.mutedText}>
+                  {role.userCount} 位用户
+                </Text>
               </Space>
             </Space>
           </div>
         </div>
-        <Space size={4} onClick={(e) => e.stopPropagation()}>
+
+        <Space size={4} onClick={(event) => event.stopPropagation()}>
           <Tooltip title="编辑描述">
             <Button
               type="text"
               size="small"
               icon={<EditOutlined />}
               onClick={onEdit}
-              style={{ color: '#8c8c8c' }}
+              className={styles.iconButton}
             />
           </Tooltip>
-          {!isSystem && (
+          {!isSystemRole && (
             <Tooltip title="删除角色">
               <Popconfirm
                 title="确认删除该角色？"
@@ -153,12 +151,7 @@ function RoleCard({
                 okButtonProps={{ danger: true, disabled: role.userCount > 0 }}
                 cancelText="取消"
               >
-                <Button
-                  type="text"
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                />
+                <Button type="text" size="small" danger icon={<DeleteOutlined />} />
               </Popconfirm>
             </Tooltip>
           )}
@@ -166,41 +159,45 @@ function RoleCard({
       </div>
     </div>
   );
-}
+};
 
-// ── Main Component ───────────────────────────────────────────
-
-export default function PermissionsContent() {
-  const [roles, setRoles] = useState<RoleItem[]>([]);
-  const [allPermissions, setAllPermissions] = useState<PermissionItem[]>([]);
+const PermissionsContent = () => {
+  const [roleList, setRoleList] = useState<RoleItem[]>([]);
+  const [permissionList, setPermissionList] = useState<PermissionItem[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
-  const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
-  const [dirty, setDirty] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [checkedPermissionIds, setCheckedPermissionIds] = useState<Set<number>>(new Set());
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [roleModalMode, setRoleModalMode] = useState<'create' | 'edit'>('create');
   const [editingRole, setEditingRole] = useState<RoleItem | null>(null);
-  const [modalLoading, setModalLoading] = useState(false);
-  const [form] = Form.useForm();
+  const [submittingRoleModal, setSubmittingRoleModal] = useState(false);
+  const [roleForm] = Form.useForm<RoleModalValues>();
 
-  // ── Data loading ────────────────────────────
+  const selectedRole = useMemo(() => {
+    return roleList.find((role) => role.id === selectedRoleId) ?? null;
+  }, [roleList, selectedRoleId]);
+
+  const groupedPermissions = useMemo(() => {
+    return groupPermissionsByModule(permissionList);
+  }, [permissionList]);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
+    setLoadingData(true);
+
     try {
-      const [rolesRes, permsRes] = await Promise.all([
+      const [rolesResponse, permissionsResponse] = await Promise.all([
         request<RoleItem[]>('/api/roles'),
         request<PermissionItem[]>('/api/permissions'),
       ]);
-      setRoles(rolesRes.data ?? []);
-      setAllPermissions(permsRes.data ?? []);
+
+      setRoleList(rolesResponse.data ?? []);
+      setPermissionList(permissionsResponse.data ?? []);
     } catch {
       message.error('加载数据失败');
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
   }, []);
 
@@ -208,159 +205,191 @@ export default function PermissionsContent() {
     loadData();
   }, [loadData]);
 
-  // ── Selected role sync ──────────────────────
-
-  const selectedRole = useMemo(
-    () => roles.find((r) => r.id === selectedRoleId) ?? null,
-    [roles, selectedRoleId],
-  );
+  useEffect(() => {
+    if (!selectedRole && roleList.length > 0) {
+      setSelectedRoleId(roleList[0].id);
+    }
+  }, [roleList, selectedRole]);
 
   useEffect(() => {
-    if (selectedRole) {
-      setCheckedIds(new Set(selectedRole.permissions.map((p) => p.id)));
-      setDirty(false);
+    if (!selectedRole) {
+      return;
     }
+
+    setCheckedPermissionIds(new Set(selectedRole.permissions.map((permission) => permission.id)));
+    setHasPendingChanges(false);
   }, [selectedRole]);
 
-  // Auto-select first role after load
-  useEffect(() => {
-    if (roles.length > 0 && selectedRoleId === null) {
-      setSelectedRoleId(roles[0].id);
-    }
-  }, [roles, selectedRoleId]);
+  const togglePermission = useCallback((permissionId: number) => {
+    setCheckedPermissionIds((previousPermissionIds) => {
+      const nextPermissionIds = new Set(previousPermissionIds);
 
-  // ── Permission groups ───────────────────────
+      if (nextPermissionIds.has(permissionId)) {
+        nextPermissionIds.delete(permissionId);
+      } else {
+        nextPermissionIds.add(permissionId);
+      }
 
-  const permissionGroups = useMemo(() => groupPermissions(allPermissions), [allPermissions]);
-
-  // ── Permission checkbox handlers ────────────
-
-  function togglePermission(id: number) {
-    setCheckedIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+      return nextPermissionIds;
     });
-    setDirty(true);
-  }
 
-  function toggleModule(modulePermissions: PermissionItem[]) {
-    const ids = modulePermissions.map((p) => p.id);
-    const allChecked = ids.every((id) => checkedIds.has(id));
-    setCheckedIds((prev) => {
-      const next = new Set(prev);
-      ids.forEach((id) => (allChecked ? next.delete(id) : next.add(id)));
-      return next;
-    });
-    setDirty(true);
-  }
+    setHasPendingChanges(true);
+  }, []);
 
-  async function handleSave() {
-    if (!selectedRoleId) return;
-    setSaving(true);
-    try {
-      const res = await request<RoleItem>(`/api/roles/${selectedRoleId}`, {
-        method: 'PUT',
-        data: { permissionIds: Array.from(checkedIds) },
+  const toggleModulePermissions = useCallback((modulePermissionList: PermissionItem[]) => {
+    const modulePermissionIds = modulePermissionList.map((permission) => permission.id);
+    const hasCheckedAllPermissions = modulePermissionIds.every((permissionId) => checkedPermissionIds.has(permissionId));
+
+    setCheckedPermissionIds((previousPermissionIds) => {
+      const nextPermissionIds = new Set(previousPermissionIds);
+
+      modulePermissionIds.forEach((permissionId) => {
+        if (hasCheckedAllPermissions) {
+          nextPermissionIds.delete(permissionId);
+        } else {
+          nextPermissionIds.add(permissionId);
+        }
       });
-      setRoles((prev) => prev.map((r) => (r.id === selectedRoleId ? res.data! : r)));
-      setDirty(false);
-      message.success('权限配置已保存');
-    } catch (e) {
-      message.error(e instanceof Error ? e.message : '保存失败');
-    } finally {
-      setSaving(false);
+
+      return nextPermissionIds;
+    });
+
+    setHasPendingChanges(true);
+  }, [checkedPermissionIds]);
+
+  const handleSave = useCallback(async () => {
+    if (!selectedRoleId) {
+      return;
     }
-  }
 
-  function handleCancel() {
-    if (selectedRole) {
-      setCheckedIds(new Set(selectedRole.permissions.map((p) => p.id)));
-      setDirty(false);
-    }
-  }
+    setSavingConfig(true);
 
-  // ── Modal handlers ──────────────────────────
-
-  function openCreateModal() {
-    setModalMode('create');
-    setEditingRole(null);
-    form.resetFields();
-    setModalOpen(true);
-  }
-
-  function openEditModal(role: RoleItem) {
-    setModalMode('edit');
-    setEditingRole(role);
-    form.setFieldsValue({ name: role.name, description: role.description ?? '' });
-    setModalOpen(true);
-  }
-
-  async function handleModalOk() {
     try {
-      const values = await form.validateFields();
-      setModalLoading(true);
+      const roleResponse = await request<RoleItem>(`/api/roles/${selectedRoleId}`, {
+        method: 'PUT',
+        data: { permissionIds: Array.from(checkedPermissionIds) },
+      });
 
-      if (modalMode === 'create') {
-        const res = await request<RoleItem>('/api/roles', {
+      setRoleList((previousRoleList) =>
+        previousRoleList.map((role) => (role.id === selectedRoleId ? roleResponse.data : role)),
+      );
+      setHasPendingChanges(false);
+      message.success('权限配置已保存');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '保存失败');
+    } finally {
+      setSavingConfig(false);
+    }
+  }, [checkedPermissionIds, selectedRoleId]);
+
+  const handleCancel = useCallback(() => {
+    if (!selectedRole) {
+      return;
+    }
+
+    setCheckedPermissionIds(new Set(selectedRole.permissions.map((permission) => permission.id)));
+    setHasPendingChanges(false);
+  }, [selectedRole]);
+
+  const openCreateModal = useCallback(() => {
+    setRoleModalMode('create');
+    setEditingRole(null);
+    roleForm.resetFields();
+    setRoleModalOpen(true);
+  }, [roleForm]);
+
+  const openEditModal = useCallback((role: RoleItem) => {
+    setRoleModalMode('edit');
+    setEditingRole(role);
+    roleForm.setFieldsValue({ name: role.name, description: role.description ?? '' });
+    setRoleModalOpen(true);
+  }, [roleForm]);
+
+  const handleRoleModalOk = useCallback(async () => {
+    try {
+      const roleFormValues = await roleForm.validateFields();
+      setSubmittingRoleModal(true);
+
+      if (roleModalMode === 'create') {
+        const roleResponse = await request<RoleItem>('/api/roles', {
           method: 'POST',
-          data: { name: values.name, description: values.description || null },
+          data: {
+            name: roleFormValues.name,
+            description: roleFormValues.description || null,
+          },
         });
-        setRoles((prev) => [...prev, res.data!]);
-        setSelectedRoleId(res.data!.id);
+
+        setRoleList((previousRoleList) => [...previousRoleList, roleResponse.data]);
+        setSelectedRoleId(roleResponse.data.id);
         message.success('角色创建成功');
-      } else if (editingRole) {
-        const res = await request<RoleItem>(`/api/roles/${editingRole.id}`, {
+      }
+
+      if (roleModalMode === 'edit' && editingRole) {
+        const roleResponse = await request<RoleItem>(`/api/roles/${editingRole.id}`, {
           method: 'PUT',
-          data: { description: values.description || null },
+          data: { description: roleFormValues.description || null },
         });
-        setRoles((prev) => prev.map((r) => (r.id === editingRole.id ? res.data! : r)));
+
+        setRoleList((previousRoleList) =>
+          previousRoleList.map((role) => (role.id === editingRole.id ? roleResponse.data : role)),
+        );
         message.success('角色信息已更新');
       }
 
-      setModalOpen(false);
-    } catch (e) {
-      if (e instanceof Error) message.error(e.message);
+      setRoleModalOpen(false);
+    } catch (error) {
+      if (error instanceof Error) {
+        message.error(error.message);
+      }
     } finally {
-      setModalLoading(false);
+      setSubmittingRoleModal(false);
     }
-  }
+  }, [editingRole, roleForm, roleModalMode]);
 
-  async function handleDelete(role: RoleItem) {
+  const handleDelete = useCallback(async (role: RoleItem) => {
     try {
       await request(`/api/roles/${role.id}`, { method: 'DELETE' });
-      const nextRoles = roles.filter((r) => r.id !== role.id);
-      setRoles(nextRoles);
-      if (selectedRoleId === role.id) {
-        setSelectedRoleId(nextRoles[0]?.id ?? null);
-      }
-      message.success('角色已删除');
-    } catch (e) {
-      message.error(e instanceof Error ? e.message : '删除失败');
-    }
-  }
 
-  // ── Render ──────────────────────────────────
+      const nextRoleList = roleList.filter((roleItem) => roleItem.id !== role.id);
+      setRoleList(nextRoleList);
+
+      if (selectedRoleId === role.id) {
+        setSelectedRoleId(nextRoleList[0]?.id ?? null);
+      }
+
+      message.success('角色已删除');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '删除失败');
+    }
+  }, [roleList, selectedRoleId]);
 
   return (
-    <div style={{ padding: 0 }}>
-      <Typography.Title level={4} className="text-slate-900">
-        权限管理
-      </Typography.Title>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div>
+          <Title level={4} className="text-slate-900">
+            权限管理
+          </Title>
+          <Text type="secondary" className={styles.mutedText}>
+            管理系统角色及其对应的操作权限
+          </Text>
+        </div>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
+          新建角色
+        </Button>
+      </div>
 
-      <Row gutter={[16, 16]} style={{ alignItems: 'stretch' }}>
-        {/* Left: Role List */}
-        <Col xs={24} xl={8} style={{ display: 'flex', flexDirection: 'column' }}>
+      <Row gutter={[16, 16]} className={styles.layoutRow}>
+        <Col xs={24} xl={8} className={styles.stretchCol}>
           <Card
             bordered={false}
-            style={{ flex: 1 }}
+            className={styles.fillCard}
+            style={{ height: '100%' }}
             title={<Text strong>角色列表</Text>}
-            extra={<Button size='small' icon={<PlusOutlined />} onClick={openCreateModal}>
-              新建
-            </Button>}
-            loading={loading}
+            extra={<Text type="secondary" className={styles.mutedText}>{roleList.length} 个角色</Text>}
+            loading={loadingData}
           >
-            {roles.map((role) => (
+            {roleList.map((role) => (
               <RoleCard
                 key={role.id}
                 role={role}
@@ -370,105 +399,81 @@ export default function PermissionsContent() {
                 onDelete={() => handleDelete(role)}
               />
             ))}
-            {!loading && roles.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '32px 0' }}>
+
+            {!loadingData && roleList.length === 0 && (
+              <div className={styles.emptyState}>
                 <Text type="secondary">暂无角色数据</Text>
               </div>
             )}
           </Card>
         </Col>
 
-        {/* Right: Permission Assignment */}
-        <Col xs={24} xl={16} style={{ display: 'flex', flexDirection: 'column' }}>
+        <Col xs={24} xl={16} className={styles.stretchCol}>
           <Card
             bordered={false}
-            style={{ flex: 1 }}
+            className={styles.fillCard}
+            style={{ height: '100%' }}
             title={
               selectedRole ? (
-                <Space size={10}>
-                  <SafetyCertificateOutlined style={{ color: '#1677ff' }} />
+                <Space size={10} className={styles.permissionHeader}>
+                  <SafetyCertificateOutlined className="text-[#1677ff]" />
                   <span>
                     <Text strong>{selectedRole.name}</Text>
-                    <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>权限配置</Text>
+                    <Text type="secondary" className={styles.permissionHeaderSuffix}>
+                      权限配置
+                    </Text>
                   </span>
                 </Space>
               ) : (
                 <Text type="secondary">请先选择角色</Text>
               )
             }
-            extra={
-              dirty && (
-                <Space>
-                  <Button size="small" onClick={handleCancel}>取消</Button>
-                  <Button size="small" type="primary" loading={saving} onClick={handleSave}>
-                    保存配置
-                  </Button>
-                </Space>
-              )
-            }
-            loading={loading}
+            loading={loadingData}
           >
             {!selectedRole ? (
-              <div style={{ textAlign: 'center', padding: '64px 0' }}>
-                <SafetyCertificateOutlined style={{ fontSize: 40, color: '#d9d9d9', display: 'block', marginBottom: 12 }} />
+              <div className={styles.permissionEmpty}>
+                <SafetyCertificateOutlined className={styles.permissionEmptyIcon} />
                 <Text type="secondary">从左侧选择一个角色以配置权限</Text>
               </div>
             ) : (
               <div>
-                {Object.entries(permissionGroups).map(([module, perms]) => {
-                  const checkedCount = perms.filter((p) => checkedIds.has(p.id)).length;
-                  const allChecked = checkedCount === perms.length;
-                  const indeterminate = checkedCount > 0 && checkedCount < perms.length;
+                {Object.entries(groupedPermissions).map(([moduleKey, modulePermissionList]) => {
+                  const checkedPermissionCount = modulePermissionList.filter((permission) =>
+                    checkedPermissionIds.has(permission.id),
+                  ).length;
+                  const checkedAllPermissions = checkedPermissionCount === modulePermissionList.length;
+                  const moduleIndeterminate = checkedPermissionCount > 0 && checkedPermissionCount < modulePermissionList.length;
 
                   return (
-                    <div
-                      key={module}
-                      style={{
-                        marginBottom: 16,
-                        border: '1px solid #f0f0f0',
-                        borderRadius: 8,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {/* Module header */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 16px',
-                          background: '#fafafa',
-                          borderBottom: '1px solid #f0f0f0',
-                        }}
-                      >
+                    <div key={moduleKey} className={styles.moduleCard}>
+                      <div className={styles.moduleHeader}>
                         <Space size={8}>
                           <Checkbox
-                            checked={allChecked}
-                            indeterminate={indeterminate}
-                            onChange={() => toggleModule(perms)}
+                            checked={checkedAllPermissions}
+                            indeterminate={moduleIndeterminate}
+                            onChange={() => toggleModulePermissions(modulePermissionList)}
                           />
-                          <Text strong style={{ fontSize: 13 }}>
-                            {MODULE_LABELS[module] ?? module}
+                          <Text strong className="text-[13px]">
+                            {moduleLabels[moduleKey] ?? moduleKey}
                           </Text>
                         </Space>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {checkedCount} / {perms.length}
+                        <Text type="secondary" className={styles.mutedText}>
+                          {checkedPermissionCount} / {modulePermissionList.length}
                         </Text>
                       </div>
 
-                      {/* Permission checkboxes */}
-                      <div style={{ padding: '12px 16px' }}>
+                      <div className={styles.moduleBody}>
                         <Row gutter={[8, 12]}>
-                          {perms.map((p) => (
-                            <Col key={p.id} xs={24} sm={12} md={8} lg={6}>
+                          {modulePermissionList.map((permission) => (
+                            <Col key={permission.id} xs={24} sm={12} md={8} lg={6}>
                               <Checkbox
-                                checked={checkedIds.has(p.id)}
-                                onChange={() => togglePermission(p.id)}
+                                checked={checkedPermissionIds.has(permission.id)}
+                                onChange={() => togglePermission(permission.id)}
                               >
-                                <Text style={{ fontSize: 13 }}>{p.name}</Text>
+                                <Text className="text-[13px]">{permission.name}</Text>
                                 <div>
-                                  <Text type="secondary" style={{ fontSize: 11, fontFamily: 'monospace' }}>
-                                    {p.code}
+                                  <Text type="secondary" className={styles.codeText}>
+                                    {permission.code}
                                   </Text>
                                 </div>
                               </Checkbox>
@@ -480,16 +485,16 @@ export default function PermissionsContent() {
                   );
                 })}
 
-                {Object.keys(permissionGroups).length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                {Object.keys(groupedPermissions).length === 0 && (
+                  <div className={styles.emptyState}>
                     <Text type="secondary">系统暂未定义权限项</Text>
                   </div>
                 )}
 
-                {dirty && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                {hasPendingChanges && (
+                  <div className={styles.footerActions}>
                     <Button onClick={handleCancel}>取消</Button>
-                    <Button type="primary" loading={saving} onClick={handleSave}>
+                    <Button type="primary" loading={savingConfig} onClick={handleSave}>
                       保存配置
                     </Button>
                   </div>
@@ -500,19 +505,18 @@ export default function PermissionsContent() {
         </Col>
       </Row>
 
-      {/* Create / Edit Modal */}
       <Modal
-        title={modalMode === 'create' ? '新建角色' : '编辑角色'}
-        open={modalOpen}
-        onOk={handleModalOk}
-        onCancel={() => setModalOpen(false)}
-        confirmLoading={modalLoading}
-        okText={modalMode === 'create' ? '创建' : '保存'}
+        title={roleModalMode === 'create' ? '新建角色' : '编辑角色'}
+        open={roleModalOpen}
+        onOk={handleRoleModalOk}
+        onCancel={() => setRoleModalOpen(false)}
+        confirmLoading={submittingRoleModal}
+        okText={roleModalMode === 'create' ? '创建' : '保存'}
         cancelText="取消"
         destroyOnClose
         width={460}
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+        <Form form={roleForm} layout="vertical" className={styles.modalForm}>
           <Form.Item
             label="角色标识"
             name="name"
@@ -521,8 +525,8 @@ export default function PermissionsContent() {
           >
             <Input
               placeholder="如：editor"
-              disabled={modalMode === 'edit'}
-              style={{ fontFamily: 'monospace' }}
+              disabled={roleModalMode === 'edit'}
+              className={styles.roleNameInput}
             />
           </Form.Item>
           <Form.Item label="角色描述" name="description">
@@ -532,4 +536,6 @@ export default function PermissionsContent() {
       </Modal>
     </div>
   );
-}
+};
+
+export default PermissionsContent;

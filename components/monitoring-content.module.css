@@ -1,0 +1,217 @@
+.page {
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stretchRow {
+  align-items: stretch;
+}
+
+.stretchCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.fillCard {
+  flex: 1;
+}
+
+.kpiIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.smallIcon {
+  font-size: 14px;
+}
+
+.iconError {
+  color: #ff4d4f;
+}
+
+.iconWarn {
+  color: #faad14;
+}
+
+.iconInfo {
+  color: #1677ff;
+}
+
+.kpiCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.kpiValue {
+  margin: 10px 0 4px;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.kpiSuffix {
+  font-size: 13px;
+  font-weight: 400;
+  color: #8c8c8c;
+  margin-left: 2px;
+}
+
+.trendTextUp {
+  font-size: 12px;
+  color: #cf1322;
+}
+
+.trendTextDown {
+  font-size: 12px;
+  color: #389e0d;
+}
+
+.trendTitle {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.legendSwatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.legendBlue {
+  background: #1677ff;
+}
+
+.legendGreen {
+  background: #52c41a;
+}
+
+.tooltipCard {
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.progressTiny {
+  width: 64px;
+  margin: 0;
+}
+
+.sourceList {
+  border-top: 1px solid #f5f5f5;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.sourceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.sourceDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.legendRow {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding-top: 8px;
+}
+
+.legendSquare {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.warningLevelHigh {
+  border: 1px solid #ffccc7;
+  background: #fff1f0;
+}
+
+.warningLevelMedium {
+  border: 1px solid #ffe58f;
+  background: #fffbe6;
+}
+
+.warningLevelLow {
+  border: 1px solid #91caff;
+  background: #e6f4ff;
+}
+
+.warningCard {
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 10px;
+}
+
+.warningIcon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.warningContent {
+  flex: 1;
+}
+
+.warningHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.statusTag {
+  border-radius: 10px;
+  font-size: 11px;
+  margin: 0;
+}
+
+.timelineText {
+  margin-top: 2px;
+}
+
+.apiText {
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.metricGood {
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.metricWarn {
+  color: #faad14;
+  font-weight: 500;
+}
+
+.metricError {
+  color: #ff4d4f;
+  font-weight: 500;
+}

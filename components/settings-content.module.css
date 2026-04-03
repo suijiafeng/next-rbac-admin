@@ -1,0 +1,39 @@
+.page {
+  padding: 0;
+}
+
+.title {
+  color: #0f172a;
+  margin-bottom: 20px !important;
+}
+
+.form {
+  max-width: 520px;
+}
+
+.narrowNumberInput {
+  width: 160px;
+}
+
+.adminToolbar {
+  margin-bottom: 16px;
+}
+
+.adminUserSelect {
+  width: 260px;
+}
+
+.logoPreview {
+  margin-top: -8px;
+  margin-bottom: 4px;
+}
+
+.logoPreviewImg {
+  height: 40px;
+  max-width: 200px;
+  object-fit: contain;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #fafafa;
+}

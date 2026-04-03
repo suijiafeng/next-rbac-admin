@@ -212,7 +212,6 @@ export default function DashboardContent() {
   return (
     <div style={{ padding: 0 }}>
       <Row gutter={[16, 16]}>
-        {/* 总销售额 */}
         <Col xs={24} sm={12} xl={6}>
           <Card bordered={false} style={{ height: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -235,7 +234,6 @@ export default function DashboardContent() {
           </Card>
         </Col>
 
-        {/* 访问量 */}
         <Col xs={24} sm={12} xl={6}>
           <Card bordered={false} style={{ height: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -255,7 +253,6 @@ export default function DashboardContent() {
           </Card>
         </Col>
 
-        {/* 支付笔数 */}
         <Col xs={24} sm={12} xl={6}>
           <Card bordered={false} style={{ height: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -275,7 +272,6 @@ export default function DashboardContent() {
           </Card>
         </Col>
 
-        {/* 运营活动效果 */}
         <Col xs={24} sm={12} xl={6}>
           <Card bordered={false} style={{ height: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -301,7 +297,6 @@ export default function DashboardContent() {
         </Col>
       </Row>
 
-      {/* ── Middle: chart + ranking ────────────────────────────── */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} xl={16}>
           <Card bordered={false}>
@@ -352,7 +347,6 @@ export default function DashboardContent() {
           </Card>
         </Col>
 
-        {/* 门店销售额排名 */}
         <Col xs={24} xl={8}>
           <Card bordered={false} style={{ height: '100%' }}>
             <Text strong style={{ fontSize: 14 }}>门店销售额排名</Text>
@@ -395,9 +389,7 @@ export default function DashboardContent() {
         </Col>
       </Row>
 
-      {/* ── Bottom ────────────────────────────────────────────── */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        {/* 线上热门搜索 */}
         <Col xs={24} xl={12}>
           <Card
             bordered={false}
@@ -496,7 +488,6 @@ export default function DashboardContent() {
           </Card>
         </Col>
 
-        {/* 销售额类别占比 */}
         <Col xs={24} xl={12}>
           <Card
             title={<Text strong>销售额类别占比</Text>}
