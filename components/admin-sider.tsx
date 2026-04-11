@@ -200,7 +200,7 @@ export default function AdminSider(props: AdminSiderProps) {
                 whiteSpace: 'nowrap',
               }}
             >
-              Next Admin
+              RBAC Admin
             </span>
           )}
         </div>

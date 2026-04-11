@@ -302,7 +302,7 @@ async function main() {
    * 5. 创建系统设置
    */
   const systemSettings = [
-    { key: 'site_name', value: 'Next Admin Demo' },
+    { key: 'site_name', value: 'Next RBAC Admin' },
     { key: 'site_description', value: '基于 Next.js 的管理后台演示' },
     { key: 'admin_email', value: 'admin@example.com' },
     { key: 'allow_registration', value: 'true' },

@@ -1,6 +1,6 @@
-# Next Admin Template
+# next-rbac-admin
 
-一个基于 **Next.js 14 App Router + Antd 5 + Prisma** 的中后台模板。
+一个基于 **Next.js 14 App Router + Antd 5 + Prisma + Neon** 的 RBAC 中后台模板。
 
 不是又一个 "Hello Admin"——这个模板把"做后台真正会遇到的问题"都给了答案：渲染模式怎么选、权限怎么落、多标签怎么 keep-alive、请求反馈怎么做、主题怎么切不闪屏。
 

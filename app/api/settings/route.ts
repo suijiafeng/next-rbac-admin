@@ -8,8 +8,8 @@ export const dynamic = 'force-dynamic';
 
 // 默认设置值
 const DEFAULTS: Record<string, string> = {
-  site_name: 'Next Admin',
-  site_description: '后台管理系统',
+  site_name: 'Next RBAC Admin',
+  site_description: 'RBAC 后台管理系统',
   site_logo: '',
   session_duration: '7',
   max_login_attempts: '5',

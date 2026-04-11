@@ -4,8 +4,8 @@ import AntdRegistry from '../components/antd-registry';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 
 export const metadata: Metadata = {
-  title: 'Next Admin',
-  description: 'Admin System',
+  title: 'Next RBAC Admin',
+  description: 'A Next.js RBAC admin dashboard',
 };
 
 /**

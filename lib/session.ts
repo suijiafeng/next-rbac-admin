@@ -1,6 +1,6 @@
 export const ADMIN_SESSION_COOKIE = 'admin_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
-const DEV_SESSION_SECRET = 'next-admin-demo-dev-secret';
+const DEV_SESSION_SECRET = 'next-rbac-admin-dev-secret';
 
 export interface AdminSessionPayload {
   userId: number;
