@@ -27,6 +27,9 @@ export async function PUT(
 
     const exists = await prisma.role.findUnique({ where: { id: roleId } });
     if (!exists) return apiError('角色不存在', 404);
+    if (exists.name === 'SUPER_ADMIN' && permissionIds !== undefined) {
+      return apiError('超级管理员权限不能被修改', 403);
+    }
 
     await prisma.$transaction(async (tx) => {
       await tx.role.update({
@@ -94,6 +97,7 @@ export async function DELETE(
     });
 
     if (!role) return apiError('角色不存在', 404);
+    if (role.name === 'SUPER_ADMIN') return apiError('超级管理员角色不能删除', 403);
     if (role._count.userRoles > 0) return apiError('该角色下还有用户，不能删除', 400);
 
     await prisma.role.delete({ where: { id: roleId } });

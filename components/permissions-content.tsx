@@ -182,6 +182,8 @@ const PermissionsContent = () => {
     return roleList.find((role) => role.id === selectedRoleId) ?? null;
   }, [roleList, selectedRoleId]);
 
+  const isSelectedSuperAdminRole = selectedRole?.name.toUpperCase() === 'SUPER_ADMIN';
+
   const groupedPermissions = useMemo(() => {
     return groupPermissionsByModule(permissionList);
   }, [permissionList]);
@@ -224,6 +226,10 @@ const PermissionsContent = () => {
   }, [selectedRole]);
 
   const togglePermission = useCallback((permissionId: number) => {
+    if (isSelectedSuperAdminRole) {
+      return;
+    }
+
     setCheckedPermissionIds((previousPermissionIds) => {
       const nextPermissionIds = new Set(previousPermissionIds);
 
@@ -237,9 +243,13 @@ const PermissionsContent = () => {
     });
 
     setHasPendingChanges(true);
-  }, []);
+  }, [isSelectedSuperAdminRole]);
 
   const toggleModulePermissions = useCallback((modulePermissionList: PermissionItem[]) => {
+    if (isSelectedSuperAdminRole) {
+      return;
+    }
+
     const modulePermissionIds = modulePermissionList.map((permission) => permission.id);
     const hasCheckedAllPermissions = modulePermissionIds.every((permissionId) => checkedPermissionIds.has(permissionId));
 
@@ -258,10 +268,10 @@ const PermissionsContent = () => {
     });
 
     setHasPendingChanges(true);
-  }, [checkedPermissionIds]);
+  }, [checkedPermissionIds, isSelectedSuperAdminRole]);
 
   const handleSave = useCallback(async () => {
-    if (!selectedRoleId) {
+    if (!selectedRoleId || isSelectedSuperAdminRole) {
       return;
     }
 
@@ -283,7 +293,7 @@ const PermissionsContent = () => {
     } finally {
       setSavingConfig(false);
     }
-  }, [checkedPermissionIds, selectedRoleId]);
+  }, [checkedPermissionIds, isSelectedSuperAdminRole, selectedRoleId]);
 
   const handleCancel = useCallback(() => {
     if (!selectedRole) {
@@ -444,6 +454,12 @@ const PermissionsContent = () => {
               </div>
             ) : (
               <div>
+                {isSelectedSuperAdminRole && (
+                  <div className={styles.lockNotice}>
+                    超级管理员拥有全部权限，权限配置不可收回。
+                  </div>
+                )}
+
                 {Object.entries(groupedPermissions).map(([moduleKey, modulePermissionList]) => {
                   const checkedPermissionCount = modulePermissionList.filter((permission) =>
                     checkedPermissionIds.has(permission.id),
@@ -458,6 +474,7 @@ const PermissionsContent = () => {
                           <Checkbox
                             checked={checkedAllPermissions}
                             indeterminate={moduleIndeterminate}
+                            disabled={isSelectedSuperAdminRole}
                             onChange={() => toggleModulePermissions(modulePermissionList)}
                           />
                           <Text strong className="text-[13px]">
@@ -475,6 +492,7 @@ const PermissionsContent = () => {
                             <Col key={permission.id} xs={24} sm={12} md={8} lg={6}>
                               <Checkbox
                                 checked={checkedPermissionIds.has(permission.id)}
+                                disabled={isSelectedSuperAdminRole}
                                 onChange={() => togglePermission(permission.id)}
                               >
                                 <Text className="text-[13px]">{permission.name}</Text>
@@ -498,7 +516,7 @@ const PermissionsContent = () => {
                   </div>
                 )}
 
-                {hasPendingChanges && (
+                {hasPendingChanges && !isSelectedSuperAdminRole && (
                   <div className={styles.footerActions}>
                     <Button onClick={handleCancel}>取消</Button>
                     <Button type="primary" loading={savingConfig} onClick={handleSave}>

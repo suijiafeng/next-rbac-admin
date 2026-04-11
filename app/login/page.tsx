@@ -57,10 +57,6 @@ export default function LoginPage() {
           layout="vertical"
           onFinish={handleLogin}
           autoComplete="off"
-          initialValues={{
-            username: 'super_admin',
-            password: '123456',
-          }}
         >
           <Form.Item
             label="用户名"
@@ -69,7 +65,7 @@ export default function LoginPage() {
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder="请输入用户名"
+              placeholder="用户名 super_admin"
               autoComplete="off"
             />
           </Form.Item>
@@ -81,7 +77,7 @@ export default function LoginPage() {
           >
             <Input.Password
               prefix={<LockOutlined />}
-              placeholder="请输入密码"
+              placeholder="密码 123456"
               autoComplete="new-password"
             />
           </Form.Item>

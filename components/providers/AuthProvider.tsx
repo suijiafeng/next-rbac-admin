@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { usePathname } from 'next/navigation';
@@ -35,6 +36,7 @@ export function AuthProvider({
   const pathname = usePathname();
   const [authInfo, setAuthInfo] = useState<AuthInfo>(defaultAuthInfo);
   const [loading, setLoading] = useState(true);
+  const authLoadedRef = useRef(false);
 
   const clearAuth = useCallback(() => {
     setAuthInfo(defaultAuthInfo);
@@ -78,6 +80,11 @@ export function AuthProvider({
       return;
     }
 
+    if (authLoadedRef.current) {
+      return;
+    }
+
+    authLoadedRef.current = true;
     refreshAuth();
   }, [clearAuth, pathname, refreshAuth]);
 

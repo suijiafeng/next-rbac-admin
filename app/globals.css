@@ -283,43 +283,103 @@ a {
 
 .glass-card .ant-input-affix-wrapper {
   padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  transition: all 0.25s;
+  background: rgba(15, 23, 42, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s, transform 0.25s;
 }
 
 .glass-card .ant-input-affix-wrapper:hover {
-  border-color: rgba(139, 92, 246, 0.7);
+  border-color: rgba(165, 180, 252, 0.82);
+  background: rgba(30, 41, 59, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 3px rgba(99, 102, 241, 0.16);
 }
 
 .glass-card .ant-input-affix-wrapper-focused,
 .glass-card .ant-input-affix-wrapper:focus-within {
-  border-color: #8b5cf6;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+  border-color: #a5b4fc;
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 3px rgba(139, 92, 246, 0.3),
+    0 10px 28px rgba(15, 23, 42, 0.24);
+  transform: translateY(-1px);
 }
 
-.glass-card .ant-input {
+.glass-card .ant-input-affix-wrapper-status-error,
+.glass-card .ant-input-affix-wrapper-status-error:not(.ant-input-affix-wrapper-disabled),
+.glass-card .ant-input-affix-wrapper-status-error:hover,
+.glass-card .ant-input-affix-wrapper-status-error:focus-within {
+  border-color: #fb7185;
+  background: rgba(127, 29, 29, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 3px rgba(244, 63, 94, 0.22);
+}
+
+.glass-card .ant-input,
+.glass-card .ant-input-affix-wrapper .ant-input,
+.glass-card .ant-input-affix-wrapper input.ant-input {
   background: transparent !important;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.96) !important;
+  font-weight: 500;
+  caret-color: #fff;
+}
+
+.glass-card .ant-input-status-error,
+.glass-card .ant-input-status-error:not(.ant-input-disabled),
+.glass-card .ant-input-status-error:hover,
+.glass-card .ant-input-status-error:focus {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.glass-card .ant-input-affix-wrapper-status-error .ant-input,
+.glass-card .ant-input-affix-wrapper-status-error .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.glass-card .ant-input:-webkit-autofill,
+.glass-card .ant-input:-webkit-autofill:hover,
+.glass-card .ant-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.96);
+  caret-color: #fff;
+  transition: background-color 9999s ease-in-out 0s;
+  box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.72) inset;
 }
 
 .glass-card .ant-input::placeholder {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(226, 232, 240, 0.54);
 }
 
 .glass-card .ant-input-prefix {
   margin-inline-end: 10px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(199, 210, 254, 0.86);
+  transition: color 0.25s;
 }
 
 .glass-card .ant-input-password-icon {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(199, 210, 254, 0.78);
+  transition: color 0.25s;
+}
+
+.glass-card .ant-input-password-icon:hover,
+.glass-card .ant-input-affix-wrapper:hover .ant-input-prefix,
+.glass-card .ant-input-affix-wrapper:focus-within .ant-input-prefix {
+  color: #fff;
 }
 
 .glass-card .ant-form-item-label > label {
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(241, 245, 249, 0.92);
+  font-weight: 600;
+}
+
+.glass-card .ant-form-item-explain-error {
+  color: #fecaca;
+  text-shadow: 0 1px 8px rgba(127, 29, 29, 0.45);
 }
 
 .glass-card .ant-btn-primary {

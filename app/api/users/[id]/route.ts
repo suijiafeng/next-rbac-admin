@@ -183,10 +183,29 @@ export async function DELETE(
       where: {
         id,
       },
+      include: {
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!currentUser) {
       return apiError('用户不存在', 404);
+    }
+
+    const currentUserRole = resolveRoleFromNames(
+      currentUser.userRoles.map((item) => item.role.name),
+    );
+
+    if (currentUserRole === 'SUPER_ADMIN') {
+      return apiError('超级管理员不能删除', 403);
     }
 
     await prisma.user.delete({
