@@ -132,6 +132,341 @@ a {
 }
 
 /* ============================================================
+ * Login
+ * ============================================================ */
+.login-wrap {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(8, 12, 28, 0.62), rgba(8, 12, 28, 0.78)),
+    url('/assets/bg.jpg') center / cover no-repeat;
+  background-color: #0b1020;
+}
+
+.login-wrap::before,
+.login-wrap::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.login-wrap::before {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle at 30% 30%, #6366f1, #8b5cf6 45%, transparent 70%);
+  top: -120px;
+  left: -100px;
+  animation: float1 14s ease-in-out infinite;
+}
+
+.login-wrap::after {
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle at 60% 40%, #06b6d4, #3b82f6 50%, transparent 72%);
+  right: -120px;
+  bottom: -160px;
+  animation: float2 18s ease-in-out infinite;
+}
+
+.login-blob3 {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  z-index: 0;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #ec4899, #f43f5e 55%, transparent 72%);
+  filter: blur(90px);
+  opacity: 0.4;
+  animation: float3 16s ease-in-out infinite;
+}
+
+@keyframes float1 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(80px, 60px) scale(1.15);
+  }
+}
+
+@keyframes float2 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-90px, -50px) scale(1.1);
+  }
+}
+
+@keyframes float3 {
+  0%,
+  100% {
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-40%, -40px) scale(1.2);
+  }
+}
+
+.glass-card {
+  position: relative;
+  z-index: 1;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  padding: 44px 40px 36px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(22px) saturate(140%);
+  animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.glass-logo {
+  display: flex;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
+  color: #fff;
+  font-size: 26px;
+}
+
+.glass-title {
+  margin-bottom: 6px;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.glass-sub {
+  margin-bottom: 30px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  text-align: center;
+}
+
+.glass-card .ant-input-affix-wrapper {
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: all 0.25s;
+}
+
+.glass-card .ant-input-affix-wrapper:hover {
+  border-color: rgba(139, 92, 246, 0.7);
+}
+
+.glass-card .ant-input-affix-wrapper-focused,
+.glass-card .ant-input-affix-wrapper:focus-within {
+  border-color: #8b5cf6;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+}
+
+.glass-card .ant-input {
+  background: transparent !important;
+  color: #fff;
+}
+
+.glass-card .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.glass-card .ant-input-prefix {
+  margin-inline-end: 10px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.glass-card .ant-input-password-icon {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.glass-card .ant-form-item-label > label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.glass-card .ant-btn-primary {
+  height: 46px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6 50%, #06b6d4);
+  background-size: 200% auto;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  transition: all 0.4s;
+}
+
+.glass-card .ant-btn-primary:hover {
+  background-position: right center;
+  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.7);
+  transform: translateY(-1px);
+}
+
+.glass-foot {
+  margin-top: 22px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  text-align: center;
+}
+
+.glass-foot a {
+  color: #a5b4fc;
+  font-weight: 600;
+}
+
+.glass-foot a:hover {
+  color: #c7d2fe;
+}
+
+.auth-register {
+  padding: 24px 0;
+}
+
+.auth-register .glass-card {
+  width: 420px;
+  padding: 28px 36px 24px;
+}
+
+.auth-register .glass-logo {
+  width: 46px;
+  height: 46px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  font-size: 22px;
+}
+
+.auth-register .glass-title {
+  margin-bottom: 4px;
+  font-size: 21px;
+}
+
+.auth-register .glass-sub {
+  margin-bottom: 18px;
+  font-size: 12px;
+}
+
+.auth-register .glass-card .ant-form-item {
+  margin-bottom: 14px;
+}
+
+.auth-register .glass-card .ant-form-vertical .ant-form-item-label {
+  padding-bottom: 2px;
+}
+
+.auth-register .glass-card .ant-form-item-label > label {
+  height: 22px;
+  font-size: 13px;
+}
+
+.auth-register .glass-card .ant-input-affix-wrapper {
+  padding: 7px 14px;
+}
+
+.auth-register .glass-card .ant-btn-primary {
+  height: 42px;
+  margin-top: 2px;
+}
+
+.auth-register .glass-foot {
+  margin-top: 18px;
+}
+
+.glass-card .ant-result-title {
+  color: #fff;
+}
+
+.glass-card .ant-result-subtitle {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.auth-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.auth-particle {
+  position: absolute;
+  bottom: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #a5b4fc 0%, #6366f1 60%, transparent 100%);
+  box-shadow: 0 0 8px 2px rgba(139, 92, 246, 0.6);
+  opacity: 0;
+  animation-name: particleRise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes particleRise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(0) scale(0.6);
+  }
+
+  10% {
+    opacity: 0.9;
+  }
+
+  50% {
+    transform: translateY(-55vh) translateX(calc(var(--drift) * 0.5)) scale(1);
+  }
+
+  90% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-108vh) translateX(var(--drift)) scale(0.5);
+  }
+}
+
+.page-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
  * 全局滚动条美化（数据密集风：细而克制）
  * ============================================================ */
 ::-webkit-scrollbar {
