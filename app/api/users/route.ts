@@ -6,6 +6,8 @@ import bcrypt from 'bcryptjs';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 import { parsePagination } from '@/lib/pagination';
 
+export const dynamic = 'force-dynamic';
+
 const userSelect = {
   id: true,
   username: true,

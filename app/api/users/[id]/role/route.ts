@@ -4,6 +4,8 @@ import { resolveRoleFromNames } from '@/lib/user-role';
 import { writeAuditLog } from '@/lib/audit-log';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
+export const dynamic = 'force-dynamic';
+
 interface RouteContext {
   params: {
     id: string;

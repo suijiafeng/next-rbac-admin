@@ -4,6 +4,8 @@ import { requireRole } from '@/lib/permission';
 import { writeAuditLog } from '@/lib/audit-log';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
+export const dynamic = 'force-dynamic';
+
 const DEFAULT_PASSWORD = '123456';
 
 interface RouteContext {
