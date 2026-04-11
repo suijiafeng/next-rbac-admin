@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requirePermission, requireRole } from '@/lib/permission';
 import { PERMISSIONS } from '@/constants/permission';
 import { writeAuditLog } from '@/lib/audit-log';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,21 +28,9 @@ export async function GET() {
       settings[record.key] = record.value;
     }
 
-    return NextResponse.json({
-      code: 0,
-      data: settings,
-      message: 'success',
-    });
+    return apiSuccess(settings);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === '未登录') {
-        return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
-      }
-      if (error.message === '无权限') {
-        return NextResponse.json({ code: 1, data: null, message: '无权限' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ code: 1, data: null, message: '获取设置失败' }, { status: 500 });
+    return handleApiError(error, '获取设置失败', 'GET /api/settings error');
   }
 }
 
@@ -57,13 +45,13 @@ export async function PUT(request: Request) {
     if (body.session_duration !== undefined) {
       const v = Number(body.session_duration);
       if (!Number.isInteger(v) || v < 1 || v > 30) {
-        return NextResponse.json({ code: 1, data: null, message: '会话时长须在 1~30 天之间' }, { status: 400 });
+        return apiError('会话时长须在 1~30 天之间', 400);
       }
     }
     if (body.max_login_attempts !== undefined) {
       const v = Number(body.max_login_attempts);
       if (!Number.isInteger(v) || v < 1 || v > 20) {
-        return NextResponse.json({ code: 1, data: null, message: '最大登录尝试次数须在 1~20 之间' }, { status: 400 });
+        return apiError('最大登录尝试次数须在 1~20 之间', 400);
       }
     }
 
@@ -97,20 +85,8 @@ export async function PUT(request: Request) {
       });
     }
 
-    return NextResponse.json({
-      code: 0,
-      data: settings,
-      message: '保存成功',
-    });
+    return apiSuccess(settings, '保存成功');
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === '未登录') {
-        return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
-      }
-      if (error.message === '无权限') {
-        return NextResponse.json({ code: 1, data: null, message: '无权限' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ code: 1, data: null, message: '保存设置失败' }, { status: 500 });
+    return handleApiError(error, '保存设置失败', 'PUT /api/settings error');
   }
 }

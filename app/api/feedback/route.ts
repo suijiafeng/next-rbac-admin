@@ -1,28 +1,15 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminUser } from '@/lib/permission';
 import {
   canSubmitFeedback,
   visibleSubmitterRoles,
 } from '@/lib/feedback';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
 const VALID_TYPES = ['bug', 'feature', 'experience', 'other'];
 const VALID_PRIORITIES = ['low', 'medium', 'high'];
-
-function errResponse(error: unknown) {
-  if (error instanceof Error) {
-    if (error.message === '未登录') {
-      return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
-    }
-    if (error.message === '无权限') {
-      return NextResponse.json({ code: 1, data: null, message: '无权限' }, { status: 403 });
-    }
-  }
-  console.error('feedback route error:', error);
-  return NextResponse.json({ code: 1, data: null, message: '操作失败' }, { status: 500 });
-}
 
 /** 列出当前查看者可见（下级提交）的反馈，附带已读状态 */
 export async function GET() {
@@ -31,7 +18,7 @@ export async function GET() {
     const roles = visibleSubmitterRoles(me.role);
 
     if (roles.length === 0) {
-      return NextResponse.json({ code: 0, data: { list: [], unread: 0 }, message: 'success' });
+      return apiSuccess({ list: [], unread: 0 });
     }
 
     const list = await prisma.feedback.findMany({
@@ -48,9 +35,9 @@ export async function GET() {
     });
     const unread = data.filter((f) => !f.read).length;
 
-    return NextResponse.json({ code: 0, data: { list: data, unread }, message: 'success' });
+    return apiSuccess({ list: data, unread });
   } catch (error) {
-    return errResponse(error);
+    return handleApiError(error, '操作失败', 'GET /api/feedback error');
   }
 }
 
@@ -60,10 +47,7 @@ export async function POST(request: Request) {
     const me = await requireAdminUser();
 
     if (!canSubmitFeedback(me.role)) {
-      return NextResponse.json(
-        { code: 1, data: null, message: '当前角色无需提交反馈' },
-        { status: 403 },
-      );
+      return apiError('当前角色无需提交反馈', 403);
     }
 
     const body = await request.json();
@@ -76,16 +60,16 @@ export async function POST(request: Request) {
       body?.satisfaction == null ? null : Number(body.satisfaction);
 
     if (!title || title.length > 50) {
-      return NextResponse.json({ code: 1, data: null, message: '标题不合法' }, { status: 400 });
+      return apiError('标题不合法', 400);
     }
     if (content.length < 10 || content.length > 500) {
-      return NextResponse.json({ code: 1, data: null, message: '描述需 10-500 字' }, { status: 400 });
+      return apiError('描述需 10-500 字', 400);
     }
     if (!VALID_TYPES.includes(type)) {
-      return NextResponse.json({ code: 1, data: null, message: '反馈类型不合法' }, { status: 400 });
+      return apiError('反馈类型不合法', 400);
     }
     if (!VALID_PRIORITIES.includes(priority)) {
-      return NextResponse.json({ code: 1, data: null, message: '紧急程度不合法' }, { status: 400 });
+      return apiError('紧急程度不合法', 400);
     }
 
     const created = await prisma.feedback.create({
@@ -103,8 +87,8 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ code: 0, data: { id: created.id }, message: 'success' });
+    return apiSuccess({ id: created.id });
   } catch (error) {
-    return errResponse(error);
+    return handleApiError(error, '操作失败', 'POST /api/feedback error');
   }
 }

@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/lib/permission';
 import { PERMISSIONS } from '@/constants/permission';
+import { apiSuccess, handleApiError } from '@/lib/api-response';
 
 export async function GET() {
   try {
@@ -12,14 +12,8 @@ export async function GET() {
       select: { id: true, code: true, name: true, description: true },
     });
 
-    return NextResponse.json({ code: 0, data: permissions, message: 'success' });
+    return apiSuccess(permissions);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === '未登录')
-        return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
-      if (error.message === '无权限')
-        return NextResponse.json({ code: 1, data: null, message: '无权限' }, { status: 403 });
-    }
-    return NextResponse.json({ code: 1, data: null, message: '获取权限列表失败' }, { status: 500 });
+    return handleApiError(error, '获取权限列表失败', 'GET /api/permissions error');
   }
 }

@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdminUser } from '@/lib/permission';
 import { visibleSubmitterRoles } from '@/lib/feedback';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,20 +14,20 @@ export async function GET(
     const me = await requireAdminUser();
     const id = Number(params.id);
 
-    if (!Number.isInteger(id)) {
-      return NextResponse.json({ code: 1, data: null, message: '参数错误' }, { status: 400 });
+    if (!Number.isInteger(id) || id <= 0) {
+      return apiError('参数错误', 400);
     }
 
     const feedback = await prisma.feedback.findUnique({ where: { id } });
 
     if (!feedback) {
-      return NextResponse.json({ code: 1, data: null, message: '反馈不存在' }, { status: 404 });
+      return apiError('反馈不存在', 404);
     }
 
     // 只有「严格高于」提交者角色的人能看
     const roles = visibleSubmitterRoles(me.role);
     if (!roles.includes(feedback.submitterRole as never)) {
-      return NextResponse.json({ code: 1, data: null, message: '无权限' }, { status: 403 });
+      return apiError('无权限', 403);
     }
 
     // 标记已读（幂等）
@@ -37,12 +37,8 @@ export async function GET(
       create: { feedbackId: id, userId: me.id },
     });
 
-    return NextResponse.json({ code: 0, data: feedback, message: 'success' });
+    return apiSuccess(feedback);
   } catch (error) {
-    if (error instanceof Error && error.message === '未登录') {
-      return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
-    }
-    console.error('GET /api/feedback/[id] error:', error);
-    return NextResponse.json({ code: 1, data: null, message: '获取详情失败' }, { status: 500 });
+    return handleApiError(error, '获取详情失败', 'GET /api/feedback/[id] error');
   }
 }

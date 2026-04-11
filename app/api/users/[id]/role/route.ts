@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
 import { resolveRoleFromNames } from '@/lib/user-role';
 import { writeAuditLog } from '@/lib/audit-log';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 interface RouteContext {
   params: {
@@ -17,21 +17,20 @@ export async function PATCH(
   try {
     const currentUser = await requireRole(['SUPER_ADMIN']);
     const id = Number(context.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return apiError('用户 ID 不合法', 400);
+    }
+
     const body = await request.json();
     const { role } = body;
 
     if (!role || !['ADMIN', 'USER'].includes(role)) {
-      return NextResponse.json(
-        { code: 1, data: null, message: '角色值无效，只能设置为 ADMIN 或 USER' },
-        { status: 400 },
-      );
+      return apiError('角色值无效，只能设置为 ADMIN 或 USER', 400);
     }
 
     if (id === currentUser.id) {
-      return NextResponse.json(
-        { code: 1, data: null, message: '不能修改自己的角色' },
-        { status: 400 },
-      );
+      return apiError('不能修改自己的角色', 400);
     }
 
     const targetWithRoles = await prisma.user.findUnique({
@@ -55,10 +54,7 @@ export async function PATCH(
     });
 
     if (!targetWithRoles) {
-      return NextResponse.json(
-        { code: 1, data: null, message: '用户不存在' },
-        { status: 404 },
-      );
+      return apiError('用户不存在', 404);
     }
 
     const currentTargetRole = resolveRoleFromNames(
@@ -66,10 +62,7 @@ export async function PATCH(
     );
 
     if (currentTargetRole === 'SUPER_ADMIN') {
-      return NextResponse.json(
-        { code: 1, data: null, message: '不能修改超级管理员的角色' },
-        { status: 403 },
-      );
+      return apiError('不能修改超级管理员的角色', 403);
     }
 
     const targetRole = await prisma.role.findUnique({
@@ -77,10 +70,7 @@ export async function PATCH(
     });
 
     if (!targetRole) {
-      return NextResponse.json(
-        { code: 1, data: null, message: '目标角色不存在' },
-        { status: 400 },
-      );
+      return apiError('目标角色不存在', 400);
     }
 
     await prisma.$transaction([
@@ -139,9 +129,8 @@ export async function PATCH(
       detail: { from: currentTargetRole, to: role },
     });
 
-    return NextResponse.json({
-      code: 0,
-      data: updated
+    return apiSuccess(
+      updated
         ? {
             id: updated.id,
             username: updated.username,
@@ -151,29 +140,15 @@ export async function PATCH(
             role: resolveRoleFromNames(updated.userRoles.map((item) => item.role.name)),
           }
         : null,
-      message: '角色更新成功',
-    });
+      '角色更新成功',
+    );
   } catch (error) {
-    console.error('PATCH /api/users/[id]/role error:', error);
-
     if (error instanceof Error) {
-      if (error.message === '未登录') {
-        return NextResponse.json(
-          { code: 1, data: null, message: '未登录' },
-          { status: 401 },
-        );
-      }
       if (error.message === '无权限') {
-        return NextResponse.json(
-          { code: 1, data: null, message: '无权限，仅超级管理员可操作' },
-          { status: 403 },
-        );
+        return apiError('无权限，仅超级管理员可操作', 403);
       }
     }
 
-    return NextResponse.json(
-      { code: 1, data: null, message: '角色更新失败' },
-      { status: 500 },
-    );
+    return handleApiError(error, '角色更新失败', 'PATCH /api/users/[id]/role error');
   }
 }

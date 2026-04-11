@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/lib/permission';
 import { PERMISSIONS } from '@/constants/permission';
 import { resolveRoleFromNames } from '@/lib/user-role';
 import bcrypt from 'bcryptjs';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
+import { parsePagination } from '@/lib/pagination';
 
 const userSelect = {
   id: true,
@@ -49,10 +50,14 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
 
-    const page = Number(searchParams.get('page') || 1);
-    const pageSize = Number(searchParams.get('pageSize') || 10);
+    const { page, pageSize, skip, take } = parsePagination(searchParams);
     const username = searchParams.get('username') || '';
     const status = searchParams.get('status');
+    const parsedStatus = Number(status);
+
+    if (status !== null && status !== '' && ![0, 1].includes(parsedStatus)) {
+      return apiError('用户状态参数不合法', 400);
+    }
 
     const where = {
       ...(username
@@ -64,7 +69,7 @@ export async function GET(request: Request) {
         : {}),
       ...(status !== null && status !== ''
         ? {
-            status: Number(status),
+            status: parsedStatus,
           }
         : {}),
     };
@@ -76,53 +81,22 @@ export async function GET(request: Request) {
         orderBy: {
           id: 'asc',
         },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        skip,
+        take,
       }),
       prisma.user.count({
         where,
       }),
     ]);
 
-    return NextResponse.json({
-      code: 0,
-      data: {
-        list: list.map(formatUser),
-        total,
-        page,
-        pageSize,
-      },
-      message: 'success',
+    return apiSuccess({
+      list: list.map(formatUser),
+      total,
+      page,
+      pageSize,
     });
   } catch (error) {
-    console.error('GET /api/users error:', error);
-
-    if (error instanceof Error) {
-      if (error.message === '未登录') {
-        return NextResponse.json(
-          { code: 1, data: null, message: '未登录' },
-          { status: 401 },
-        );
-      }
-
-      if (error.message === '无权限') {
-        return NextResponse.json(
-          { code: 1, data: null, message: '无权限' },
-          { status: 403 },
-        );
-      }
-    }
-
-    return NextResponse.json(
-      {
-        code: 1,
-        data: null,
-        message: '获取用户列表失败',
-      },
-      {
-        status: 500,
-      },
-    );
+    return handleApiError(error, '获取用户列表失败', 'GET /api/users error');
   }
 }
 
@@ -132,18 +106,14 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { username, nickname, email, status, role } = body;
+    const userStatus = Number(status ?? 1);
 
     if (!username || !nickname) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户名和昵称不能为空',
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiError('用户名和昵称不能为空', 400);
+    }
+
+    if (![0, 1].includes(userStatus)) {
+      return apiError('用户状态参数不合法', 400);
     }
 
     const existedUser = await prisma.user.findFirst({
@@ -156,16 +126,7 @@ export async function POST(request: Request) {
     });
 
     if (existedUser) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户名或邮箱已存在',
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiError('用户名或邮箱已存在', 400);
     }
 
     const targetRole = await prisma.role.findUnique({
@@ -173,16 +134,7 @@ export async function POST(request: Request) {
     });
 
     if (!targetRole) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '角色不存在',
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiError('角色不存在', 400);
     }
 
     const user = await prisma.user.create({
@@ -191,7 +143,7 @@ export async function POST(request: Request) {
         nickname,
         email: email || null,
         password: await bcrypt.hash('123456', 10),
-        status: Number(status ?? 1),
+        status: userStatus,
         userRoles: {
           create: {
             roleId: targetRole.id,
@@ -201,39 +153,8 @@ export async function POST(request: Request) {
       select: userSelect,
     });
 
-    return NextResponse.json({
-      code: 0,
-      data: formatUser(user),
-      message: '新增成功',
-    });
+    return apiSuccess(formatUser(user), '新增成功');
   } catch (error) {
-    console.error('POST /api/users error:', error);
-
-    if (error instanceof Error) {
-      if (error.message === '未登录') {
-        return NextResponse.json(
-          { code: 1, data: null, message: '未登录' },
-          { status: 401 },
-        );
-      }
-
-      if (error.message === '无权限') {
-        return NextResponse.json(
-          { code: 1, data: null, message: '无权限' },
-          { status: 403 },
-        );
-      }
-    }
-
-    return NextResponse.json(
-      {
-        code: 1,
-        data: null,
-        message: '新增用户失败',
-      },
-      {
-        status: 500,
-      },
-    );
+    return handleApiError(error, '新增用户失败', 'POST /api/users error');
   }
 }

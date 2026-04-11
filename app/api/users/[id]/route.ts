@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolveRoleFromNames } from '@/lib/user-role';
 import { getCurrentAdminUser } from '@/lib/admin-user';
 import { writeAuditLog } from '@/lib/audit-log';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 const userSelect = {
   id: true,
@@ -55,6 +55,10 @@ export async function GET(
   try {
     const id = Number(context.params.id);
 
+    if (!Number.isInteger(id) || id <= 0) {
+      return apiError('用户 ID 不合法', 400);
+    }
+
     const user = await prisma.user.findUnique({
       where: {
         id,
@@ -63,36 +67,12 @@ export async function GET(
     });
 
     if (!user) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户不存在',
-        },
-        {
-          status: 404,
-        },
-      );
+      return apiError('用户不存在', 404);
     }
 
-    return NextResponse.json({
-      code: 0,
-      data: formatUser(user),
-      message: 'success',
-    });
+    return apiSuccess(formatUser(user));
   } catch (error) {
-    console.error('GET /api/users/[id] error:', error);
-
-    return NextResponse.json(
-      {
-        code: 1,
-        data: null,
-        message: '获取用户详情失败',
-      },
-      {
-        status: 500,
-      },
-    );
+    return handleApiError(error, '获取用户详情失败', 'GET /api/users/[id] error');
   }
 }
 
@@ -102,20 +82,21 @@ export async function PUT(
 ) {
   try {
     const id = Number(context.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return apiError('用户 ID 不合法', 400);
+    }
+
     const body = await request.json();
     const { username, nickname, email, status } = body;
+    const nextStatus = Number(status ?? 1);
 
     if (!username || !nickname) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户名和昵称不能为空',
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiError('用户名和昵称不能为空', 400);
+    }
+
+    if (![0, 1].includes(nextStatus)) {
+      return apiError('用户状态参数不合法', 400);
     }
 
     const currentUser = await prisma.user.findUnique({
@@ -125,50 +106,31 @@ export async function PUT(
     });
 
     if (!currentUser) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户不存在',
-        },
-        {
-          status: 404,
-        },
-      );
+      return apiError('用户不存在', 404);
     }
 
 
-const existedUser = await prisma.user.findFirst({
-  where: {
-    AND: [
-      {
-        id: {
-          not: id,
-        },
-      },
-      {
-        OR: [
-          { username },
-          ...(email ? [{ email }] : []),
+    const existedUser = await prisma.user.findFirst({
+      where: {
+        AND: [
+          {
+            id: {
+              not: id,
+            },
+          },
+          {
+            OR: [
+              { username },
+              ...(email ? [{ email }] : []),
+            ],
+          },
         ],
       },
-    ],
-  },
-});
+    });
 
     if (existedUser) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户名或邮箱已存在',
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiError('用户名或邮箱已存在', 400);
     }
-
 
     const updatedUser = await prisma.user.update({
       where: {
@@ -178,13 +140,12 @@ const existedUser = await prisma.user.findFirst({
         username,
         nickname,
         email: email || null,
-        status: Number(status ?? 1),
+        status: nextStatus,
       },
       select: userSelect,
     });
 
     const prevStatus = currentUser.status;
-    const nextStatus = Number(status ?? 1);
     if (prevStatus !== nextStatus) {
       const actor = await getCurrentAdminUser();
       if (actor) {
@@ -199,24 +160,9 @@ const existedUser = await prisma.user.findFirst({
       }
     }
 
-    return NextResponse.json({
-      code: 0,
-      data: formatUser(updatedUser),
-      message: '编辑成功',
-    });
+    return apiSuccess(formatUser(updatedUser), '编辑成功');
   } catch (error) {
-    console.error('PUT /api/users/[id] error:', error);
-
-    return NextResponse.json(
-      {
-        code: 1,
-        data: null,
-        message: '编辑用户失败',
-      },
-      {
-        status: 500,
-      },
-    );
+    return handleApiError(error, '编辑用户失败', 'PUT /api/users/[id] error');
   }
 }
 
@@ -227,6 +173,10 @@ export async function DELETE(
   try {
     const id = Number(context.params.id);
 
+    if (!Number.isInteger(id) || id <= 0) {
+      return apiError('用户 ID 不合法', 400);
+    }
+
     const currentUser = await prisma.user.findUnique({
       where: {
         id,
@@ -234,16 +184,7 @@ export async function DELETE(
     });
 
     if (!currentUser) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户不存在',
-        },
-        {
-          status: 404,
-        },
-      );
+      return apiError('用户不存在', 404);
     }
 
     await prisma.user.delete({
@@ -252,23 +193,8 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json({
-      code: 0,
-      data: true,
-      message: '删除成功',
-    });
+    return apiSuccess(true, '删除成功');
   } catch (error) {
-    console.error('DELETE /api/users/[id] error:', error);
-
-    return NextResponse.json(
-      {
-        code: 1,
-        data: null,
-        message: '删除用户失败',
-      },
-      {
-        status: 500,
-      },
-    );
+    return handleApiError(error, '删除用户失败', 'DELETE /api/users/[id] error');
   }
 }

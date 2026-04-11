@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentAdminAuth, requireAdminUser } from '@/lib/permission';
+import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,37 +8,9 @@ export async function GET() {
   try {
     const authInfo = await getCurrentAdminAuth();
 
-    return NextResponse.json({
-      code: 0,
-      data: authInfo,
-      message: 'success',
-    });
+    return apiSuccess(authInfo);
   } catch (error) {
-    console.error('GET /api/profile error:', error);
-
-    if (error instanceof Error && error.message === '未登录') {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '未登录',
-        },
-        {
-          status: 401,
-        },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        code: 1,
-        data: null,
-        message: '获取个人信息失败',
-      },
-      {
-        status: 500,
-      },
-    );
+    return handleApiError(error, '获取个人信息失败', 'GET /api/profile error');
   }
 }
 
@@ -50,16 +22,7 @@ export async function PUT(request: Request) {
     const { nickname, email } = body;
 
     if (!nickname) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '昵称不能为空',
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiError('昵称不能为空', 400);
     }
 
     const existedUser = email
@@ -74,16 +37,7 @@ export async function PUT(request: Request) {
       : null;
 
     if (existedUser) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '邮箱已存在',
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiError('邮箱已存在', 400);
     }
 
     const user = await prisma.user.update({
@@ -105,36 +59,8 @@ export async function PUT(request: Request) {
       },
     });
 
-    return NextResponse.json({
-      code: 0,
-      data: user,
-      message: '保存成功',
-    });
+    return apiSuccess(user, '保存成功');
   } catch (error) {
-    console.error('PUT /api/profile error:', error);
-
-    if (error instanceof Error && error.message === '未登录') {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '未登录',
-        },
-        {
-          status: 401,
-        },
-      );
-    }
-
-    return NextResponse.json(
-      {
-        code: 1,
-        data: null,
-        message: '更新个人信息失败',
-      },
-      {
-        status: 500,
-      },
-    );
+    return handleApiError(error, '更新个人信息失败', 'PUT /api/profile error');
   }
 }

@@ -1,5 +1,6 @@
 export const ADMIN_SESSION_COOKIE = 'admin_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+const DEV_SESSION_SECRET = 'next-admin-demo-dev-secret';
 
 export interface AdminSessionPayload {
   userId: number;
@@ -10,7 +11,34 @@ export interface AdminSessionPayload {
 }
 
 function getSessionSecret() {
-  return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'next-admin-demo-dev-secret';
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+
+  if (secret) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('生产环境必须配置 AUTH_SECRET');
+  }
+
+  return DEV_SESSION_SECRET;
+}
+
+function timingSafeEqualString(a: string, b: string) {
+  const aBuffer = Buffer.from(a);
+  const bBuffer = Buffer.from(b);
+
+  if (aBuffer.length !== bBuffer.length) {
+    return false;
+  }
+
+  let diff = 0;
+
+  for (let i = 0; i < aBuffer.length; i += 1) {
+    diff |= aBuffer[i] ^ bBuffer[i];
+  }
+
+  return diff === 0;
 }
 
 function toBase64Url(input: string) {
@@ -66,7 +94,7 @@ export async function verifyAdminSessionToken(token?: string | null) {
 
   const expectedSignature = await signSessionPayload(encodedPayload);
 
-  if (signature !== expectedSignature) {
+  if (!timingSafeEqualString(signature, expectedSignature)) {
     return null;
   }
 

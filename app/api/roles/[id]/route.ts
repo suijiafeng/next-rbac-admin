@@ -1,19 +1,7 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/lib/permission';
 import { PERMISSIONS } from '@/constants/permission';
-
-function apiError(message: string, status: number) {
-  return NextResponse.json({ code: 1, data: null, message }, { status });
-}
-
-function handleError(error: unknown, fallbackMessage: string) {
-  if (error instanceof Error) {
-    if (error.message === '未登录') return apiError('未登录', 401);
-    if (error.message === '无权限') return apiError('无权限', 403);
-  }
-  return apiError(fallbackMessage, 500);
-}
+import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 export async function PUT(
   request: Request,
@@ -24,6 +12,11 @@ export async function PUT(
 
     const { id } = await params;
     const roleId = Number(id);
+
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      return apiError('角色 ID 不合法', 400);
+    }
+
     const body = await request.json();
     const { description, permissionIds } = body as {
       description?: string;
@@ -63,9 +56,8 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({
-      code: 0,
-      data: {
+    return apiSuccess(
+      {
         id: updated!.id,
         name: updated!.name,
         description: updated!.description,
@@ -73,10 +65,10 @@ export async function PUT(
         userCount: updated!._count.userRoles,
         permissions: updated!.rolePermissions.map((rp) => rp.permission),
       },
-      message: '更新成功',
-    });
+      '更新成功',
+    );
   } catch (error) {
-    return handleError(error, '更新角色失败');
+    return handleApiError(error, '更新角色失败', 'PUT /api/roles/[id] error');
   }
 }
 
@@ -90,6 +82,10 @@ export async function DELETE(
     const { id } = await params;
     const roleId = Number(id);
 
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      return apiError('角色 ID 不合法', 400);
+    }
+
     const role = await prisma.role.findUnique({
       where: { id: roleId },
       include: { _count: { select: { userRoles: true } } },
@@ -100,8 +96,8 @@ export async function DELETE(
 
     await prisma.role.delete({ where: { id: roleId } });
 
-    return NextResponse.json({ code: 0, data: null, message: '删除成功' });
+    return apiSuccess(null, '删除成功');
   } catch (error) {
-    return handleError(error, '删除角色失败');
+    return handleApiError(error, '删除角色失败', 'DELETE /api/roles/[id] error');
   }
 }

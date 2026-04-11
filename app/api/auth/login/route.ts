@@ -8,6 +8,7 @@ import {
 } from '@/lib/session';
 import { getPermissionsByRole, type Role } from '@/lib/permission';
 import { resolveRoleFromNames } from '@/lib/user-role';
+import { apiError } from '@/lib/api-response';
 
 export async function POST(request: Request) {
   try {
@@ -15,16 +16,7 @@ export async function POST(request: Request) {
     const { username, password } = body;
 
     if (!username || !password) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户名和密码不能为空',
-        },
-        {
-          status: 400,
-        },
-      );
+      return apiError('用户名和密码不能为空', 400);
     }
 
     const adminUser = await prisma.user.findFirst({
@@ -43,32 +35,17 @@ export async function POST(request: Request) {
     });
 
     if (!adminUser || !adminUser.password) {
-      return NextResponse.json(
-        { code: 1, data: null, message: '用户名或密码错误' },
-        { status: 401 },
-      );
+      return apiError('用户名或密码错误', 401);
     }
 
     if (adminUser.status !== 1) {
-      return NextResponse.json(
-        { code: 1, data: null, message: '账号待审核，请联系管理员' },
-        { status: 403 },
-      );
+      return apiError('账号待审核，请联系管理员', 403);
     }
 
     const isPasswordValid = await bcrypt.compare(password, adminUser.password);
 
     if (!isPasswordValid) {
-      return NextResponse.json(
-        {
-          code: 1,
-          data: null,
-          message: '用户名或密码错误',
-        },
-        {
-          status: 401,
-        },
-      );
+      return apiError('用户名或密码错误', 401);
     }
 
     const role = resolveRoleFromNames(adminUser.userRoles.map((item) => item.role.name)) as Role;
@@ -78,10 +55,7 @@ export async function POST(request: Request) {
       where: { key: 'maintenance_mode' },
     });
     if (maintenanceSetting?.value === 'true' && role !== 'SUPER_ADMIN') {
-      return NextResponse.json(
-        { code: 1, data: null, message: '系统处于维护模式，仅超级管理员可登录' },
-        { status: 503 },
-      );
+      return apiError('系统处于维护模式，仅超级管理员可登录', 503);
     }
 
     const response = NextResponse.json({
@@ -113,15 +87,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('POST /api/auth/login error:', error);
 
-    return NextResponse.json(
-      {
-        code: 1,
-        data: null,
-        message: '登录失败',
-      },
-      {
-        status: 500,
-      },
-    );
+    return apiError('登录失败', 500);
   }
 }

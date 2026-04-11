@@ -1,19 +1,7 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/lib/permission';
 import { PERMISSIONS } from '@/constants/permission';
-
-function apiError(message: string, status: number) {
-  return NextResponse.json({ code: 1, data: null, message }, { status });
-}
-
-function handleError(error: unknown, fallbackMessage: string) {
-  if (error instanceof Error) {
-    if (error.message === '未登录') return apiError('未登录', 401);
-    if (error.message === '无权限') return apiError('无权限', 403);
-  }
-  return apiError(fallbackMessage, 500);
-}
+import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 export async function GET() {
   try {
@@ -44,9 +32,9 @@ export async function GET() {
       permissions: r.rolePermissions.map((rp) => rp.permission),
     }));
 
-    return NextResponse.json({ code: 0, data, message: 'success' });
+    return apiSuccess(data);
   } catch (error) {
-    return handleError(error, '获取角色列表失败');
+    return handleApiError(error, '获取角色列表失败', 'GET /api/roles error');
   }
 }
 
@@ -88,9 +76,8 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({
-      code: 0,
-      data: {
+    return apiSuccess(
+      {
         id: role.id,
         name: role.name,
         description: role.description,
@@ -98,9 +85,9 @@ export async function POST(request: Request) {
         userCount: role._count.userRoles,
         permissions: role.rolePermissions.map((rp) => rp.permission),
       },
-      message: '创建成功',
-    });
+      '创建成功',
+    );
   } catch (error) {
-    return handleError(error, '创建角色失败');
+    return handleApiError(error, '创建角色失败', 'POST /api/roles error');
   }
 }

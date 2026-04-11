@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
+import { apiSuccess, handleApiError } from '@/lib/api-response';
+import { parsePagination } from '@/lib/pagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,8 +10,10 @@ export async function GET(request: Request) {
     await requireRole(['SUPER_ADMIN']);
 
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, Number(searchParams.get('page') || 1));
-    const pageSize = Math.min(100, Math.max(1, Number(searchParams.get('pageSize') || 20)));
+    const { page, pageSize, skip, take } = parsePagination(searchParams, {
+      defaultPageSize: 20,
+      maxPageSize: 100,
+    });
     const action = searchParams.get('action') || '';
 
     const where = action ? { action } : {};
@@ -19,27 +22,14 @@ export async function GET(request: Request) {
       prisma.auditLog.findMany({
         where,
         orderBy: { id: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        skip,
+        take,
       }),
       prisma.auditLog.count({ where }),
     ]);
 
-    return NextResponse.json({
-      code: 0,
-      data: { list, total, page, pageSize },
-      message: 'success',
-    });
+    return apiSuccess({ list, total, page, pageSize });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === '未登录') {
-        return NextResponse.json({ code: 1, data: null, message: '未登录' }, { status: 401 });
-      }
-      if (error.message === '无权限') {
-        return NextResponse.json({ code: 1, data: null, message: '无权限' }, { status: 403 });
-      }
-    }
-    console.error('GET /api/admin/audit-logs error:', error);
-    return NextResponse.json({ code: 1, data: null, message: '获取审计日志失败' }, { status: 500 });
+    return handleApiError(error, '获取审计日志失败', 'GET /api/admin/audit-logs error');
   }
 }

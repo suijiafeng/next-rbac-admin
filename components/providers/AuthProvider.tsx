@@ -8,6 +8,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { usePathname } from 'next/navigation';
 import type { AuthInfo, ProfileResponse } from '@/types/auth';
 import type { PermissionValue } from '@/constants/permission';
 
@@ -31,6 +32,7 @@ export function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const [authInfo, setAuthInfo] = useState<AuthInfo>(defaultAuthInfo);
   const [loading, setLoading] = useState(true);
 
@@ -70,8 +72,14 @@ export function AuthProvider({
   }, [clearAuth]);
 
   useEffect(() => {
+    if (pathname === '/login' || pathname === '/register') {
+      clearAuth();
+      setLoading(false);
+      return;
+    }
+
     refreshAuth();
-  }, [refreshAuth]);
+  }, [clearAuth, pathname, refreshAuth]);
 
   const hasPermission = useCallback(
     (permission: PermissionValue) => {
