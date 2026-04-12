@@ -16,6 +16,7 @@ model User {
   password   String
   nickname   String?
   email      String?    @unique
+  avatar     String?    // 头像 URL（/avatars/{userId}.{ext} 或外部链接）
   status     Int        @default(1) // 1:启用 0:禁用
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
@@ -120,6 +121,19 @@ model Feedback {
   @@map("feedbacks")
 }
 
+/// 登录/注册失败次数追踪（数据库持久化，多实例/Serverless 环境下安全可靠）
+/// key 可以是用户名（登录限流）或 IP 地址（注册限流）
+model LoginAttempt {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique // 用户名 或 "ip:x.x.x.x"
+  count     Int      @default(0)
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+  @@map("login_attempts")
+}
+
 /// 每个接收者对某条反馈的已读记录（未读角标按接收者维度计算）
 model FeedbackRead {
   id         Int      @id @default(autoincrement())
@@ -132,4 +146,22 @@ model FeedbackRead {
   @@unique([feedbackId, userId])
   @@index([userId])
   @@map("feedback_reads")
+}
+
+/// 公告：由 ADMIN/SUPER_ADMIN 发布，展示在仪表盘
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  publisherId Int
+  publisherUsername String
+  active      Boolean  @default(true)   // 是否生效
+  startsAt    DateTime @default(now())  // 生效时间
+  expiresAt   DateTime?                 // 过期时间（null 表示永不过期）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+  @@index([startsAt])
+  @@map("announcements")
 }
