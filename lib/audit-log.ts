@@ -3,9 +3,13 @@ import { prisma } from '@/lib/prisma';
 export type AuditAction =
   | 'role.grant_admin'
   | 'role.revoke_admin'
+  | 'user.create'
+  | 'user.delete'
   | 'user.suspend'
   | 'user.unsuspend'
   | 'user.reset_password'
+  | 'user.login'
+  | 'user.password_change'
   | 'settings.update';
 
 export interface AuditLogInput {
