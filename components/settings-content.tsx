@@ -5,6 +5,7 @@ import {
   Alert,
   Button,
   Card,
+  DatePicker,
   Descriptions,
   Empty,
   Form,
@@ -25,6 +26,7 @@ import {
 } from 'antd';
 import {
   AuditOutlined,
+  DownloadOutlined,
   GlobalOutlined,
   InfoCircleOutlined,
   KeyOutlined,
@@ -67,6 +69,8 @@ interface AuditLogItem {
 const settingsLabelClassName = 'inline-block w-[110px]';
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+  'user.create': { label: '新增用户', color: 'cyan' },
+  'user.delete': { label: '删除用户', color: 'red' },
   'role.grant_admin': { label: '授予管理员', color: 'blue' },
   'role.revoke_admin': { label: '撤销管理员', color: 'orange' },
   'user.suspend': { label: '暂停用户', color: 'warning' },
@@ -192,8 +196,8 @@ const getUserPermissionColumns = (options: {
               </Button>
             </Popconfirm>
             <Popconfirm
-              title="重置该用户密码为默认值 123456？"
-              description="重置后请通知用户尽快修改密码"
+              title="确认重置该用户密码？"
+              description="重置后会生成随机临时密码，请通知用户尽快修改"
               onConfirm={() => onResetPassword(user)}
               okText="确认"
               cancelText="取消"
@@ -247,6 +251,8 @@ const SettingsContent = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditFilter, setAuditFilter] = useState<string>('');
+  const [auditActorFilter, setAuditActorFilter] = useState<string>('');
+  const [auditDateRange, setAuditDateRange] = useState<[string, string] | null>(null);
   const [auditPagination, setAuditPagination] = useState({ current: 1, pageSize: 20, total: 0 });
   const [auditDetail, setAuditDetail] = useState<AuditLogItem | null>(null);
 
@@ -318,11 +324,24 @@ const SettingsContent = () => {
   }, []);
 
   const loadAuditLogs = useCallback(
-    async (page = 1, pageSize = 20, action = auditFilter) => {
+    async (
+      page = 1,
+      pageSize = 20,
+      action = auditFilter,
+      actorUsername = auditActorFilter,
+      dateRange = auditDateRange,
+    ) => {
       try {
         setAuditLoading(true);
         const result = await request<PageResponse<AuditLogItem>>('/api/admin/audit-logs', {
-          params: { page, pageSize, action },
+          params: {
+            page,
+            pageSize,
+            action,
+            actorUsername,
+            startDate: dateRange?.[0] ?? '',
+            endDate: dateRange?.[1] ?? '',
+          },
         });
         setAuditLogs(result.data.list);
         setAuditPagination({ current: result.data.page, pageSize: result.data.pageSize, total: result.data.total });
@@ -332,7 +351,7 @@ const SettingsContent = () => {
         setAuditLoading(false);
       }
     },
-    [auditFilter],
+    [auditFilter, auditActorFilter, auditDateRange],
   );
 
   useEffect(() => {
@@ -889,29 +908,103 @@ const SettingsContent = () => {
             ),
             children: (
               <Card variant="borderless">
-                <Space className={styles.adminToolbar} wrap>
+                <Space className={styles.adminToolbar} wrap style={{ marginBottom: 12 }}>
+                  {/* 动作筛选 */}
                   <Select
                     allowClear
                     placeholder="按动作筛选"
-                    style={{ width: 200 }}
+                    style={{ width: 180 }}
                     value={auditFilter || undefined}
                     onChange={(v) => {
                       const next = v || '';
                       setAuditFilter(next);
-                      loadAuditLogs(1, auditPagination.pageSize, next);
+                      loadAuditLogs(1, auditPagination.pageSize, next, auditActorFilter, auditDateRange);
                     }}
                     options={Object.entries(ACTION_LABELS).map(([value, meta]) => ({
                       value,
                       label: meta.label,
                     }))}
                   />
-                  <Button
-                    icon={<ReloadOutlined />}
-                    onClick={() => loadAuditLogs(auditPagination.current, auditPagination.pageSize, auditFilter)}
-                    loading={auditLoading}
-                  >
-                    刷新
-                  </Button>
+                  {/* 操作人筛选 */}
+                  <Input
+                    allowClear
+                    placeholder="操作人用户名"
+                    style={{ width: 150 }}
+                    value={auditActorFilter}
+                    onChange={(e) => setAuditActorFilter(e.target.value)}
+                    onPressEnter={() => loadAuditLogs(1, auditPagination.pageSize, auditFilter, auditActorFilter, auditDateRange)}
+                  />
+                  {/* 时间范围 */}
+                  <DatePicker.RangePicker
+                    style={{ width: 240 }}
+                    onChange={(_, strings) => {
+                      const range = strings[0] && strings[1] ? [strings[0], strings[1]] as [string, string] : null;
+                      setAuditDateRange(range);
+                      loadAuditLogs(1, auditPagination.pageSize, auditFilter, auditActorFilter, range);
+                    }}
+                    format="YYYY-MM-DD"
+                    placeholder={['开始日期', '结束日期']}
+                  />
+                  <Space size={8}>
+                    <Button
+                      type="primary"
+                      onClick={() => loadAuditLogs(1, auditPagination.pageSize, auditFilter, auditActorFilter, auditDateRange)}
+                      loading={auditLoading}
+                    >
+                      查询
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setAuditFilter('');
+                        setAuditActorFilter('');
+                        setAuditDateRange(null);
+                        loadAuditLogs(1, auditPagination.pageSize, '', '', null);
+                      }}
+                    >
+                      重置
+                    </Button>
+                    <Button
+                      icon={<DownloadOutlined />}
+                      onClick={() => {
+                        if (auditLogs.length === 0) { message.info('暂无数据'); return; }
+                        const headers = ['ID', '时间', '操作人', '动作', '对象类型', '对象', '详情'];
+                        const escape = (v: unknown) => {
+                          const s = v == null ? '' : String(v);
+                          if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+                          return s;
+                        };
+                        const lines = [
+                          headers.join(','),
+                          ...auditLogs.map((r) => [
+                            r.id,
+                            formatDateTime(r.createdAt),
+                            r.actorUsername,
+                            ACTION_LABELS[r.action]?.label ?? r.action,
+                            r.targetType,
+                            r.targetLabel ?? r.targetId ?? '',
+                            r.detail ?? '',
+                          ].map(escape).join(',')),
+                        ];
+                        const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        message.success(`已导出 ${auditLogs.length} 条`);
+                      }}
+                    >
+                      导出 CSV
+                    </Button>
+                    <Button
+                      icon={<ReloadOutlined />}
+                      onClick={() => loadAuditLogs(auditPagination.current, auditPagination.pageSize, auditFilter, auditActorFilter, auditDateRange)}
+                      loading={auditLoading}
+                    >
+                      刷新
+                    </Button>
+                  </Space>
                 </Space>
                 <Table
                   rowKey="id"
@@ -923,8 +1016,10 @@ const SettingsContent = () => {
                     current: auditPagination.current,
                     pageSize: auditPagination.pageSize,
                     total: auditPagination.total,
-                    showSizeChanger: false,
-                    onChange: (page, pageSize) => loadAuditLogs(page, pageSize, auditFilter),
+                    showSizeChanger: true,
+                    showTotal: (t) => `共 ${t} 条`,
+                    pageSizeOptions: ['20', '50', '100'],
+                    onChange: (page, pageSize) => loadAuditLogs(page, pageSize, auditFilter, auditActorFilter, auditDateRange),
                   }}
                 />
               </Card>
