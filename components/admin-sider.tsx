@@ -10,6 +10,8 @@ import {
   MessageOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  BellOutlined,
+  NotificationOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -75,6 +77,20 @@ const menuConfig: MenuItemConfig[] = [
     label: '意见反馈',
     group: '其他',
     roles: ['USER', 'ADMIN'],
+  },
+  {
+    key: '/announcements',
+    icon: <NotificationOutlined />,
+    label: '公告管理',
+    group: '系统管理',
+    roles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/notifications',
+    icon: <BellOutlined />,
+    label: '通知中心',
+    group: '其他',
+    roles: ['SUPER_ADMIN'],
   },
 ];
 

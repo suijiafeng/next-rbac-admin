@@ -1,14 +1,16 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Card,
   Col,
+  Divider,
   Progress,
   Row,
   Segmented,
   Space,
+  Spin,
   Table,
   Tag,
   Timeline,
@@ -24,8 +26,11 @@ import {
   ExclamationCircleFilled,
   GlobalOutlined,
   InfoCircleFilled,
+  LockOutlined,
   ThunderboltOutlined,
+  UserOutlined,
   WarningFilled,
+  WarningOutlined,
 } from '@ant-design/icons';
 import {
   Area,
@@ -42,11 +47,22 @@ import {
   YAxis,
 } from 'recharts';
 import styles from '@/components/monitoring-content.module.css';
+import { request } from '@/lib/request';
 
 const { Text, Title } = Typography;
 
 type MonitoringPeriod = '1h' | '24h' | '7d';
 type KpiMetricKey = 'pv' | 'uv' | 'conversion' | 'latency' | 'errors' | 'availability';
+
+interface StatsData {
+  userCount: number;
+  activeUserCount: number;
+  roleCount: number;
+  permissionCount: number;
+  newUsersTrend: Array<{ date: string; count: number }>;
+  auditActionCounts: Array<{ action: string; count: number }>;
+  loginFailCount: number;
+}
 
 interface TrendDataPoint {
   time: string;
@@ -257,6 +273,25 @@ const MonitoringTrendLegend = () => {
 
 const MonitoringContent = () => {
   const [period, setPeriod] = useState<MonitoringPeriod>('24h');
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await request<StatsData>('/api/admin/stats');
+      setStats(res.data);
+    } catch {
+      // 静默失败
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+    const timer = setInterval(loadStats, 60_000);
+    return () => clearInterval(timer);
+  }, [loadStats]);
 
   const periodMetrics = kpiByPeriod[period];
   const trendData = useMemo(() => trendDataMap[period], [period]);
@@ -278,6 +313,73 @@ const MonitoringContent = () => {
         />
       </div>
 
+      {/* 真实系统指标 */}
+      {statsLoading ? (
+        <div style={{ textAlign: 'center', padding: '20px 0' }}><Spin /></div>
+      ) : (
+        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+          {[
+            {
+              label: '总用户数',
+              value: stats?.userCount ?? 0,
+              sub: `活跃 ${stats?.activeUserCount ?? 0}`,
+              icon: <UserOutlined />,
+              color: '#1677ff',
+            },
+            {
+              label: '角色 / 权限',
+              value: `${stats?.roleCount ?? 0} / ${stats?.permissionCount ?? 0}`,
+              sub: '角色数 / 权限条目',
+              icon: <LockOutlined />,
+              color: '#722ed1',
+            },
+            {
+              label: '近30天新增用户',
+              value: stats?.newUsersTrend.reduce((a, b) => a + b.count, 0) ?? 0,
+              sub: '30天注册合计',
+              icon: <ArrowUpOutlined />,
+              color: '#52c41a',
+            },
+            {
+              label: '登录失败 (30d)',
+              value: stats?.loginFailCount ?? 0,
+              sub: (stats?.loginFailCount ?? 0) > 50 ? '⚠️ 需关注' : '正常',
+              icon: <WarningOutlined />,
+              color: (stats?.loginFailCount ?? 0) > 50 ? '#ff4d4f' : '#faad14',
+            },
+          ].map((item) => (
+            <Col key={item.label} xs={24} sm={12} xl={6}>
+              <Card bordered={false} size="small">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 8,
+                      background: item.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: 18,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 20, fontWeight: 700 }}>{item.value}</div>
+                    <Text type="secondary" style={{ fontSize: 11 }}>{item.label} · {item.sub}</Text>
+                  </div>
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
+
+      <Divider style={{ margin: '4px 0 16px', borderColor: 'var(--border-subtle)' }} />
+      <Text type="secondary" style={{ fontSize: 12, marginBottom: 12, display: 'block' }}>以下为模拟监控演示数据</Text>
       <Row gutter={[16, 16]} className={styles.stretchRow}>
         {kpiCardConfigList.map((cardConfig) => {
           const metricValue = periodMetrics[cardConfig.metricKey];

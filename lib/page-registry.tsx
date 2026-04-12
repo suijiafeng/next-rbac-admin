@@ -8,6 +8,8 @@ import PermissionsContent from '@/components/permissions-content';
 import SettingsContent from '@/components/settings-content';
 import ProfileContent from '@/components/profile-content';
 import FeedbackContent from '@/components/feedback-content';
+import NotificationsContent from '@/components/notifications-content';
+import AnnouncementsContent from '@/components/announcements-content';
 import PermissionGuard from '@/components/permission-guard';
 import NoPermission from '@/components/403/page';
 import { Role, PERMISSIONS, type PermissionValue } from '@/constants/permission';
@@ -48,8 +50,15 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   },
   '/feedback': {
     Component: FeedbackContent,
-    // 仅非顶层角色可提交反馈；超级管理员通过顶部通知查看，无需此页
     guard: { allowedRoles: [Role.ADMIN, Role.USER], fallback: <NoPermission /> },
+  },
+  '/notifications': {
+    Component: NotificationsContent,
+    guard: { allowedRoles: [Role.SUPER_ADMIN], fallback: <NoPermission /> },
+  },
+  '/announcements': {
+    Component: AnnouncementsContent,
+    guard: { allowedRoles: [Role.SUPER_ADMIN, Role.ADMIN], fallback: <NoPermission /> },
   },
 };
 
