@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
+  Avatar,
   Button,
   Card,
   Col,
@@ -10,15 +11,23 @@ import {
   message,
   Row,
   Space,
+  Table,
+  Tabs,
+  Tag,
   Tooltip,
   Typography,
+  Upload,
 } from 'antd';
 import type { FormInstance, Rule } from 'antd/es/form';
+import type { ColumnsType } from 'antd/es/table';
+import type { UploadProps } from 'antd/es/upload';
 import {
+  CameraOutlined,
   CheckOutlined,
   CloseOutlined,
   EditOutlined,
   ExclamationCircleFilled,
+  LockOutlined,
 } from '@ant-design/icons';
 
 import { request } from '@/lib/request';
@@ -30,8 +39,22 @@ interface ProfileInfo {
   username: string;
   nickname: string;
   email: string | null;
+  avatar: string | null;
   role: string;
   status: number;
+  createdAt: string;
+}
+
+interface ProfileApiResponse {
+  user: ProfileInfo;
+  role: string;
+  permissions: string[];
+}
+
+interface LoginHistoryItem {
+  id: number;
+  action: string;
+  detail: string | null;
   createdAt: string;
 }
 
@@ -143,9 +166,93 @@ function EditableRow({
   );
 }
 
+const ACTION_LABEL: Record<string, string> = {
+  'user.login': '登录',
+  'user.password_change': '修改密码',
+};
+
+function LoginHistoryTab() {
+  const [list, setList] = useState<LoginHistoryItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+
+  const load = useCallback(async (p = 1) => {
+    setLoading(true);
+    try {
+      const res = await request<{ list: LoginHistoryItem[]; total: number }>(
+        '/api/profile/login-history',
+        { params: { page: p, pageSize } },
+      );
+      setList(res.data.list);
+      setTotal(res.data.total);
+      setPage(p);
+    } catch {
+      message.error('获取操作记录失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const columns: ColumnsType<LoginHistoryItem> = [
+    {
+      title: '操作类型',
+      dataIndex: 'action',
+      width: 120,
+      render: (v: string) => (
+        <Tag color={v === 'user.login' ? 'green' : 'gold'}>
+          {ACTION_LABEL[v] ?? v}
+        </Tag>
+      ),
+    },
+    {
+      title: 'IP 地址',
+      key: 'ip',
+      width: 140,
+      render: (_: unknown, record: LoginHistoryItem) => {
+        try {
+          const detail = record.detail ? JSON.parse(record.detail) as { ip?: string } : null;
+          return <Text style={{ fontSize: 13 }}>{detail?.ip ?? '-'}</Text>;
+        } catch {
+          return '-';
+        }
+      },
+    },
+    {
+      title: '操作时间',
+      dataIndex: 'createdAt',
+      render: (v: string) => new Date(v).toLocaleString('zh-CN'),
+    },
+  ];
+
+  return (
+    <Card title="操作记录" bordered={false}>
+      <Table
+        rowKey="id"
+        size="small"
+        loading={loading}
+        dataSource={list}
+        columns={columns}
+        pagination={{
+          current: page,
+          pageSize,
+          total,
+          showTotal: (t) => `共 ${t} 条`,
+          onChange: (p) => load(p),
+          size: 'small',
+        }}
+      />
+    </Card>
+  );
+}
+
 export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
   const [editingField, setEditingField] = useState<EditableField | null>(null);
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [, forceUpdate] = useState(0); // 触发重渲以显示校验错误
@@ -155,8 +262,8 @@ export default function ProfilePage() {
   const getProfile = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await request<ProfileInfo>('/api/profile');
-      const user = result.data;
+      const result = await request<ProfileApiResponse>('/api/profile');
+      const user = result.data.user;
       setProfile(user);
       form.setFieldsValue({
         nickname: user.nickname,
@@ -227,6 +334,25 @@ export default function ProfilePage() {
     }
   };
 
+  const handleAvatarUpload: UploadProps['customRequest'] = async ({ file, onSuccess, onError }) => {
+    setAvatarLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file as File);
+      const res = await fetch('/api/profile/avatar', { method: 'POST', body: formData });
+      const data = await res.json() as { code: number; data: { avatarUrl: string }; message: string };
+      if (data.code !== 0) throw new Error(data.message);
+      message.success('头像更新成功');
+      setProfile((prev) => prev ? { ...prev, avatar: data.data.avatarUrl } : prev);
+      onSuccess?.(data);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '上传失败');
+      onError?.(error instanceof Error ? error : new Error('upload error'));
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
   const displayValue = (key: keyof ProfileInfo) => {
     if (!profile) return '-';
     const v = profile[key];
@@ -260,33 +386,184 @@ export default function ProfilePage() {
       { label: '创建时间', key: 'createdAt' },
     ];
 
+  const displayName = profile?.nickname || profile?.username || '?';
+  const avatarSrc = profile?.avatar || undefined;
+
+  const infoTab = (
+    <Card loading={loading} bordered={false}>
+      {/* 头像区域 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <Avatar
+            size={72}
+            src={avatarSrc}
+            style={{ background: '#1677ff', fontSize: 28, fontWeight: 700 }}
+          >
+            {!avatarSrc && displayName[0]?.toUpperCase()}
+          </Avatar>
+          <Upload
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            showUploadList={false}
+            customRequest={handleAvatarUpload}
+          >
+            <Button
+              type="text"
+              size="small"
+              loading={avatarLoading}
+              icon={<CameraOutlined />}
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                background: 'var(--color-primary)',
+                color: '#fff',
+                padding: 0,
+                minWidth: 0,
+                fontSize: 11,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            />
+          </Upload>
+        </div>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>{displayName}</div>
+          <Text type="secondary" style={{ fontSize: 12 }}>点击头像右下角相机图标上传新头像（JPG/PNG/WebP，≤2MB）</Text>
+        </div>
+      </div>
+
+      <Form form={form} onFieldsChange={() => forceUpdate((n) => n + 1)}>
+        <Row gutter={[24, 20]}>
+          {rows.map((row) => (
+            <Col span={12} key={row.key}>
+              {row.editable && editingField === row.editable ? (
+                <EditableRow
+                  label={row.label}
+                  fieldName={row.editable}
+                  rules={row.rules || []}
+                  form={form}
+                  submitLoading={submitLoading}
+                  onConfirm={() => handleConfirm(row.editable!)}
+                  onCancel={() => handleCancel(row.editable!)}
+                />
+              ) : (
+                <ReadonlyRow
+                  label={row.label}
+                  value={row.editable ? (form.getFieldValue(row.editable) || displayValue(row.key)) : displayValue(row.key)}
+                  onEdit={row.editable && editingField === null ? () => handleEdit(row.editable!) : undefined}
+                />
+              )}
+            </Col>
+          ))}
+        </Row>
+      </Form>
+    </Card>
+  );
+
   return (
-      <Card loading={loading} title="个人信息">
-        <Form form={form} onFieldsChange={() => forceUpdate((n) => n + 1)}>
-          <Row gutter={[24, 20]}>
-            {rows.map((row) => (
-              <Col span={12} key={row.key}>
-                {row.editable && editingField === row.editable ? (
-                  <EditableRow
-                    label={row.label}
-                    fieldName={row.editable}
-                    rules={row.rules || []}
-                    form={form}
-                    submitLoading={submitLoading}
-                    onConfirm={() => handleConfirm(row.editable!)}
-                    onCancel={() => handleCancel(row.editable!)}
-                  />
-                ) : (
-                  <ReadonlyRow
-                    label={row.label}
-                    value={row.editable ? (form.getFieldValue(row.editable) || displayValue(row.key)) : displayValue(row.key)}
-                    onEdit={row.editable && editingField === null ? () => handleEdit(row.editable!) : undefined}
-                  />
-                )}
-              </Col>
-            ))}
-          </Row>
-        </Form>
-      </Card>
+    <Tabs
+      defaultActiveKey="info"
+      items={[
+        { key: 'info', label: '个人信息', children: infoTab },
+        { key: 'password', label: '修改密码', children: <ChangePasswordCard /> },
+        { key: 'history', label: '操作记录', children: <LoginHistoryTab /> },
+      ]}
+    />
+  );
+}
+
+interface ChangePasswordFormValues {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+function ChangePasswordCard() {
+  const [pwForm] = Form.useForm<ChangePasswordFormValues>();
+  const [pwLoading, setPwLoading] = useState(false);
+
+  const handleChangePassword = async () => {
+    try {
+      const values = await pwForm.validateFields();
+      setPwLoading(true);
+      await request('/api/profile/password', {
+        method: 'POST',
+        data: {
+          oldPassword: values.oldPassword,
+          newPassword: values.newPassword,
+        },
+      });
+      message.success('密码修改成功');
+      pwForm.resetFields();
+    } catch (error) {
+      if (error instanceof Error) {
+        message.error(error.message);
+      }
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
+  return (
+    <Card
+      title={
+        <Space>
+          <LockOutlined />
+          修改密码
+        </Space>
+      }
+    >
+      <Form
+        form={pwForm}
+        layout="vertical"
+        style={{ maxWidth: 360 }}
+        autoComplete="off"
+      >
+        <Form.Item
+          label="旧密码"
+          name="oldPassword"
+          rules={[{ required: true, message: '请输入旧密码' }]}
+        >
+          <Input.Password placeholder="请输入当前密码" />
+        </Form.Item>
+        <Form.Item
+          label="新密码"
+          name="newPassword"
+          rules={[
+            { required: true, message: '请输入新密码' },
+            { min: 6, message: '密码长度不能少于 6 位' },
+          ]}
+        >
+          <Input.Password placeholder="请输入新密码（至少 6 位）" />
+        </Form.Item>
+        <Form.Item
+          label="确认新密码"
+          name="confirmPassword"
+          dependencies={['newPassword']}
+          rules={[
+            { required: true, message: '请再次输入新密码' },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('newPassword') === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(new Error('两次输入的密码不一致'));
+              },
+            }),
+          ]}
+        >
+          <Input.Password placeholder="请再次输入新密码" />
+        </Form.Item>
+        <Form.Item style={{ marginBottom: 0 }}>
+          <Button type="primary" loading={pwLoading} onClick={handleChangePassword}>
+            确认修改
+          </Button>
+        </Form.Item>
+      </Form>
+    </Card>
   );
 }
