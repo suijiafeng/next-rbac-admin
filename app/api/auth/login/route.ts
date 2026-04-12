@@ -9,6 +9,20 @@ import {
 import { getPermissionsByRole, type Role } from '@/lib/permission';
 import { resolveRoleFromNames } from '@/lib/user-role';
 import { apiError } from '@/lib/api-response';
+import {
+  isLockedOut,
+  recordFailedAttempt,
+  resetAttempts,
+  LOCKOUT_DURATION_MINUTES,
+} from '@/lib/login-attempt';
+import { writeAuditLog } from '@/lib/audit-log';
+
+const DEFAULT_MAX_ATTEMPTS = 5;
+
+function parseMaxAttempts(settingValue: string | undefined): number {
+  const parsed = Number(settingValue);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_MAX_ATTEMPTS;
+}
 
 export async function POST(request: Request) {
   try {
@@ -17,6 +31,20 @@ export async function POST(request: Request) {
 
     if (!username || !password) {
       return apiError('用户名和密码不能为空', 400);
+    }
+
+    // 读取系统设置中的最大登录尝试次数
+    const attemptsSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'max_login_attempts' },
+    });
+    const maxAttempts = parseMaxAttempts(attemptsSetting?.value);
+
+    // 检查是否已被锁定
+    if (await isLockedOut(username, maxAttempts)) {
+      return apiError(
+        `登录失败次数过多，请 ${LOCKOUT_DURATION_MINUTES} 分钟后再试`,
+        429,
+      );
     }
 
     const adminUser = await prisma.user.findFirst({
@@ -35,6 +63,7 @@ export async function POST(request: Request) {
     });
 
     if (!adminUser || !adminUser.password) {
+      await recordFailedAttempt(username);
       return apiError('用户名或密码错误', 401);
     }
 
@@ -45,6 +74,7 @@ export async function POST(request: Request) {
     const isPasswordValid = await bcrypt.compare(password, adminUser.password);
 
     if (!isPasswordValid) {
+      await recordFailedAttempt(username);
       return apiError('用户名或密码错误', 401);
     }
 
@@ -58,6 +88,30 @@ export async function POST(request: Request) {
       return apiError('系统处于维护模式，仅超级管理员可登录', 503);
     }
 
+    const sessionDurationSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'session_duration' },
+    });
+    const sessionDurationDays = Number(sessionDurationSetting?.value) || 7;
+    const sessionMaxAge = sessionDurationDays * 24 * 60 * 60;
+
+    // 登录成功，重置失败计数
+    await resetAttempts(username);
+
+    // 记录登录审计日志（异步，不阻塞响应）
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    writeAuditLog({
+      actorId: adminUser.id,
+      actorUsername: adminUser.username,
+      action: 'user.login',
+      targetType: 'user',
+      targetId: adminUser.id,
+      targetLabel: adminUser.username,
+      detail: { ip },
+    });
+
     const response = NextResponse.json({
       code: 0,
       data: {
@@ -70,17 +124,20 @@ export async function POST(request: Request) {
       message: '登录成功',
     });
 
-    const sessionToken = await createAdminSessionToken({
-      userId: adminUser.id,
-      username: adminUser.username,
-      nickname: adminUser.nickname ?? adminUser.username,
-      role,
-    });
+    const sessionToken = await createAdminSessionToken(
+      {
+        userId: adminUser.id,
+        username: adminUser.username,
+        nickname: adminUser.nickname ?? adminUser.username,
+        role,
+      },
+      sessionMaxAge,
+    );
 
     response.cookies.set(
       ADMIN_SESSION_COOKIE,
       sessionToken,
-      getAdminSessionCookieOptions(),
+      getAdminSessionCookieOptions(sessionMaxAge),
     );
 
     return response;

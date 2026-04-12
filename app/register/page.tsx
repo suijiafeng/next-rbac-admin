@@ -1,10 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button, Form, Input, Result, message } from 'antd';
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import AuthParticles from '@/components/auth/AuthParticles';
+
+const DEVICE_TOKEN_KEY = 'next-rbac-device-token';
+
+/** 获取或创建持久化的设备令牌（localStorage UUID），用于设备维度的注册频率限制 */
+function getOrCreateDeviceToken(): string {
+  let token = localStorage.getItem(DEVICE_TOKEN_KEY);
+  if (!token) {
+    token = crypto.randomUUID();
+    localStorage.setItem(DEVICE_TOKEN_KEY, token);
+  }
+  return token;
+}
 
 interface RegisterFormValues {
   username: string;
@@ -18,13 +30,23 @@ export default function RegisterPage() {
   const [form] = Form.useForm<RegisterFormValues>();
   const [registered, setRegistered] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const deviceTokenRef = useRef<string>('');
+
+  useEffect(() => {
+    deviceTokenRef.current = getOrCreateDeviceToken();
+  }, []);
 
   const handleRegister = async (values: RegisterFormValues) => {
     setSubmitting(true);
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (deviceTokenRef.current) {
+        headers['X-Device-Token'] = deviceTokenRef.current;
+      }
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(values),
       });
 
