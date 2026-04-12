@@ -3,10 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
 import { writeAuditLog } from '@/lib/audit-log';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
+import { generateInitialPassword } from '@/lib/user-helpers';
 
 export const dynamic = 'force-dynamic';
-
-const DEFAULT_PASSWORD = '123456';
 
 interface RouteContext {
   params: { id: string };
@@ -22,7 +21,7 @@ export async function POST(_request: Request, context: RouteContext) {
     }
 
     if (id === currentUser.id) {
-      return apiError('不能重置自己的密码，请使用“修改密码”', 400);
+      return apiError('不能重置自己的密码，请使用"修改密码"', 400);
     }
 
     const target = await prisma.user.findUnique({
@@ -33,9 +32,11 @@ export async function POST(_request: Request, context: RouteContext) {
       return apiError('用户不存在', 404);
     }
 
+    const temporaryPassword = generateInitialPassword();
+
     await prisma.user.update({
       where: { id },
-      data: { password: await bcrypt.hash(DEFAULT_PASSWORD, 10) },
+      data: { password: await bcrypt.hash(temporaryPassword, 10) },
     });
 
     await writeAuditLog({
@@ -47,7 +48,7 @@ export async function POST(_request: Request, context: RouteContext) {
       targetLabel: target.username,
     });
 
-    return apiSuccess({ defaultPassword: DEFAULT_PASSWORD }, '密码已重置为默认密码');
+    return apiSuccess({ defaultPassword: temporaryPassword }, '密码已重置，请将临时密码告知用户');
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === '无权限') {

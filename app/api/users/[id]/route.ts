@@ -1,48 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { resolveRoleFromNames } from '@/lib/user-role';
+import { requirePermission } from '@/lib/permission';
+import { PERMISSIONS } from '@/constants/permission';
 import { getCurrentAdminUser } from '@/lib/admin-user';
 import { writeAuditLog } from '@/lib/audit-log';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
+import { userSelect, formatUser } from '@/lib/user-helpers';
 
 export const dynamic = 'force-dynamic';
-
-const userSelect = {
-  id: true,
-  username: true,
-  nickname: true,
-  email: true,
-  status: true,
-  createdAt: true,
-  updatedAt: true,
-  userRoles: {
-    select: {
-      role: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  },
-} as const;
-
-function formatUser(user: {
-  id: number;
-  username: string;
-  nickname: string | null;
-  email: string | null;
-  status: number;
-  createdAt: Date;
-  updatedAt: Date;
-  userRoles: Array<{ role: { name: string } }>;
-}) {
-  const { userRoles, ...rest } = user;
-
-  return {
-    ...rest,
-    nickname: rest.nickname ?? '',
-    role: resolveRoleFromNames(userRoles.map((item) => item.role.name)),
-  };
-}
 
 interface RouteContext {
   params: {
@@ -55,6 +20,8 @@ export async function GET(
   context: RouteContext,
 ) {
   try {
+    await requirePermission(PERMISSIONS.USER_VIEW);
+
     const id = Number(context.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
@@ -83,6 +50,8 @@ export async function PUT(
   context: RouteContext,
 ) {
   try {
+    await requirePermission(PERMISSIONS.USER_EDIT);
+
     const id = Number(context.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
@@ -105,10 +74,22 @@ export async function PUT(
       where: {
         id,
       },
+      include: {
+        userRoles: {
+          select: {
+            role: { select: { name: true } },
+          },
+        },
+      },
     });
 
     if (!currentUser) {
       return apiError('用户不存在', 404);
+    }
+
+    const targetUserRole = resolveRoleFromNames(currentUser.userRoles.map((ur) => ur.role.name));
+    if (targetUserRole === 'SUPER_ADMIN') {
+      return apiError('不能编辑超级管理员账号', 403);
     }
 
 
@@ -173,6 +154,8 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
+    const { user: actor } = await requirePermission(PERMISSIONS.USER_DELETE);
+
     const id = Number(context.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
@@ -180,17 +163,11 @@ export async function DELETE(
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
       include: {
         userRoles: {
           select: {
-            role: {
-              select: {
-                name: true,
-              },
-            },
+            role: { select: { name: true } },
           },
         },
       },
@@ -208,10 +185,24 @@ export async function DELETE(
       return apiError('超级管理员不能删除', 403);
     }
 
+    // 防止删除自己（在角色检查之后，避免信息泄露）
+    if (actor.id === id) {
+      return apiError('不能删除自己的账号', 400);
+    }
+
     await prisma.user.delete({
       where: {
         id,
       },
+    });
+
+    await writeAuditLog({
+      actorId: actor.id,
+      actorUsername: actor.username,
+      action: 'user.delete',
+      targetType: 'user',
+      targetId: id,
+      targetLabel: currentUser.username,
     });
 
     return apiSuccess(true, '删除成功');
