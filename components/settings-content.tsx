@@ -139,7 +139,10 @@ const getUserPermissionColumns = (options: {
           <Space size={4}>
             <Tag color="warning">已暂停</Tag>
             <Tooltip title="该用户已被暂停，登录将被拒绝">
-              <InfoCircleOutlined className="cursor-default text-slate-400" />
+              <InfoCircleOutlined
+                className="cursor-default"
+                style={{ color: 'var(--text-tertiary)' }}
+              />
             </Tooltip>
           </Space>
         ),
@@ -1025,7 +1028,7 @@ const SettingsContent = () => {
             />
           </div>
 
-          <div className="text-xs text-slate-500">
+          <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             候选列表显示所有「启用」用户；超级管理员不可被重新分配。提交后该用户的角色将被替换为所选角色。
           </div>
         </Space>

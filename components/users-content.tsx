@@ -60,7 +60,10 @@ function getUserTableColumns(options: UserTableColumnsOptions): ColumnsType<User
       dataIndex: 'id',
       width: 64,
       render: (value: number) => (
-        <Typography.Text className="font-mono text-xs font-medium text-slate-400 dark:text-slate-500">
+        <Typography.Text
+          className="font-mono text-xs font-medium"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
           #{value}
         </Typography.Text>
       ),
@@ -82,11 +85,21 @@ function getUserTableColumns(options: UserTableColumnsOptions): ColumnsType<User
       render: (value: string | null) =>
         value ? (
           <Space size={5}>
-            <MailOutlined className="text-xs text-slate-400 dark:text-slate-500" />
-            <Typography.Text className="text-[13px] !text-slate-700 dark:!text-slate-200">{value}</Typography.Text>
+            <MailOutlined className="text-xs" style={{ color: 'var(--text-tertiary)' }} />
+            <Typography.Text
+              className="text-[13px]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {value}
+            </Typography.Text>
           </Space>
         ) : (
-          <Typography.Text className="text-[13px] !text-slate-300 dark:!text-slate-600">—</Typography.Text>
+          <Typography.Text
+            className="text-[13px]"
+            style={{ color: 'var(--text-disabled)' }}
+          >
+            —
+          </Typography.Text>
         ),
     },
     {
@@ -95,11 +108,20 @@ function getUserTableColumns(options: UserTableColumnsOptions): ColumnsType<User
       width: 88,
       render: (value: number) =>
         value === 1 ? (
-          <Tag className="m-0 rounded-full border-0 bg-green-100 px-[10px] py-px text-xs font-medium text-green-600 dark:bg-green-900/30 dark:text-green-400">
+          <Tag
+            className="m-0 rounded-full border-0 px-[10px] py-px text-xs font-medium"
+            style={{
+              background: 'var(--color-success-bg)',
+              color: 'var(--color-success-text)',
+            }}
+          >
             启用
           </Tag>
         ) : (
-          <Tag className="m-0 rounded-full border-0 bg-slate-100 px-[10px] py-px text-xs font-medium text-slate-400 dark:bg-slate-700/40 dark:text-slate-300">
+          <Tag
+            className="m-0 rounded-full border-0 px-[10px] py-px text-xs font-medium"
+            style={{ background: 'var(--tag-muted-bg)', color: 'var(--tag-muted-text)' }}
+          >
             禁用
           </Tag>
         ),
@@ -113,8 +135,10 @@ function getUserTableColumns(options: UserTableColumnsOptions): ColumnsType<User
 
         return (
           <div className="leading-[1.45]">
-            <div className="text-[13px] text-slate-700 dark:text-slate-200">{d.toLocaleDateString('zh-CN')}</div>
-            <div className="mt-px text-[11px] text-slate-400 dark:text-slate-500">
+            <div className="text-[13px]" style={{ color: 'var(--text-primary)' }}>
+              {d.toLocaleDateString('zh-CN')}
+            </div>
+            <div className="mt-px text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
               {d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
@@ -455,7 +479,7 @@ export default function UsersPage() {
       <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
         <div ref={toolbarRef}>
           <div className="mb-4 flex items-center justify-between">
-            <Typography.Title level={4} className="text-slate-900 dark:!text-slate-100">
+            <Typography.Title level={4} style={{ color: 'var(--text-primary)' }}>
               用户管理
             </Typography.Title>
             <Button
@@ -468,7 +492,10 @@ export default function UsersPage() {
             </Button>
           </div>
 
-          <div className="border-b border-slate-200 dark:border-slate-700 px-3.5 pb-3.5 pt-1">
+          <div
+            className="px-3.5 pb-3.5 pt-1"
+            style={{ borderBottom: '1px solid var(--border-subtle)' }}
+          >
             <Form
               form={form}
               layout="inline"
@@ -481,7 +508,12 @@ export default function UsersPage() {
                   placeholder="搜索用户名"
                   allowClear
                   className="w-[190px] rounded-md"
-                  prefix={<SearchOutlined className="text-[13px] text-slate-400 dark:text-slate-500" />}
+                  prefix={(
+                    <SearchOutlined
+                      className="text-[13px]"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    />
+                  )}
                 />
               </Form.Item>
 

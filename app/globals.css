@@ -38,9 +38,15 @@
   --color-primary-hover: #4096ff;
   --color-primary-active: #0958d9;
   --color-success: #52c41a;
+  --color-success-bg: #f0fdf4;
+  --color-success-text: #16a34a;
   --color-warning: #faad14;
   --color-danger: #ff4d4f;
   --color-info: #1677ff;
+
+  /* —— 状态标签 —— */
+  --tag-muted-bg: #f3f4f6;
+  --tag-muted-text: #6b7280;
 
   /* —— 阴影（柔和） —— */
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02);
@@ -92,6 +98,11 @@ html[data-theme='dark'] {
   --color-primary: #1677ff;
   --color-primary-hover: #4096ff;
   --color-primary-active: #0958d9;
+  --color-success-bg: rgba(82, 196, 26, 0.16);
+  --color-success-text: #73d13d;
+
+  --tag-muted-bg: rgba(255, 255, 255, 0.08);
+  --tag-muted-text: rgba(255, 255, 255, 0.65);
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 6px -1px rgba(0, 0, 0, 0.3);
   --shadow-elevated: 0 6px 16px rgba(0, 0, 0, 0.5), 0 3px 6px -4px rgba(0, 0, 0, 0.4);
@@ -153,29 +164,4 @@ a {
   .text-balance {
     text-wrap: balance;
   }
-}
-
-/* ============================================================
- * 主题切换平滑过渡 —— 统一所有相关属性的节奏
- *
- * 关键：必须把所有"会跟着主题变"的属性都列出来，否则没列上的会瞬变，
- * 跟正在 0.2s 过渡的元素拉开节奏 —— 这就是肉眼上"鼓点不齐"的来源。
- *
- * 选用 timing-function: cubic-bezier(.4,0,.2,1) ——
- * material/tailwind 默认的"加速后减速"曲线，比 ease 更接近"软切换"感。
- * ============================================================ */
-html.theme-transition,
-html.theme-transition *,
-html.theme-transition *::before,
-html.theme-transition *::after {
-  transition:
-    background-color 0.22s cubic-bezier(.4, 0, .2, 1),
-    background 0.22s cubic-bezier(.4, 0, .2, 1),
-    color 0.22s cubic-bezier(.4, 0, .2, 1),
-    border-color 0.22s cubic-bezier(.4, 0, .2, 1),
-    outline-color 0.22s cubic-bezier(.4, 0, .2, 1),
-    fill 0.22s cubic-bezier(.4, 0, .2, 1),
-    stroke 0.22s cubic-bezier(.4, 0, .2, 1),
-    box-shadow 0.22s cubic-bezier(.4, 0, .2, 1)
-  !important;
 }
