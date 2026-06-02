@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolveRoleFromNames } from '@/lib/user-role';
+import { getCurrentAdminUser } from '@/lib/admin-user';
+import { writeAuditLog } from '@/lib/audit-log';
 
 const userSelect = {
   id: true,
@@ -181,6 +183,21 @@ const existedUser = await prisma.user.findFirst({
       select: userSelect,
     });
 
+    const prevStatus = currentUser.status;
+    const nextStatus = Number(status ?? 1);
+    if (prevStatus !== nextStatus) {
+      const actor = await getCurrentAdminUser();
+      if (actor) {
+        await writeAuditLog({
+          actorId: actor.id,
+          actorUsername: actor.username,
+          action: nextStatus === 0 ? 'user.suspend' : 'user.unsuspend',
+          targetType: 'user',
+          targetId: id,
+          targetLabel: updatedUser.username,
+        });
+      }
+    }
 
     return NextResponse.json({
       code: 0,

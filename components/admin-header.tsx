@@ -89,7 +89,6 @@ export default function AdminHeader(props: AdminHeaderProps) {
           icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
           onClick={onToggleCollapse}
         />
-        <Text strong>后台管理系统</Text>
       </Space>
 
       <Dropdown
