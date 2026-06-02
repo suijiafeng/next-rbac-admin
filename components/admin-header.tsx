@@ -9,7 +9,6 @@ import {
   Layout,
   Space,
   Tag,
-  Tooltip,
   Typography,
 } from 'antd';
 import {
@@ -170,30 +169,31 @@ export default function AdminHeader(props: AdminHeaderProps) {
         />
       </div>
 
-      {/* 右侧：搜索 + 主题 + 消息 + 用户 */}
+      {/* 右侧：搜索 + 主题 + 消息 + 用户（图标语义已足够，不再加 tooltip） */}
       <Space size={4} align="center">
-        <Tooltip title="全局搜索 (⌘K)" placement="bottom">
+        <Button
+          type="text"
+          aria-label="全局搜索"
+          icon={<SearchOutlined />}
+          style={{ width: 32, height: 32 }}
+        />
+
+        <Button
+          type="text"
+          aria-label={resolved === 'dark' ? '切换为亮色' : '切换为暗色'}
+          icon={resolved === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+          onClick={toggle}
+          style={{ width: 32, height: 32 }}
+        />
+
+        <Badge dot offset={[-6, 6]}>
           <Button
             type="text"
-            icon={<SearchOutlined />}
+            aria-label="消息"
+            icon={<BellOutlined />}
             style={{ width: 32, height: 32 }}
           />
-        </Tooltip>
-
-        <Tooltip title={resolved === 'dark' ? '切换为亮色' : '切换为暗色'} placement="bottom">
-          <Button
-            type="text"
-            icon={resolved === 'dark' ? <SunOutlined /> : <MoonOutlined />}
-            onClick={toggle}
-            style={{ width: 32, height: 32 }}
-          />
-        </Tooltip>
-
-        <Tooltip title="消息" placement="bottom">
-          <Badge dot offset={[-6, 6]}>
-            <Button type="text" icon={<BellOutlined />} style={{ width: 32, height: 32 }} />
-          </Badge>
-        </Tooltip>
+        </Badge>
 
         <div
           style={{
