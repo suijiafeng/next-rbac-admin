@@ -178,21 +178,34 @@ export default function UsersPage() {
     total: 0,
   });
 
-  // 动态计算表格可滚动高度
+  // 动态计算表格可滚动高度（适配紧凑主题）
+  // 各部分尺寸（紧凑算法 + 当前 module.css 样式）：
+  //   表头  ≈ 38px (header padding 10+10 + 文字 18)
+  //   表格上方 margin ≈ 14 (mt-3.5)
+  //   分页+ margin-top ≈ 44 (32 控件高 + 12 margin)
+  //   底部缓冲 ≈ 4
   const calcHeight = useCallback(() => {
     if (!containerRef.current || !toolbarRef.current) return;
     const containerH = containerRef.current.clientHeight;
     const toolbarH = toolbarRef.current.offsetHeight;
-    // 减去: toolbar + 表头(45) + 分页(56) + 间距(16)
-    const scrollY = containerH - toolbarH - 45 - 56 - 16;
-    setTableScrollY(Math.max(scrollY, 180));
+    const TABLE_HEADER = 38;
+    const TABLE_GAP_TOP = 14;
+    const PAGINATION = 44;
+    const BOTTOM_BUFFER = 4;
+    const scrollY = containerH - toolbarH - TABLE_HEADER - TABLE_GAP_TOP - PAGINATION - BOTTOM_BUFFER;
+    setTableScrollY(Math.max(scrollY, 200));
   }, []);
 
   useEffect(() => {
     calcHeight();
     const ro = new ResizeObserver(calcHeight);
     if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
+    // window resize 兜底（容器宽变化不一定触发 RO）
+    window.addEventListener('resize', calcHeight);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', calcHeight);
+    };
   }, [calcHeight]);
 
   const getList = useCallback(async (
