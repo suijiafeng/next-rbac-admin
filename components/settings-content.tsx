@@ -31,8 +31,8 @@ import {
   LockOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SafetyCertificateOutlined,
   SaveOutlined,
-  TeamOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons';
 import { request } from '@/lib/request';
@@ -75,6 +75,15 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'settings.update': { label: '修改设置', color: 'geekblue' },
 };
 
+// 角色显示元信息（中文名 + Tag 颜色）
+const ROLE_META: Record<string, { label: string; color: string }> = {
+  SUPER_ADMIN: { label: '超级管理员', color: 'magenta' },
+  ADMIN: { label: '管理员', color: 'blue' },
+  USER: { label: '普通用户', color: 'default' },
+};
+const getRoleMeta = (roleName: string) =>
+  ROLE_META[roleName] ?? { label: roleName, color: 'default' };
+
 const formatDateTime = (value: string | Date | null | undefined) => {
   if (!value) return '-';
   const d = new Date(value);
@@ -83,14 +92,14 @@ const formatDateTime = (value: string | Date | null | undefined) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-const getAdminColumns = (options: {
+const getUserPermissionColumns = (options: {
   operatingId: number | null;
   currentUserId: number | null;
   onToggleStatus: (user: UserItem) => void;
-  onRemoveAdmin: (user: UserItem) => void;
+  onChangeRole: (user: UserItem, targetRole: 'ADMIN' | 'USER') => void;
   onResetPassword: (user: UserItem) => void;
 }): ColumnsType<UserItem> => {
-  const { operatingId, currentUserId, onToggleStatus, onRemoveAdmin, onResetPassword } = options;
+  const { operatingId, currentUserId, onToggleStatus, onChangeRole, onResetPassword } = options;
 
   return [
     { title: '用户名', dataIndex: 'username', key: 'username', width: 140 },
@@ -100,6 +109,16 @@ const getAdminColumns = (options: {
       dataIndex: 'email',
       key: 'email',
       render: (email: string | null) => email || '-',
+    },
+    {
+      title: '角色',
+      dataIndex: 'role',
+      key: 'role',
+      width: 120,
+      render: (role: string) => {
+        const meta = getRoleMeta(role);
+        return <Tag color={meta.color}>{meta.label}</Tag>;
+      },
     },
     {
       title: '加入时间',
@@ -112,7 +131,7 @@ const getAdminColumns = (options: {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 110,
+      width: 100,
       render: (status: number) =>
         status === 1 ? (
           <Tag color="success">正常</Tag>
@@ -128,20 +147,43 @@ const getAdminColumns = (options: {
     {
       title: '操作',
       key: 'action',
-      width: 240,
+      width: 260,
       render: (_value: unknown, user: UserItem) => {
         const isBusy = operatingId === user.id;
         const isSelf = user.id === currentUserId;
+        const isSuperAdminRow = user.role === 'SUPER_ADMIN';
+
+        // 角色切换目标：ADMIN ↔ USER；SUPER_ADMIN 不允许切换
+        let roleSwitchNode: React.ReactNode = null;
+        if (!isSuperAdminRow) {
+          const targetRole: 'ADMIN' | 'USER' = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
+          const targetLabel = ROLE_META[targetRole].label;
+          const isDemote = user.role === 'ADMIN';
+          roleSwitchNode = (
+            <Popconfirm
+              title={isDemote ? `确认将该用户降为${targetLabel}？` : `确认将该用户升为${targetLabel}？`}
+              description={isDemote ? '该用户将失去管理员权限，账号本身不受影响' : '该用户将获得管理员权限'}
+              onConfirm={() => onChangeRole(user, targetRole)}
+              okText="确认"
+              cancelText="取消"
+              okButtonProps={{ danger: isDemote }}
+            >
+              <Button type="link" size="small" danger={isDemote} disabled={isBusy || isSelf}>
+                {isDemote ? '降为普通用户' : '升为管理员'}
+              </Button>
+            </Popconfirm>
+          );
+        }
 
         return (
           <Space size="small">
             <Popconfirm
-              title={user.status === 1 ? '确认暂停该管理员？' : '确认启用该管理员？'}
+              title={user.status === 1 ? '确认暂停该用户？' : '确认启用该用户？'}
               onConfirm={() => onToggleStatus(user)}
               okText="确认"
               cancelText="取消"
             >
-              <Button type="link" size="small" disabled={isBusy || isSelf}>
+              <Button type="link" size="small" disabled={isBusy || isSelf || isSuperAdminRow}>
                 {user.status === 1 ? '暂停' : '启用'}
               </Button>
             </Popconfirm>
@@ -156,18 +198,7 @@ const getAdminColumns = (options: {
                 重置密码
               </Button>
             </Popconfirm>
-            <Popconfirm
-              title="确认撤销该管理员权限？"
-              description="该用户将降为普通用户，账号本身不受影响"
-              onConfirm={() => onRemoveAdmin(user)}
-              okText="确认"
-              cancelText="取消"
-              okButtonProps={{ danger: true }}
-            >
-              <Button type="link" size="small" danger disabled={isBusy || isSelf}>
-                撤销
-              </Button>
-            </Popconfirm>
+            {roleSwitchNode}
           </Space>
         );
       },
@@ -188,17 +219,24 @@ const SettingsContent = () => {
   const [securityDirty, setSecurityDirty] = useState(false);
   const [maintenanceOn, setMaintenanceOn] = useState(false);
 
-  const [adminUsers, setAdminUsers] = useState<UserItem[]>([]);
-  const [adminScope, setAdminScope] = useState<'active' | 'all'>('active');
+  // —— 权限管理 tab：用户 + 角色 —— //
+  const [allUsers, setAllUsers] = useState<UserItem[]>([]);
+  const [roles, setRoles] = useState<Array<{ id: number; name: string; description: string | null; userCount: number }>>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  // 当前筛选选中的角色名（默认 ADMIN）
+  const [selectedRoleName, setSelectedRoleName] = useState<string>('ADMIN');
   const [usersLoading, setUsersLoading] = useState(false);
   const [operatingId, setOperatingId] = useState<number | null>(null);
   const [passwordSaving, setPasswordSaving] = useState(false);
 
+  // —— 添加分配弹窗 —— //
   const [addAdminOpen, setAddAdminOpen] = useState(false);
   const [candidateKeyword, setCandidateKeyword] = useState('');
   const [candidates, setCandidates] = useState<UserItem[]>([]);
   const [candidatesLoading, setCandidatesLoading] = useState(false);
   const [selectedCandidateId, setSelectedCandidateId] = useState<number | undefined>();
+  // 弹窗里要分配的目标角色（后端 PATCH 仅接受 ADMIN/USER）
+  const [addTargetRole, setAddTargetRole] = useState<'ADMIN' | 'USER'>('ADMIN');
   const [addingAdmin, setAddingAdmin] = useState(false);
 
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
@@ -244,18 +282,33 @@ const SettingsContent = () => {
     }
   }, []);
 
-  const loadAdmins = useCallback(async () => {
+  // 一次性拉取全量用户，前端按当前选中角色过滤
+  const loadAllUsers = useCallback(async () => {
     try {
       setUsersLoading(true);
       const result = await request<PageResponse<UserItem>>('/api/users', {
         params: { pageSize: 1000 },
       });
-      const admins = result.data.list.filter((u) => u.role === 'ADMIN');
-      setAdminUsers(admins);
+      setAllUsers(result.data.list);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '获取管理员列表失败');
+      message.error(error instanceof Error ? error.message : '获取用户列表失败');
     } finally {
       setUsersLoading(false);
+    }
+  }, []);
+
+  // 角色列表来自角色管理
+  const loadRoles = useCallback(async () => {
+    try {
+      setRolesLoading(true);
+      const result = await request<Array<{ id: number; name: string; description: string | null; userCount: number }>>(
+        '/api/roles',
+      );
+      setRoles(result.data);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '获取角色列表失败');
+    } finally {
+      setRolesLoading(false);
     }
   }, []);
 
@@ -282,14 +335,15 @@ const SettingsContent = () => {
     loadCurrentUser();
   }, [loadSettings, loadCurrentUser]);
 
-  const visibleAdmins = useMemo(
-    () => (adminScope === 'all' ? adminUsers : adminUsers.filter((u) => u.status === 1)),
-    [adminUsers, adminScope],
+  const visibleUsers = useMemo(
+    () => allUsers.filter((u) => u.role === selectedRoleName),
+    [allUsers, selectedRoleName],
   );
 
   const handleTabChange = (key: string) => {
-    if (key === 'admin' && adminUsers.length === 0) {
-      loadAdmins();
+    if (key === 'permissions') {
+      if (allUsers.length === 0) loadAllUsers();
+      if (roles.length === 0) loadRoles();
     }
     if (key === 'audit' && auditLogs.length === 0) {
       loadAuditLogs(1, auditPagination.pageSize, auditFilter);
@@ -301,12 +355,15 @@ const SettingsContent = () => {
     setCandidateKeyword('');
     setSelectedCandidateId(undefined);
     setCandidates([]);
+    // 弹窗默认要分配的角色 = 当前筛选选中的角色（若是 SUPER_ADMIN 则降级为 ADMIN）
+    setAddTargetRole(selectedRoleName === 'USER' ? 'USER' : 'ADMIN');
     try {
       setCandidatesLoading(true);
+      // 拉取所有启用状态的用户作为候选（具体能否分配在 handleAddAdmin 里再判）
       const result = await request<PageResponse<UserItem>>('/api/users', {
-        params: { pageSize: 50, status: 1 },
+        params: { pageSize: 100, status: 1 },
       });
-      setCandidates(result.data.list.filter((u) => u.role === 'USER'));
+      setCandidates(result.data.list);
     } catch (error) {
       message.error(error instanceof Error ? error.message : '获取候选用户失败');
     } finally {
@@ -318,9 +375,9 @@ const SettingsContent = () => {
     try {
       setCandidatesLoading(true);
       const result = await request<PageResponse<UserItem>>('/api/users', {
-        params: { pageSize: 50, status: 1, username: keyword },
+        params: { pageSize: 100, status: 1, username: keyword },
       });
-      setCandidates(result.data.list.filter((u) => u.role === 'USER'));
+      setCandidates(result.data.list);
     } catch (error) {
       message.error(error instanceof Error ? error.message : '搜索失败');
     } finally {
@@ -331,17 +388,30 @@ const SettingsContent = () => {
   const handleAddAdmin = async () => {
     if (!selectedCandidateId) return;
     const target = candidates.find((u) => u.id === selectedCandidateId);
+    // 防御：目标若已是该角色则提示
+    if (target && target.role === addTargetRole) {
+      message.info(`该用户已经是${ROLE_META[addTargetRole].label}`);
+      return;
+    }
+    // 不能给 SUPER_ADMIN 改角色
+    if (target && target.role === 'SUPER_ADMIN') {
+      message.warning('超级管理员的角色不可修改');
+      return;
+    }
     try {
       setAddingAdmin(true);
       await request(`/api/users/${selectedCandidateId}/role`, {
         method: 'PATCH',
-        data: { role: 'ADMIN' },
+        data: { role: addTargetRole },
       });
-      message.success('已添加为管理员');
+      message.success(`已分配为${ROLE_META[addTargetRole].label}`);
+      // 本地状态同步
       if (target) {
-        setAdminUsers((prev) => [...prev, { ...target, role: 'ADMIN' }]);
+        setAllUsers((prev) =>
+          prev.map((u) => (u.id === target.id ? { ...u, role: addTargetRole } : u)),
+        );
       } else {
-        await loadAdmins();
+        await loadAllUsers();
       }
       setAddAdminOpen(false);
 
@@ -352,16 +422,17 @@ const SettingsContent = () => {
     }
   };
 
-  const handleRemoveAdmin = async (user: UserItem) => {
+  const handleChangeRole = async (user: UserItem, targetRole: 'ADMIN' | 'USER') => {
     try {
       setOperatingId(user.id);
       await request(`/api/users/${user.id}/role`, {
         method: 'PATCH',
-        data: { role: 'USER' },
+        data: { role: targetRole },
       });
-      message.success('已撤销管理员权限');
-      setAdminUsers((prev) => prev.filter((u) => u.id !== user.id));
-
+      message.success(`已切换为${ROLE_META[targetRole].label}`);
+      setAllUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, role: targetRole } : u)),
+      );
     } catch (error) {
       message.error(error instanceof Error ? error.message : '操作失败');
     } finally {
@@ -383,11 +454,10 @@ const SettingsContent = () => {
           status: newStatus,
         },
       });
-      message.success(isSuspending ? '已暂停该管理员' : '已启用');
-      setAdminUsers((prev) =>
+      message.success(isSuspending ? '已暂停该用户' : '已启用');
+      setAllUsers((prev) =>
         prev.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u)),
       );
-
     } catch (error) {
       message.error(error instanceof Error ? error.message : '操作失败');
     } finally {
@@ -474,11 +544,11 @@ const SettingsContent = () => {
     }
   };
 
-  const adminColumns = getAdminColumns({
+  const permissionColumns = getUserPermissionColumns({
     operatingId,
     currentUserId,
     onToggleStatus: handleToggleStatus,
-    onRemoveAdmin: handleRemoveAdmin,
+    onChangeRole: handleChangeRole,
     onResetPassword: handleResetPassword,
   });
 
@@ -735,39 +805,71 @@ const SettingsContent = () => {
     ...(isSuperAdmin
       ? [
           {
-            key: 'admin',
+            key: 'permissions',
             label: (
               <span>
-                <TeamOutlined className="mr-1.5" />
-                管理员
+                <SafetyCertificateOutlined className="mr-1.5" />
+                权限
               </span>
             ),
             children: (
               <Card variant="borderless">
                 <Space className={styles.adminToolbar} wrap>
                   <Button type="primary" icon={<PlusOutlined />} onClick={openAddAdmin}>
-                    添加管理员
+                    添加
                   </Button>
+                  {/* 角色筛选 —— 来自 /api/roles */}
                   <Segmented
-                    value={adminScope}
-                    onChange={(v) => setAdminScope(v as 'active' | 'all')}
-                    options={[
-                      { label: '仅启用', value: 'active' },
-                      { label: '全部（含暂停）', value: 'all' },
-                    ]}
+                    value={selectedRoleName}
+                    onChange={(v) => setSelectedRoleName(String(v))}
+                    options={
+                      roles.length > 0
+                        ? roles.map((r) => {
+                            const meta = getRoleMeta(r.name);
+                            const count = allUsers.filter((u) => u.role === r.name).length;
+                            return {
+                              label: (
+                                <span>
+                                  {meta.label}
+                                  <span style={{ marginLeft: 6, color: 'var(--text-tertiary)', fontSize: 12 }}>
+                                    {count}
+                                  </span>
+                                </span>
+                              ),
+                              value: r.name,
+                            };
+                          })
+                        : [
+                            { label: '管理员', value: 'ADMIN' },
+                            { label: '普通用户', value: 'USER' },
+                          ]
+                    }
                   />
-                  <Button icon={<ReloadOutlined />} onClick={loadAdmins} loading={usersLoading}>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => {
+                      loadAllUsers();
+                      loadRoles();
+                    }}
+                    loading={usersLoading || rolesLoading}
+                  >
                     刷新
                   </Button>
                 </Space>
                 <Table
                   rowKey="id"
                   loading={usersLoading}
-                  dataSource={visibleAdmins}
-                  columns={adminColumns}
+                  dataSource={visibleUsers}
+                  columns={permissionColumns}
                   pagination={{ pageSize: 10, showSizeChanger: false }}
                   size="middle"
-                  locale={{ emptyText: <Empty description="暂无管理员" /> }}
+                  locale={{
+                    emptyText: (
+                      <Empty
+                        description={`暂无${getRoleMeta(selectedRoleName).label}`}
+                      />
+                    ),
+                  }}
                 />
               </Card>
             ),
@@ -849,42 +951,82 @@ const SettingsContent = () => {
       <Tabs items={tabItems} onChange={handleTabChange} />
 
       <Modal
-        title={<><UserSwitchOutlined /> 添加管理员</>}
+        title={<><UserSwitchOutlined /> 分配角色</>}
         open={addAdminOpen}
         onCancel={() => setAddAdminOpen(false)}
         onOk={handleAddAdmin}
-        okText="确认添加"
+        okText="确认分配"
         okButtonProps={{ disabled: !selectedCandidateId, loading: addingAdmin }}
         destroyOnHidden
       >
         <Space direction="vertical" style={{ width: '100%' }} size={12}>
-          <Input.Search
-            allowClear
-            placeholder="按用户名搜索"
-            value={candidateKeyword}
-            onChange={(e) => setCandidateKeyword(e.target.value)}
-            onSearch={(value) => searchCandidates(value)}
-            loading={candidatesLoading}
-          />
-          <Select
-            showSearch
-            placeholder="从候选用户中选择"
-            style={{ width: '100%' }}
-            value={selectedCandidateId}
-            onChange={setSelectedCandidateId}
-            loading={candidatesLoading}
-            filterOption={(input, option) =>
-              String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-            }
-            options={candidates.map((u) => ({
-              value: u.id,
-              label: `${u.username}（${u.nickname || '-'}）${u.email ? ` · ${u.email}` : ''}`,
-            }))}
-            allowClear
-            notFoundContent={candidatesLoading ? '加载中…' : '无匹配用户'}
-          />
+          {/* 1. 选择用户 */}
+          <div>
+            <div style={{ marginBottom: 6, fontSize: 13, color: 'var(--text-secondary)' }}>用户</div>
+            <Input.Search
+              allowClear
+              placeholder="按用户名搜索"
+              value={candidateKeyword}
+              onChange={(e) => setCandidateKeyword(e.target.value)}
+              onSearch={(value) => searchCandidates(value)}
+              loading={candidatesLoading}
+              style={{ marginBottom: 8 }}
+            />
+            <Select
+              showSearch
+              placeholder="从候选用户中选择"
+              style={{ width: '100%' }}
+              value={selectedCandidateId}
+              onChange={setSelectedCandidateId}
+              loading={candidatesLoading}
+              filterOption={(input, option) =>
+                String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={candidates.map((u) => ({
+                value: u.id,
+                label: `${u.username}（${u.nickname || '-'}）${u.email ? ` · ${u.email}` : ''} · ${getRoleMeta(u.role).label}`,
+                disabled: u.role === 'SUPER_ADMIN',
+              }))}
+              allowClear
+              notFoundContent={candidatesLoading ? '加载中…' : '无匹配用户'}
+            />
+          </div>
+
+          {/* 2. 选择目标角色（角色数据来自 /api/roles，过滤掉 SUPER_ADMIN —— 后端 PATCH 不接受） */}
+          <div>
+            <div style={{ marginBottom: 6, fontSize: 13, color: 'var(--text-secondary)' }}>目标角色</div>
+            <Select
+              style={{ width: '100%' }}
+              value={addTargetRole}
+              onChange={(v) => setAddTargetRole(v)}
+              loading={rolesLoading}
+              options={
+                roles.length > 0
+                  ? roles
+                      .filter((r) => r.name === 'ADMIN' || r.name === 'USER')
+                      .map((r) => ({
+                        value: r.name as 'ADMIN' | 'USER',
+                        label: (
+                          <span>
+                            <Tag color={getRoleMeta(r.name).color} style={{ marginRight: 8 }}>
+                              {getRoleMeta(r.name).label}
+                            </Tag>
+                            <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>
+                              {r.description || '—'}
+                            </span>
+                          </span>
+                        ),
+                      }))
+                  : [
+                      { value: 'ADMIN', label: <Tag color="blue">管理员</Tag> },
+                      { value: 'USER', label: <Tag>普通用户</Tag> },
+                    ]
+              }
+            />
+          </div>
+
           <div className="text-xs text-slate-500">
-            仅显示状态为「启用」且角色为普通用户的账号。被授予后将立即拥有管理员权限。
+            候选列表显示所有「启用」用户；超级管理员不可被重新分配。提交后该用户的角色将被替换为所选角色。
           </div>
         </Space>
       </Modal>
