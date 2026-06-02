@@ -16,14 +16,11 @@ import {
   HomeOutlined,
   LogoutOutlined,
   MenuOutlined,
-  MoonOutlined,
-  SunOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import type { MenuProps } from 'antd';
-import { useTheme } from './providers/ThemeProvider';
 import { PAGE_META } from '@/lib/page-meta';
 
 const { Text } = Typography;
@@ -66,7 +63,6 @@ export default function AdminHeader(props: AdminHeaderProps) {
   const { currentUser, onOpenProfile, onMobileMenuClick, showMobileMenu } = props;
   const router = useRouter();
   const pathname = usePathname();
-  const { resolved, toggle } = useTheme();
 
   useEffect(() => {
     router.prefetch('/profile');
@@ -168,16 +164,8 @@ export default function AdminHeader(props: AdminHeaderProps) {
         />
       </div>
 
-      {/* 右侧：主题 + 消息 + 用户 */}
+      {/* 右侧：消息 + 用户 */}
       <Space size={4} align="center">
-        <Button
-          type="text"
-          aria-label={resolved === 'dark' ? '切换为亮色' : '切换为暗色'}
-          icon={resolved === 'dark' ? <SunOutlined /> : <MoonOutlined />}
-          onClick={toggle}
-          style={{ width: 36, height: 36, fontSize: 17 }}
-        />
-
         <Badge dot offset={[-7, 7]}>
           <Button
             type="text"
