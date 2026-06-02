@@ -27,16 +27,24 @@
 .roleCard {
   padding: 14px 16px;
   border-radius: 8px;
-  border: 1px solid #f0f0f0;
-  background: #fff;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-container);
   cursor: pointer;
   transition: all 0.15s;
   margin-bottom: 8px;
 }
 
+.roleCard:hover {
+  background: var(--bg-hover);
+}
+
 .roleCardSelected {
-  border-color: #1677ff;
-  background: #e6f4ff;
+  border-color: var(--color-primary);
+  background: var(--bg-active);
+}
+
+.roleCardSelected:hover {
+  background: var(--bg-active);
 }
 
 .roleCardHeader {
@@ -69,7 +77,7 @@
 }
 
 .iconButton {
-  color: #8c8c8c;
+  color: var(--text-tertiary);
 }
 
 .emptyState {
@@ -95,14 +103,14 @@
 
 .permissionEmptyIcon {
   font-size: 40px;
-  color: #d9d9d9;
+  color: var(--text-disabled);
   display: block;
   margin-bottom: 12px;
 }
 
 .moduleCard {
   margin-bottom: 16px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -112,8 +120,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  background: #fafafa;
-  border-bottom: 1px solid #f0f0f0;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .moduleBody {
