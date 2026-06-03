@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button, Card, Form, Input, Typography, message } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import Link from 'next/link';
@@ -14,9 +15,10 @@ export default function LoginPage() {
   const [form] = Form.useForm<LoginFormValues>();
   const router = useRouter();
   const { refreshAuth } = useAuthContext();
+  const [submitting, setSubmitting] = useState(false);
 
   const handleLogin = async (values: { username: string; password: string }) => {
-
+    setSubmitting(true);
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -31,11 +33,10 @@ export default function LoginPage() {
         throw new Error(result.message);
       }
       await refreshAuth();
-      router.replace('/');
-      router.refresh();
-
+      router.replace('/dashboard');
     } catch (error) {
       message.error(error instanceof Error ? error.message : '登录失败');
+      setSubmitting(false);
     }
   };
   return (
@@ -110,7 +111,7 @@ export default function LoginPage() {
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 8 }}>
-            <Button type="primary" htmlType="submit" block>
+            <Button type="primary" htmlType="submit" block loading={submitting}>
               登录
             </Button>
           </Form.Item>

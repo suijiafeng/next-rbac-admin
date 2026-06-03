@@ -1,3 +1,5 @@
+'use client';
+
 import SettingsContent from '@/components/settings-content';
 import PermissionGuard from '@/components/permission-guard';
 import { Role } from '@/constants/permission'

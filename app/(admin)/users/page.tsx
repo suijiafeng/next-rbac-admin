@@ -1,3 +1,5 @@
+'use client';
+
 import UsersContent from '@/components/users-content';
 import PermissionGuard from '@/components/permission-guard';
 import { Role } from '@/constants/permission'

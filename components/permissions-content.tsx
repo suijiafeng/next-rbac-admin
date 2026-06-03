@@ -48,6 +48,7 @@ interface RoleItem {
 interface RoleCardProps {
   role: RoleItem;
   selected: boolean;
+  deleting?: boolean;
   onSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -87,6 +88,7 @@ const groupPermissionsByModule = (permissionList: PermissionItem[]) => {
 const RoleCard = ({
   role,
   selected,
+  deleting = false,
   onSelect,
   onEdit,
   onDelete,
@@ -148,10 +150,10 @@ const RoleCard = ({
                 description={role.userCount > 0 ? `该角色下有 ${role.userCount} 位用户，无法删除` : '删除后不可恢复'}
                 onConfirm={onDelete}
                 okText="删除"
-                okButtonProps={{ danger: true, disabled: role.userCount > 0 }}
+                okButtonProps={{ danger: true, disabled: role.userCount > 0, loading: deleting }}
                 cancelText="取消"
               >
-                <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+                <Button type="text" size="small" danger icon={<DeleteOutlined />} loading={deleting} />
               </Popconfirm>
             </Tooltip>
           )}
@@ -173,6 +175,7 @@ const PermissionsContent = () => {
   const [roleModalMode, setRoleModalMode] = useState<'create' | 'edit'>('create');
   const [editingRole, setEditingRole] = useState<RoleItem | null>(null);
   const [submittingRoleModal, setSubmittingRoleModal] = useState(false);
+  const [deletingRoleId, setDeletingRoleId] = useState<number | null>(null);
   const [roleForm] = Form.useForm<RoleModalValues>();
 
   const selectedRole = useMemo(() => {
@@ -347,6 +350,7 @@ const PermissionsContent = () => {
   }, [editingRole, roleForm, roleModalMode]);
 
   const handleDelete = useCallback(async (role: RoleItem) => {
+    setDeletingRoleId(role.id);
     try {
       await request(`/api/roles/${role.id}`, { method: 'DELETE' });
 
@@ -360,6 +364,8 @@ const PermissionsContent = () => {
       message.success('角色已删除');
     } catch (error) {
       message.error(error instanceof Error ? error.message : '删除失败');
+    } finally {
+      setDeletingRoleId(null);
     }
   }, [roleList, selectedRoleId]);
 
@@ -394,6 +400,7 @@ const PermissionsContent = () => {
                 key={role.id}
                 role={role}
                 selected={role.id === selectedRoleId}
+                deleting={deletingRoleId === role.id}
                 onSelect={() => setSelectedRoleId(role.id)}
                 onEdit={() => openEditModal(role)}
                 onDelete={() => handleDelete(role)}

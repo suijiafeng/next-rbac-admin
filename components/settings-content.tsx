@@ -169,9 +169,9 @@ const getUserPermissionColumns = (options: {
               onConfirm={() => onChangeRole(user, targetRole)}
               okText="确认"
               cancelText="取消"
-              okButtonProps={{ danger: isDemote }}
+              okButtonProps={{ danger: isDemote, loading: isBusy }}
             >
-              <Button type="link" size="small" danger={isDemote} disabled={isBusy || isSelf}>
+              <Button type="link" size="small" danger={isDemote} disabled={isBusy || isSelf} loading={isBusy}>
                 {isDemote ? '降为普通用户' : '升为管理员'}
               </Button>
             </Popconfirm>
@@ -185,8 +185,9 @@ const getUserPermissionColumns = (options: {
               onConfirm={() => onToggleStatus(user)}
               okText="确认"
               cancelText="取消"
+              okButtonProps={{ loading: isBusy }}
             >
-              <Button type="link" size="small" disabled={isBusy || isSelf || isSuperAdminRow}>
+              <Button type="link" size="small" disabled={isBusy || isSelf || isSuperAdminRow} loading={isBusy}>
                 {user.status === 1 ? '暂停' : '启用'}
               </Button>
             </Popconfirm>
@@ -196,8 +197,9 @@ const getUserPermissionColumns = (options: {
               onConfirm={() => onResetPassword(user)}
               okText="确认"
               cancelText="取消"
+              okButtonProps={{ loading: isBusy }}
             >
-              <Button type="link" size="small" disabled={isBusy || isSelf}>
+              <Button type="link" size="small" disabled={isBusy || isSelf} loading={isBusy}>
                 重置密码
               </Button>
             </Popconfirm>
