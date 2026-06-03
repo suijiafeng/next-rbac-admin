@@ -7,6 +7,7 @@ import {
   SafetyCertificateOutlined,
   UserOutlined,
   SettingOutlined,
+  MessageOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
@@ -67,6 +68,13 @@ const menuConfig: MenuItemConfig[] = [
     label: '系统设置',
     group: '系统管理',
     roles: ['SUPER_ADMIN'],
+  },
+  {
+    key: '/feedback',
+    icon: <MessageOutlined />,
+    label: '意见反馈',
+    group: '其他',
+    roles: ['USER', 'ADMIN'],
   },
 ];
 

@@ -20,6 +20,7 @@ export const PAGE_META: Record<string, PageMeta> = {
   permissions: { label: '权限管理', closable: true },
   settings: { label: '系统设置', closable: true },
   profile: { label: '个人中心', closable: true },
+  feedback: { label: '意见反馈', closable: true },
 };
 
 /** 根据完整 pathname 解析出页面元信息 */

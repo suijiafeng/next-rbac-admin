@@ -2,7 +2,6 @@
 
 import {
   Avatar,
-  Badge,
   Breadcrumb,
   Button,
   Dropdown,
@@ -12,12 +11,12 @@ import {
   Typography,
 } from 'antd';
 import {
-  BellOutlined,
   HomeOutlined,
   LogoutOutlined,
   MenuOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import NotificationBell from './notification-bell';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import type { MenuProps } from 'antd';
@@ -166,14 +165,7 @@ export default function AdminHeader(props: AdminHeaderProps) {
 
       {/* 右侧：消息 + 用户 */}
       <Space size={4} align="center">
-        <Badge dot offset={[-7, 7]}>
-          <Button
-            type="text"
-            aria-label="消息"
-            icon={<BellOutlined />}
-            style={{ width: 36, height: 36, fontSize: 17 }}
-          />
-        </Badge>
+        <NotificationBell role={currentUser.role} />
 
         <div
           style={{

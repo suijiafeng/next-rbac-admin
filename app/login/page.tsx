@@ -225,7 +225,7 @@ export default function LoginPage() {
           onFinish={handleLogin}
           autoComplete="off"
           initialValues={{
-            username: 'admin',
+            username: 'super_admin',
             password: '123456',
           }}
         >
