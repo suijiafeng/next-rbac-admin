@@ -11,7 +11,7 @@ import { useTabs } from './providers/TabsProvider';
  * 设计：紧凑卡片式 tab，活动 tab 有底部蓝色细条 + 略亮背景
  */
 export default function PageTabs() {
-  const { tabs, activeKey, switchTab, closeTab, closeOthers, closeRight, closeAll } = useTabs();
+  const { tabs, activeKey, switchTab, closeTab, closeOthers, closeRight, closeAll, refreshTab } = useTabs();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLDivElement>(null);
 
@@ -52,7 +52,7 @@ export default function PageTabs() {
   const handleContextAction = (action: string, key: string) => {
     switch (action) {
       case 'refresh':
-        window.location.reload();
+        refreshTab(key);
         break;
       case 'close':
         closeTab(key);
@@ -207,7 +207,7 @@ export default function PageTabs() {
       >
         <button
           type="button"
-          onClick={() => window.location.reload()}
+          onClick={() => refreshTab(activeKey)}
           aria-label="刷新当前页"
           style={{
             width: 24,

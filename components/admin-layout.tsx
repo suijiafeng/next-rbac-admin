@@ -6,6 +6,7 @@ import AdminHeader from './admin-header';
 import AdminSider from './admin-sider';
 import ProfileModal from './profile-modal';
 import PageTabs from './page-tabs';
+import TabPagesHost from './tab-pages-host';
 import { TabsProvider } from './providers/TabsProvider';
 
 const { Content } = Layout;
@@ -20,14 +21,15 @@ interface CurrentUser {
 }
 
 interface AdminLayoutProps {
-  children: React.ReactNode;
+  /** 保留以兼容 Next 文件路由——但内容通过 TabPagesHost 渲染，children 不再可见 */
+  children?: React.ReactNode;
   currentUser: CurrentUser;
 }
 
 const COLLAPSE_KEY = 'next-admin-sider-collapsed';
 
 export default function AdminLayout(props: AdminLayoutProps) {
-  const { children, currentUser } = props;
+  const { currentUser } = props;
   const screens = useBreakpoint();
   const isMobile = !screens.lg; // <992px 视为移动端
 
@@ -133,7 +135,7 @@ export default function AdminLayout(props: AdminLayoutProps) {
               flexDirection: 'column',
             }}
           >
-            {children}
+            <TabPagesHost />
           </div>
         </Content>
       </Layout>
