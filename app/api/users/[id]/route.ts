@@ -4,6 +4,8 @@ import { getCurrentAdminUser } from '@/lib/admin-user';
 import { writeAuditLog } from '@/lib/audit-log';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
+export const dynamic = 'force-dynamic';
+
 const userSelect = {
   id: true,
   username: true,

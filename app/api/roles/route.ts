@@ -3,6 +3,8 @@ import { requirePermission } from '@/lib/permission';
 import { PERMISSIONS } from '@/constants/permission';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     await requirePermission(PERMISSIONS.ROLE_VIEW);
