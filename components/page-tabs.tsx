@@ -264,11 +264,6 @@ export default function PageTabs() {
         </button>
       </div>
 
-      <style jsx global>{`
-        .page-tabs-scroll::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   );
 }

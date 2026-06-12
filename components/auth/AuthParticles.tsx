@@ -32,48 +32,5 @@ export default function AuthParticles() {
     );
   });
 
-  return (
-    <div className="auth-particles" aria-hidden>
-      <style jsx global>{`
-        .auth-particles {
-          position: absolute;
-          inset: 0;
-          z-index: 0;
-          pointer-events: none;
-          overflow: hidden;
-        }
-        .auth-particle {
-          position: absolute;
-          bottom: -10px;
-          border-radius: 50%;
-          background: radial-gradient(circle, #a5b4fc 0%, #6366f1 60%, transparent 100%);
-          box-shadow: 0 0 8px 2px rgba(139, 92, 246, 0.6);
-          opacity: 0;
-          animation-name: particleRise;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-        }
-        @keyframes particleRise {
-          0% {
-            transform: translateY(0) translateX(0) scale(0.6);
-            opacity: 0;
-          }
-          10% {
-            opacity: 0.9;
-          }
-          50% {
-            transform: translateY(-55vh) translateX(calc(var(--drift) * 0.5)) scale(1);
-          }
-          90% {
-            opacity: 0.7;
-          }
-          100% {
-            transform: translateY(-108vh) translateX(var(--drift)) scale(0.5);
-            opacity: 0;
-          }
-        }
-      `}</style>
-      {particles}
-    </div>
-  );
+  return <div className="auth-particles" aria-hidden>{particles}</div>;
 }
