@@ -21,7 +21,7 @@ export const PAGE_META: Record<string, PageMeta> = {
   settings: { label: '系统设置', closable: true },
   profile: { label: '个人中心', closable: true },
   feedback: { label: '意见反馈', closable: true },
-  notifications: { label: '通知中心', closable: true },
+  notifications: { label: '审计日志', closable: true },
   announcements: { label: '公告管理', closable: true },
 };
 

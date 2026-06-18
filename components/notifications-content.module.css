@@ -1,0 +1,153 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.overviewCard {
+  border: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 92%, #1677ff 8%) 0%, var(--bg-elevated) 100%);
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.statItem {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-elevated) 90%, var(--bg-subtle) 10%);
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.statHigh {
+  color: var(--ant-color-error);
+}
+
+.statMedium {
+  color: #d48806;
+}
+
+.statLow {
+  color: #389e0d;
+}
+
+.eventsBlock {
+  margin-top: 2px;
+}
+
+.eventsTitle {
+  font-size: 13px;
+}
+
+.eventList {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.eventItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--bg-elevated);
+  transition: background 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.eventItem:hover {
+  background: color-mix(in srgb, var(--bg-elevated) 84%, #1677ff 16%);
+}
+
+.eventItemHigh {
+  border-left: 3px solid var(--ant-color-error);
+}
+
+.eventItemMedium {
+  border-left: 3px solid #d48806;
+}
+
+.filterCard {
+  border: 1px solid var(--border-subtle);
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+}
+
+.filterControlAction {
+  flex: 0 0 auto;
+  width: 190px;
+}
+
+.filterControlActor {
+  flex: 0 0 auto;
+  width: 220px;
+}
+
+.filterControlDate {
+  flex: 0 0 auto;
+  width: 260px;
+}
+
+.tableCard {
+  border: 1px solid var(--border-subtle);
+}
+
+.summaryText {
+  max-width: 240px;
+  display: inline-block;
+}
+
+.rowHigh td {
+  background: rgba(255, 77, 79, 0.06) !important;
+}
+
+.rowMedium td {
+  background: rgba(250, 173, 20, 0.08) !important;
+}
+
+.detailBlock {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+@media (max-width: 992px) {
+  .statGrid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .eventItem {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -25,13 +25,21 @@ export async function GET(request: Request) {
     if (actorUsername) where.actorUsername = { contains: actorUsername };
     if (startDate || endDate) {
       const createdAt: Record<string, Date> = {};
-      if (startDate) createdAt.gte = new Date(startDate);
+      if (startDate) {
+        const start = new Date(startDate);
+        if (!Number.isNaN(start.getTime())) {
+          start.setHours(0, 0, 0, 0);
+          createdAt.gte = start;
+        }
+      }
       if (endDate) {
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        createdAt.lte = end;
+        if (!Number.isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999);
+          createdAt.lte = end;
+        }
       }
-      where.createdAt = createdAt;
+      if (createdAt.gte || createdAt.lte) where.createdAt = createdAt;
     }
 
     const [list, total] = await Promise.all([
