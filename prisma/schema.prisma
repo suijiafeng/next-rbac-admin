@@ -156,6 +156,7 @@ model Announcement {
   content     String
   publisherId Int
   publisherUsername String
+  level       String   @default("info") // 等级：info 普通 / warning 重要 / critical 紧急
   active      Boolean  @default(true)   // 是否生效
   startsAt    DateTime @default(now())  // 生效时间
   expiresAt   DateTime?                 // 过期时间（null 表示永不过期）

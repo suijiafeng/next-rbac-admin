@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
 import { Role } from '@/constants/permission';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
+import { normalizeAnnouncementLevel } from '@/constants/announcement';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ export async function PUT(request: Request, context: RouteContext) {
     if (!Number.isInteger(id) || id <= 0) return apiError('公告 ID 不合法', 400);
 
     const body = await request.json();
-    const { title, content, active, startsAt, expiresAt } = body;
+    const { title, content, level, active, startsAt, expiresAt } = body;
 
     if (!title || !content) return apiError('标题和内容不能为空', 400);
 
@@ -29,6 +30,7 @@ export async function PUT(request: Request, context: RouteContext) {
       data: {
         title,
         content,
+        level: level !== undefined ? normalizeAnnouncementLevel(level) : existing.level,
         active: active !== false,
         startsAt: startsAt ? new Date(startsAt) : existing.startsAt,
         expiresAt: expiresAt !== undefined ? (expiresAt ? new Date(expiresAt) : null) : existing.expiresAt,

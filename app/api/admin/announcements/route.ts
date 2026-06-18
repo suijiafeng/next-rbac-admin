@@ -3,6 +3,7 @@ import { requireRole, requireAdminUser } from '@/lib/permission';
 import { Role } from '@/constants/permission';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 import { parsePagination } from '@/lib/pagination';
+import { normalizeAnnouncementLevel } from '@/constants/announcement';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     const currentUser = await requireRole([Role.ADMIN, Role.SUPER_ADMIN]);
 
     const body = await request.json();
-    const { title, content, active, startsAt, expiresAt } = body;
+    const { title, content, level, active, startsAt, expiresAt } = body;
 
     if (!title || !content) {
       return apiError('标题和内容不能为空', 400);
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
       data: {
         title,
         content,
+        level: normalizeAnnouncementLevel(level),
         publisherId: currentUser.id,
         publisherUsername: currentUser.username,
         active: active !== false,
