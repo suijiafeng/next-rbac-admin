@@ -15,11 +15,11 @@ import {
   Typography,
 } from 'antd';
 import {
-  BellOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { request } from '@/lib/request';
+import { formatDateTime } from '@/lib/format';
 import type { PageResponse } from '@/types/request';
 
 const { Title, Text } = Typography;
@@ -78,7 +78,7 @@ export default function NotificationsContent() {
       title: '时间',
       dataIndex: 'createdAt',
       width: 160,
-      render: (v: string) => new Date(v).toLocaleString('zh-CN'),
+      render: (v: string) => formatDateTime(v),
     },
     {
       title: '操作人',
@@ -109,7 +109,6 @@ export default function NotificationsContent() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <Title level={4} style={{ color: 'var(--text-primary)', margin: 0 }}>
-          <BellOutlined style={{ marginRight: 8 }} />
           通知中心
         </Title>
         <Space>

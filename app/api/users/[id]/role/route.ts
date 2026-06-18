@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
+import { Role } from '@/constants/permission';
 import { resolveRoleFromNames } from '@/lib/user-role';
 import { writeAuditLog } from '@/lib/audit-log';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
@@ -17,7 +18,7 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
-    const currentUser = await requireRole(['SUPER_ADMIN']);
+    const currentUser = await requireRole([Role.SUPER_ADMIN]);
     const id = Number(context.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {

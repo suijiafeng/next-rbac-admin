@@ -31,6 +31,7 @@ import {
 } from '@ant-design/icons';
 
 import { request } from '@/lib/request';
+import { formatDateTime } from '@/lib/format';
 
 const { Text } = Typography;
 
@@ -224,7 +225,7 @@ function LoginHistoryTab() {
     {
       title: '操作时间',
       dataIndex: 'createdAt',
-      render: (v: string) => new Date(v).toLocaleString('zh-CN'),
+      render: (v: string) => formatDateTime(v),
     },
   ];
 

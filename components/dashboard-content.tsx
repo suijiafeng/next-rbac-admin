@@ -38,8 +38,9 @@ import {
 } from 'recharts';
 import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import { request } from '@/lib/request';
+import { formatDateTime } from '@/lib/format';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'user.create': { label: '新增用户', color: 'cyan' },
@@ -158,8 +159,25 @@ export default function DashboardContent() {
 
   useEffect(() => {
     loadData();
-    const timer = setInterval(loadData, 60_000);
-    return () => clearInterval(timer);
+    const timer = setInterval(() => {
+      // 标签页隐藏时暂停轮询，避免后台无谓请求
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    }, 60_000);
+
+    // 从后台切回前台时立即刷新一次
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [loadData]);
 
   if (loading) {
@@ -366,7 +384,7 @@ export default function DashboardContent() {
                           </Text>
                         </div>
                         <Text type="secondary" style={{ fontSize: 11 }}>
-                          {new Date(log.createdAt).toLocaleString('zh-CN')}
+                          {formatDateTime(log.createdAt)}
                         </Text>
                       </div>
                     ),

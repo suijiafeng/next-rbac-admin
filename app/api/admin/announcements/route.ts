@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole, requireAdminUser } from '@/lib/permission';
+import { Role } from '@/constants/permission';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 import { parsePagination } from '@/lib/pagination';
 
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
 /** POST - 创建（ADMIN/SUPER_ADMIN） */
 export async function POST(request: Request) {
   try {
-    const currentUser = await requireRole(['ADMIN', 'SUPER_ADMIN']);
+    const currentUser = await requireRole([Role.ADMIN, Role.SUPER_ADMIN]);
 
     const body = await request.json();
     const { title, content, active, startsAt, expiresAt } = body;

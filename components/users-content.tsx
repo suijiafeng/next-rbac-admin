@@ -30,6 +30,7 @@ import {
   UserSwitchOutlined,
 } from '@ant-design/icons';
 import { request } from '@/lib/request';
+import { formatDateTime } from '@/lib/format';
 import type { PageResponse } from '@/types/request';
 import type { UserItem } from '@/types/user';
 import UserModal, { UserFormValues } from '@/components/user-modal';
@@ -452,7 +453,7 @@ export default function UsersPage() {
           u.email,
           u.role,
           u.status === 1 ? '启用' : '禁用',
-          new Date(u.createdAt).toLocaleString('zh-CN'),
+          formatDateTime(u.createdAt),
         ]
           .map(escape)
           .join(','),

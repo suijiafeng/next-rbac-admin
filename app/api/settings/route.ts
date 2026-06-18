@@ -1,10 +1,23 @@
 import { prisma } from '@/lib/prisma';
 import { requirePermission, requireRole } from '@/lib/permission';
-import { PERMISSIONS } from '@/constants/permission';
+import { PERMISSIONS, Role } from '@/constants/permission';
 import { writeAuditLog } from '@/lib/audit-log';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
+
+// 审计日志中需脱敏的设置键（含密钥/令牌/密码类）
+const SENSITIVE_KEY_PATTERN = /secret|password|token|api[_-]?key|credential/i;
+
+function maskSettingValue(key: string, value: string): string {
+  if (!SENSITIVE_KEY_PATTERN.test(key)) {
+    return value;
+  }
+  if (!value) {
+    return '';
+  }
+  return '******';
+}
 
 // 默认设置值
 const DEFAULTS: Record<string, string> = {
@@ -36,7 +49,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const currentUser = await requireRole(['SUPER_ADMIN']);
+    const currentUser = await requireRole([Role.SUPER_ADMIN]);
 
     const body = await request.json();
     const allowedKeys = Object.keys(DEFAULTS);
@@ -81,7 +94,9 @@ export async function PUT(request: Request) {
         action: 'settings.update',
         targetType: 'settings',
         targetLabel: updatedKeys.join(', '),
-        detail: Object.fromEntries(updatedKeys.map((k) => [k, settings[k]])),
+        detail: Object.fromEntries(
+          updatedKeys.map((k) => [k, maskSettingValue(k, settings[k])]),
+        ),
       });
     }
 

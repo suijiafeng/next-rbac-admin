@@ -20,6 +20,7 @@ export async function getCurrentAdminUser() {
       email: true,
       avatar: true,
       status: true,
+      authVersion: true,
       createdAt: true,
       updatedAt: true,
       userRoles: {
@@ -36,7 +37,14 @@ export async function getCurrentAdminUser() {
     return null;
   }
 
-  const role = resolveRoleFromNames(user.userRoles.map((ur) => ur.role.name));
+  const role = resolveRoleFromNames(
+    user.userRoles.map((ur: { role: { name: string } }) => ur.role.name),
+  );
+  const tokenAuthVersion = session.authVersion ?? 0;
+
+  if (tokenAuthVersion !== user.authVersion) {
+    return null;
+  }
 
   const { userRoles, ...rest } = user;
   void userRoles;

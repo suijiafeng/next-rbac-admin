@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
+import { Role } from '@/constants/permission';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,7 @@ interface RouteContext {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
-    await requireRole(['ADMIN', 'SUPER_ADMIN']);
+    await requireRole([Role.ADMIN, Role.SUPER_ADMIN]);
 
     const id = Number(context.params.id);
     if (!Number.isInteger(id) || id <= 0) return apiError('公告 ID 不合法', 400);
@@ -42,7 +43,7 @@ export async function PUT(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
-    await requireRole(['ADMIN', 'SUPER_ADMIN']);
+    await requireRole([Role.ADMIN, Role.SUPER_ADMIN]);
 
     const id = Number(context.params.id);
     if (!Number.isInteger(id) || id <= 0) return apiError('公告 ID 不合法', 400);

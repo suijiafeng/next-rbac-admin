@@ -17,7 +17,6 @@ import {
   Typography,
 } from 'antd';
 import {
-  NotificationOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -26,6 +25,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { request } from '@/lib/request';
+import { formatDate } from '@/lib/format';
 import type { PageResponse } from '@/types/request';
 
 const { Title, Text } = Typography;
@@ -162,13 +162,13 @@ export default function AnnouncementsContent() {
       title: '生效时间',
       dataIndex: 'startsAt',
       width: 140,
-      render: (v: string) => new Date(v).toLocaleDateString('zh-CN'),
+      render: (v: string) => formatDate(v),
     },
     {
       title: '过期时间',
       dataIndex: 'expiresAt',
       width: 140,
-      render: (v: string | null) => v ? new Date(v).toLocaleDateString('zh-CN') : <Text type="secondary">永久</Text>,
+      render: (v: string | null) => v ? formatDate(v) : <Text type="secondary">永久</Text>,
     },
     {
       title: '操作',
@@ -194,7 +194,6 @@ export default function AnnouncementsContent() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <Title level={4} style={{ color: 'var(--text-primary)', margin: 0 }}>
-          <NotificationOutlined style={{ marginRight: 8 }} />
           公告管理
         </Title>
         <Space>

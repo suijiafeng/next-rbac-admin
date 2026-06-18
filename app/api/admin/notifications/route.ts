@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
+import { Role } from '@/constants/permission';
 import { apiSuccess, handleApiError } from '@/lib/api-response';
 import { parsePagination } from '@/lib/pagination';
 
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic';
 /** SUPER_ADMIN 通知中心：聚合最近的关键审计事件 */
 export async function GET(request: Request) {
   try {
-    await requireRole(['SUPER_ADMIN']);
+    await requireRole([Role.SUPER_ADMIN]);
 
     const { searchParams } = new URL(request.url);
     const { page, pageSize, skip, take } = parsePagination(searchParams, { defaultPageSize: 20 });
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
       'user.suspend',
       'user.unsuspend',
       'user.reset_password',
+      'user.password_change',
       'role.grant_admin',
       'role.revoke_admin',
       'settings.update',
@@ -30,7 +32,7 @@ export async function GET(request: Request) {
       action: action ? action : { in: criticalActions },
     };
 
-    const [list, total] = await Promise.all([
+    const [list, total, actionCounts] = await Promise.all([
       prisma.auditLog.findMany({
         where,
         orderBy: { id: 'desc' },
@@ -47,9 +49,18 @@ export async function GET(request: Request) {
         },
       }),
       prisma.auditLog.count({ where }),
+      prisma.auditLog.groupBy({
+        by: ['action'],
+        _count: { action: true },
+        where,
+      }),
     ]);
 
-    return apiSuccess({ list, total, page, pageSize });
+    const summary = Object.fromEntries(
+      actionCounts.map((item: (typeof actionCounts)[number]) => [item.action, item._count.action]),
+    ) as Record<string, number>;
+
+    return apiSuccess({ list, total, page, pageSize, summary });
   } catch (error) {
     return handleApiError(error, '获取通知失败', 'GET /api/admin/notifications error');
   }

@@ -1,8 +1,9 @@
 import { getCurrentAdminUser } from '@/lib/admin-user';
-import { ROLE_PERMISSION_MAP } from '@/constants/permission';
+import { Role, ROLE_PERMISSION_MAP } from '@/constants/permission';
 import type { PermissionValue } from '@/constants/permission';
 
-export type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+// 角色类型单一来源：复用 constants/permission.ts 的 Role 枚举
+export { Role };
 
 export function getPermissionsByRole(role: Role): PermissionValue[] {
   return ROLE_PERMISSION_MAP[role] ?? [];

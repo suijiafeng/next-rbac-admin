@@ -7,6 +7,7 @@ export interface AdminSessionPayload {
   username: string;
   nickname: string;
   role: string;
+  authVersion: number;
   exp: number;
 }
 

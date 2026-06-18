@@ -11,6 +11,7 @@ import {
   Typography,
 } from 'antd';
 import { request } from '@/lib/request';
+import { formatDateTime } from '@/lib/format';
 
 const { Paragraph, Text } = Typography;
 
@@ -134,7 +135,7 @@ export default function FeedbackDetailModal({ feedbackId, open, onClose, onViewe
               </Descriptions.Item>
             )}
             <Descriptions.Item label="提交时间">
-              {new Date(detail.createdAt).toLocaleString('zh-CN')}
+              {formatDateTime(detail.createdAt)}
             </Descriptions.Item>
           </Descriptions>
         </div>

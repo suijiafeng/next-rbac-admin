@@ -6,7 +6,8 @@ import {
   createAdminSessionToken,
   getAdminSessionCookieOptions,
 } from '@/lib/session';
-import { getPermissionsByRole, type Role } from '@/lib/permission';
+import { getPermissionsByRole } from '@/lib/permission';
+import { Role } from '@/constants/permission';
 import { resolveRoleFromNames } from '@/lib/user-role';
 import { apiError } from '@/lib/api-response';
 import {
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
     const maintenanceSetting = await prisma.systemSetting.findUnique({
       where: { key: 'maintenance_mode' },
     });
-    if (maintenanceSetting?.value === 'true' && role !== 'SUPER_ADMIN') {
+    if (maintenanceSetting?.value === 'true' && role !== Role.SUPER_ADMIN) {
       return apiError('系统处于维护模式，仅超级管理员可登录', 503);
     }
 
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
         username: adminUser.username,
         nickname: adminUser.nickname ?? adminUser.username,
         role,
+        authVersion: adminUser.authVersion,
       },
       sessionMaxAge,
     );

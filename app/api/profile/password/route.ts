@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { requireAdminUser } from '@/lib/permission';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 import { writeAuditLog } from '@/lib/audit-log';
+import {
+  ADMIN_SESSION_COOKIE,
+  createAdminSessionToken,
+  getAdminSessionCookieOptions,
+} from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,9 +44,14 @@ export async function POST(request: Request) {
       return apiError('新密码不能与旧密码相同', 400);
     }
 
-    await prisma.user.update({
+    // 改密时 authVersion +1，使其它设备上的旧会话立即失效
+    const updated = await prisma.user.update({
       where: { id: currentUser.id },
-      data: { password: await bcrypt.hash(newPassword, 10) },
+      data: {
+        password: await bcrypt.hash(newPassword, 10),
+        authVersion: { increment: 1 },
+      },
+      select: { authVersion: true },
     });
 
     writeAuditLog({
@@ -53,7 +63,22 @@ export async function POST(request: Request) {
       targetLabel: currentUser.username,
     });
 
-    return apiSuccess(null, '密码修改成功');
+    // 用最新 authVersion 给当前设备重新签发会话，避免改密后把自己也登出
+    const response = apiSuccess(null, '密码修改成功');
+    const sessionToken = await createAdminSessionToken({
+      userId: currentUser.id,
+      username: currentUser.username,
+      nickname: currentUser.nickname ?? currentUser.username,
+      role: currentUser.role,
+      authVersion: updated.authVersion,
+    });
+    response.cookies.set(
+      ADMIN_SESSION_COOKIE,
+      sessionToken,
+      getAdminSessionCookieOptions(),
+    );
+
+    return response;
   } catch (error) {
     return handleApiError(error, '修改密码失败', 'POST /api/profile/password error');
   }

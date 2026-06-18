@@ -386,9 +386,6 @@ const PermissionsContent = () => {
           <Title level={4} style={{ color: 'var(--text-primary)' }}>
             权限管理
           </Title>
-          <Text type="secondary" className={styles.mutedText}>
-            管理系统角色及其对应的操作权限
-          </Text>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
           新建角色

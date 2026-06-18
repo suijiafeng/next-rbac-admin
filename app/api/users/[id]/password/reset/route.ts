@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/permission';
+import { Role } from '@/constants/permission';
 import { writeAuditLog } from '@/lib/audit-log';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 import { generateInitialPassword } from '@/lib/user-helpers';
@@ -13,7 +14,7 @@ interface RouteContext {
 
 export async function POST(_request: Request, context: RouteContext) {
   try {
-    const currentUser = await requireRole(['SUPER_ADMIN']);
+    const currentUser = await requireRole([Role.SUPER_ADMIN]);
     const id = Number(context.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
@@ -36,7 +37,10 @@ export async function POST(_request: Request, context: RouteContext) {
 
     await prisma.user.update({
       where: { id },
-      data: { password: await bcrypt.hash(temporaryPassword, 10) },
+      data: {
+        password: await bcrypt.hash(temporaryPassword, 10),
+        authVersion: { increment: 1 },
+      },
     });
 
     await writeAuditLog({
