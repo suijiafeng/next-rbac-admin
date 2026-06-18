@@ -6,26 +6,26 @@
  * Design Tokens —— 数据密集型企业风（明色）
  * ============================================================ */
 :root {
-  /* —— Background 层级 —— */
-  --bg-layout: #f2f3f5;      /* 整体页面底色 */
+  /* —— Background 层级（冷调 slate，更透气干净） —— */
+  --bg-layout: #f4f6f8;      /* 整体页面底色 */
   --bg-container: #ffffff;   /* 卡片/容器底色 */
   --bg-elevated: #ffffff;    /* 悬浮元素（dropdown/modal） */
-  --bg-subtle: #fafafa;      /* 次级容器（如 table header） */
-  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-subtle: #f7f9fb;      /* 次级容器（如 table header） */
+  --bg-hover: rgba(15, 23, 42, 0.04);
   --bg-active: rgba(22, 119, 255, 0.08);
 
   /* —— Sider 专用（深色侧边栏，与主体反差） —— */
-  --sider-bg: #001529;
-  --sider-bg-hover: rgba(255, 255, 255, 0.06);
+  --sider-bg: #101c2e;
+  --sider-bg-hover: rgba(255, 255, 255, 0.07);
   --sider-bg-selected: #1677ff;
   --sider-text: rgba(255, 255, 255, 0.85);
   --sider-text-muted: rgba(255, 255, 255, 0.45);
   --sider-divider: rgba(255, 255, 255, 0.08);
 
-  /* —— Border —— */
-  --border-base: #e5e7eb;
-  --border-subtle: #f0f0f0;
-  --border-strong: #d1d5db;
+  /* —— Border（slate，更干净） —— */
+  --border-base: #e3e8ef;
+  --border-subtle: #eef1f5;
+  --border-strong: #cdd5df;
 
   /* —— Text —— */
   --text-primary: rgba(0, 0, 0, 0.88);
@@ -48,9 +48,9 @@
   --tag-muted-bg: #f3f4f6;
   --tag-muted-text: #6b7280;
 
-  /* —— 阴影（柔和） —— */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02);
-  --shadow-elevated: 0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12);
+  /* —— 阴影（利落、低扩散） —— */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-elevated: 0 4px 12px rgba(16, 24, 40, 0.10), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
 
   /* —— 圆角 —— */
   --radius-sm: 4px;
@@ -66,12 +66,18 @@
   --header-height: 52px;
   --sider-width: 220px;
   --sider-width-collapsed: 64px;
+
+  /* —— Table 专用 token —— */
+  --table-stripe-bg: #ebf0f9;
 }
 
 /* ============================================================
  * Design Tokens —— 暗色主题
  * ============================================================ */
 html[data-theme='dark'] {
+  /* —— Table 专用 token（暗色） —— */
+  --table-stripe-bg: #1a1d25;
+
   --bg-layout: #0f1115;
   --bg-container: #181a20;
   --bg-elevated: #1f2128;
@@ -80,7 +86,7 @@ html[data-theme='dark'] {
   --bg-active: rgba(22, 119, 255, 0.16);
 
   --sider-bg: #0a0c10;
-  --sider-bg-hover: rgba(255, 255, 255, 0.06);
+  --sider-bg-hover: rgba(255, 255, 255, 0.07);
   --sider-bg-selected: #1677ff;
   --sider-text: rgba(255, 255, 255, 0.85);
   --sider-text-muted: rgba(255, 255, 255, 0.45);
@@ -104,8 +110,8 @@ html[data-theme='dark'] {
   --tag-muted-bg: rgba(255, 255, 255, 0.08);
   --tag-muted-text: rgba(255, 255, 255, 0.65);
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 6px -1px rgba(0, 0, 0, 0.3);
-  --shadow-elevated: 0 6px 16px rgba(0, 0, 0, 0.5), 0 3px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.55), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
 }
 
 /* ============================================================
@@ -550,6 +556,20 @@ a {
 }
 .admin-sider ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================================
+ * 空状态 —— 数据为空时给足高度，避免卡片过矮显空旷
+ * ============================================================ */
+.ant-table-wrapper .ant-table-placeholder {
+  min-height: 320px;
+}
+.ant-table-wrapper .ant-table-placeholder .ant-table-cell {
+  border-bottom: none;
+  vertical-align: middle;
+}
+.ant-empty-normal {
+  margin-block: 40px;
 }
 
 /* ============================================================

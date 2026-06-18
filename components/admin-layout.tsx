@@ -32,6 +32,7 @@ export default function AdminLayout(props: AdminLayoutProps) {
   const { currentUser } = props;
   const screens = useBreakpoint();
   const isMobile = !screens.lg; // <992px 视为移动端
+  const isTablet = !!screens.lg && !screens.xl; // 992–1200px：自动折叠为图标栏
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,7 +49,9 @@ export default function AdminLayout(props: AdminLayoutProps) {
     localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
   }, [collapsed]);
 
-  const siderWidth = collapsed ? 64 : 220;
+  // 中等屏强制折叠；宽屏沿用用户手动偏好
+  const effectiveCollapsed = !isMobile && (collapsed || isTablet);
+  const siderWidth = effectiveCollapsed ? 64 : 220;
 
   const handleToggle = () => {
     if (isMobile) setMobileOpen((v) => !v);
@@ -64,7 +67,7 @@ export default function AdminLayout(props: AdminLayoutProps) {
       {/* 桌面端固定侧栏 */}
       {!isMobile && (
         <AdminSider
-          collapsed={collapsed}
+          collapsed={effectiveCollapsed}
           role={currentUser.role}
           onToggleCollapse={handleToggle}
         />
@@ -109,6 +112,9 @@ export default function AdminLayout(props: AdminLayoutProps) {
           onOpenProfile={() => setProfileOpen(true)}
           showMobileMenu={isMobile}
           onMobileMenuClick={() => setMobileOpen(true)}
+          collapsed={effectiveCollapsed}
+          onToggleCollapse={handleToggle}
+          canToggle={!isMobile && !isTablet}
         />
 
         {/* 多标签页 —— 紧贴 Header 下方 */}
@@ -118,7 +124,7 @@ export default function AdminLayout(props: AdminLayoutProps) {
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: 16,
+            padding: isMobile ? 12 : 16,
             background: 'var(--bg-layout)',
           }}
         >

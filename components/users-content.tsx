@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Button,
+  Card,
   Form,
   Input,
   Modal,
@@ -229,8 +230,8 @@ export default function UsersPage() {
     const bulkH = bulkBarRef.current?.offsetHeight ?? 0;
     const TABLE_HEADER = 38;
     const TABLE_GAP_TOP = 14;
-    const PAGINATION = 44;
-    const BOTTOM_BUFFER = 4;
+    const PAGINATION = 55; // border-top(1) + padding-top(10) + 控件高(32) + padding-bottom(12)
+    const BOTTOM_BUFFER = 0;
     const scrollY = containerH - toolbarH - bulkH - TABLE_HEADER - TABLE_GAP_TOP - PAGINATION - BOTTOM_BUFFER;
     setTableScrollY(Math.max(scrollY, 200));
   }, []);
@@ -479,10 +480,7 @@ export default function UsersPage() {
     <>
       <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
         <div ref={toolbarRef}>
-          <div className="mb-4 flex items-center justify-between">
-            <Typography.Title level={4} style={{ color: 'var(--text-primary)' }}>
-              用户管理
-            </Typography.Title>
+          <div className="mb-4 flex items-center justify-end">
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -628,7 +626,7 @@ export default function UsersPage() {
           </div>
         )}
 
-        <div className="min-h-0 flex-1 mt-3.5">
+        <Card variant="borderless" className={`min-h-0 flex-1 mt-3.5 ${styles.tableCard}`} styles={{ body: {height: '100%', display: 'flex', flexDirection: 'column' } }}>
           <Table
             className={styles.table}
             rowKey="id"
@@ -657,7 +655,7 @@ export default function UsersPage() {
             }}
             columns={columns}
           />
-        </div>
+        </Card>
       </div>
 
       <UserModal

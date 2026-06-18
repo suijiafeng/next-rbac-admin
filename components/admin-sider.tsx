@@ -1,6 +1,6 @@
 'use client';
 
-import { Layout, Menu, Tooltip } from 'antd';
+import { Layout, Menu } from 'antd';
 import {
   DashboardOutlined,
   LineChartOutlined,
@@ -8,9 +8,7 @@ import {
   UserOutlined,
   SettingOutlined,
   MessageOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  BellOutlined,
+  AuditOutlined,
   NotificationOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
@@ -24,7 +22,8 @@ type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 interface AdminSiderProps {
   collapsed: boolean;
   role: Role;
-  onToggleCollapse: () => void;
+  /** 保留以兼容调用方；折叠控制现由 Header 统一负责 */
+  onToggleCollapse?: () => void;
 }
 
 interface MenuItemConfig {
@@ -87,15 +86,15 @@ const menuConfig: MenuItemConfig[] = [
   },
   {
     key: '/notifications',
-    icon: <BellOutlined />,
-    label: '通知中心',
-    group: '其他',
+    icon: <AuditOutlined />,
+    label: '审计日志',
+    group: '系统管理',
     roles: ['SUPER_ADMIN'],
   },
 ];
 
 export default function AdminSider(props: AdminSiderProps) {
-  const { collapsed, role, onToggleCollapse } = props;
+  const { collapsed, role } = props;
   const pathname = usePathname();
   const router = useRouter();
 
@@ -221,84 +220,7 @@ export default function AdminSider(props: AdminSiderProps) {
           )}
         </div>
 
-        {/* 展开态：Logo 右侧的小图标按钮 */}
-        {!collapsed && (
-          <Tooltip title="收起侧栏" placement="right">
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              aria-label="收起侧栏"
-              style={{
-                width: 24,
-                height: 24,
-                border: 'none',
-                background: 'transparent',
-                color: 'rgba(255,255,255,0.55)',
-                cursor: 'pointer',
-                borderRadius: 4,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 14,
-                transition: 'all 0.2s',
-                flexShrink: 0,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                e.currentTarget.style.color = '#fff';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
-              }}
-            >
-              <MenuFoldOutlined />
-            </button>
-          </Tooltip>
-        )}
       </div>
-
-      {/* 折叠态：悬浮在 Sider 右边缘的小圆按钮 */}
-      {collapsed && (
-        <Tooltip title="展开侧栏" placement="right">
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            aria-label="展开侧栏"
-            style={{
-              position: 'absolute',
-              top: 14,
-              right: -10,
-              width: 20,
-              height: 20,
-              border: '1px solid var(--sider-divider)',
-              background: 'var(--sider-bg)',
-              color: 'rgba(255,255,255,0.75)',
-              cursor: 'pointer',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 10,
-              zIndex: 1,
-              transition: 'all 0.2s',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--color-primary)';
-              e.currentTarget.style.color = '#fff';
-              e.currentTarget.style.borderColor = 'var(--color-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--sider-bg)';
-              e.currentTarget.style.color = 'rgba(255,255,255,0.75)';
-              e.currentTarget.style.borderColor = 'var(--sider-divider)';
-            }}
-          >
-            <MenuUnfoldOutlined />
-          </button>
-        </Tooltip>
-      )}
 
       {/* 菜单区（可滚动） */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingTop: 8 }}>

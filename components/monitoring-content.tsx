@@ -8,9 +8,9 @@ import {
   Divider,
   Progress,
   Row,
+  Skeleton,
   Segmented,
   Space,
-  Spin,
   Table,
   Tag,
   Timeline,
@@ -49,7 +49,7 @@ import {
 import styles from '@/components/monitoring-content.module.css';
 import { request } from '@/lib/request';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 type MonitoringPeriod = '1h' | '24h' | '7d';
 type KpiMetricKey = 'pv' | 'uv' | 'conversion' | 'latency' | 'errors' | 'availability';
@@ -299,9 +299,6 @@ const MonitoringContent = () => {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <Title level={4} style={{ color: 'var(--text-primary)' }}>
-          数据监控
-        </Title>
         <Segmented
           value={period}
           onChange={(value) => setPeriod(value as MonitoringPeriod)}
@@ -313,73 +310,7 @@ const MonitoringContent = () => {
         />
       </div>
 
-      {/* 真实系统指标 */}
-      {statsLoading ? (
-        <div style={{ textAlign: 'center', padding: '20px 0' }}><Spin /></div>
-      ) : (
-        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-          {[
-            {
-              label: '总用户数',
-              value: stats?.userCount ?? 0,
-              sub: `活跃 ${stats?.activeUserCount ?? 0}`,
-              icon: <UserOutlined />,
-              color: '#1677ff',
-            },
-            {
-              label: '角色 / 权限',
-              value: `${stats?.roleCount ?? 0} / ${stats?.permissionCount ?? 0}`,
-              sub: '角色数 / 权限条目',
-              icon: <LockOutlined />,
-              color: '#722ed1',
-            },
-            {
-              label: '近30天新增用户',
-              value: stats?.newUsersTrend.reduce((a, b) => a + b.count, 0) ?? 0,
-              sub: '30天注册合计',
-              icon: <ArrowUpOutlined />,
-              color: '#52c41a',
-            },
-            {
-              label: '登录失败 (30d)',
-              value: stats?.loginFailCount ?? 0,
-              sub: (stats?.loginFailCount ?? 0) > 50 ? '⚠️ 需关注' : '正常',
-              icon: <WarningOutlined />,
-              color: (stats?.loginFailCount ?? 0) > 50 ? '#ff4d4f' : '#faad14',
-            },
-          ].map((item) => (
-            <Col key={item.label} xs={24} sm={12} xl={6}>
-              <Card bordered={false} size="small">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 8,
-                      background: item.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: 18,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {item.icon}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 20, fontWeight: 700 }}>{item.value}</div>
-                    <Text type="secondary" style={{ fontSize: 11 }}>{item.label} · {item.sub}</Text>
-                  </div>
-                </div>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      )}
-
       <Divider style={{ margin: '4px 0 16px', borderColor: 'var(--border-subtle)' }} />
-      <Text type="secondary" style={{ fontSize: 12, marginBottom: 12, display: 'block' }}>以下为模拟监控演示数据</Text>
       <Row gutter={[16, 16]} className={styles.stretchRow}>
         {kpiCardConfigList.map((cardConfig) => {
           const metricValue = periodMetrics[cardConfig.metricKey];
@@ -389,7 +320,7 @@ const MonitoringContent = () => {
 
           return (
             <Col key={cardConfig.metricKey} xs={24} sm={12} xl={4} className={styles.stretchCol}>
-              <Card bordered={false} className={styles.fillCard} style={{ height: '100%' }}>
+              <Card variant="borderless" className={styles.fillCard} style={{ height: '100%' }}>
                 <div className={styles.kpiCardHeader}>
                   <Text type="secondary" className="text-[13px]">{cardConfig.title}</Text>
                   <div className={`${styles.kpiIcon} ${cardConfig.iconClassName}`}>
@@ -426,7 +357,7 @@ const MonitoringContent = () => {
       <Row gutter={[16, 16]} className={`mt-4 ${styles.stretchRow}`}>
         <Col xs={24} xl={16} className={styles.stretchCol}>
           <Card
-            bordered={false}
+            variant="borderless"
             className={styles.fillCard}
             style={{ height: '100%' }}
             title={
@@ -486,7 +417,7 @@ const MonitoringContent = () => {
         </Col>
 
         <Col xs={24} xl={8} className={styles.stretchCol}>
-          <Card bordered={false} title="流量来源" className={styles.fillCard} style={{ height: '100%' }}>
+          <Card variant="borderless" title="流量来源" className={styles.fillCard} style={{ height: '100%' }}>
             <ResponsiveContainer width="100%" height={190}>
               <PieChart>
                 <Pie
@@ -536,7 +467,7 @@ const MonitoringContent = () => {
 
       <Row gutter={[16, 16]} className={`mt-4 ${styles.stretchRow}`}>
         <Col xs={24} xl={10} className={styles.stretchCol}>
-          <Card bordered={false} title="地区访问分布" className={styles.fillCard} style={{ height: '100%' }}>
+          <Card variant="borderless" title="地区访问分布" className={styles.fillCard} style={{ height: '100%' }}>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart
                 data={regionData}
@@ -580,7 +511,7 @@ const MonitoringContent = () => {
         </Col>
 
         <Col xs={24} xl={14} className={styles.stretchCol}>
-          <Card bordered={false} title="接口巡检" className={styles.fillCard} style={{ height: '100%' }}>
+          <Card variant="borderless" title="接口巡检" className={styles.fillCard} style={{ height: '100%' }}>
             <Table
               size="small"
               pagination={false}
@@ -638,7 +569,7 @@ const MonitoringContent = () => {
 
       <Row gutter={[16, 16]} className={`mt-4 ${styles.stretchRow}`}>
         <Col xs={24} xl={12} className={styles.stretchCol}>
-          <Card bordered={false} title="异常告警" className={styles.fillCard} style={{ height: '100%' }}>
+          <Card variant="borderless" title="异常告警" className={styles.fillCard} style={{ height: '100%' }}>
             <Space direction="vertical" size={10} className="w-full">
               {warningList.map((warningItem) => {
                 const levelConfig = warningLevelConfig[warningItem.level];
@@ -666,7 +597,7 @@ const MonitoringContent = () => {
         </Col>
 
         <Col xs={24} xl={12} className={styles.stretchCol}>
-          <Card bordered={false} title="监控时间线" className={styles.fillCard} style={{ height: '100%' }}>
+          <Card variant="borderless" title="监控时间线" className={styles.fillCard} style={{ height: '100%' }}>
             <Timeline
               className="mt-2"
               items={timelineItems.map((timelineItem) => ({

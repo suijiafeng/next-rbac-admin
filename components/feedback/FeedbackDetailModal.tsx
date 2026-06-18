@@ -93,7 +93,7 @@ export default function FeedbackDetailModal({ feedbackId, open, onClose, onViewe
       footer={null}
       title="反馈详情"
       width={560}
-      destroyOnClose
+      destroyOnHidden
     >
       {loading || !detail ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>

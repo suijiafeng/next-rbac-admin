@@ -252,7 +252,6 @@ export default function AuditLogsContent() {
         return (
           <Space size={6}>
             <Tag color={risk.color}>{risk.label}</Tag>
-            <Text type="secondary">{RISK_SCORE[risk.label]} 分</Text>
           </Space>
         );
       },
@@ -274,12 +273,12 @@ export default function AuditLogsContent() {
       width: 220,
       render: (_v, row) => {
         const targetText = row.targetLabel || row.targetId || '-';
-        const targetPrefix = row.targetType === 'settings' ? '设置' : '对象';
 
         return (
           <div>
-            <div>{targetPrefix}：{targetText}</div>
-            {row.targetId ? <Text type="secondary">ID: {row.targetId}</Text> : null}
+            <div>
+              {targetText}
+             </div>
           </div>
         );
       },
@@ -322,38 +321,6 @@ export default function AuditLogsContent() {
 
   return (
     <div className={styles.page}>
-      <Card
-        variant="borderless"
-        className={styles.overviewCard}
-      >
-        <Space direction="vertical" size={10} style={{ width: '100%' }}>
-          <div className={styles.statGrid}>
-            <div className={styles.statItem}>
-              <div className={styles.statLabel}>当前页高风险</div>
-              <div className={`${styles.statValue} ${styles.statHigh}`}>
-                {riskOverview.high}
-              </div>
-            </div>
-            <div className={styles.statItem}>
-              <div className={styles.statLabel}>当前页中风险</div>
-              <div className={`${styles.statValue} ${styles.statMedium}`}>
-                {riskOverview.medium}
-              </div>
-            </div>
-            <div className={styles.statItem}>
-              <div className={styles.statLabel}>当前页低风险</div>
-              <div className={`${styles.statValue} ${styles.statLow}`}>
-                {riskOverview.low}
-              </div>
-            </div>
-            <div className={styles.statItem}>
-              <div className={styles.statLabel}>当前查询总量</div>
-              <div className={styles.statValue}>{total}</div>
-            </div>
-          </div>
-        </Space>
-      </Card>
-
       <Card variant="borderless" className={styles.filterCard}>
         <div className={styles.filterRow}>
           <Select

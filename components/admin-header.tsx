@@ -2,7 +2,6 @@
 
 import {
   Avatar,
-  Breadcrumb,
   Button,
   Dropdown,
   Layout,
@@ -12,18 +11,19 @@ import {
   Typography,
 } from 'antd';
 import {
-  HomeOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
   MenuOutlined,
+  MenuUnfoldOutlined,
   MoonOutlined,
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import NotificationBell from './notification-bell';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import type { MenuProps } from 'antd';
-import { PAGE_META } from '@/lib/page-meta';
+import { resolvePageMeta } from '@/lib/page-meta';
 import { useTheme } from '@/components/providers/ThemeProvider';
 
 const { Text } = Typography;
@@ -60,10 +60,23 @@ interface AdminHeaderProps {
   /** 仅在移动端显示的汉堡按钮回调 */
   onMobileMenuClick?: () => void;
   showMobileMenu?: boolean;
+  /** 桌面端侧栏折叠状态与切换 */
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  /** 是否允许手动折叠（中等屏强制折叠时为 false） */
+  canToggle?: boolean;
 }
 
 export default function AdminHeader(props: AdminHeaderProps) {
-  const { currentUser, onOpenProfile, onMobileMenuClick, showMobileMenu } = props;
+  const {
+    currentUser,
+    onOpenProfile,
+    onMobileMenuClick,
+    showMobileMenu,
+    collapsed,
+    onToggleCollapse,
+    canToggle,
+  } = props;
   const router = useRouter();
   const pathname = usePathname();
   const { resolved, toggle } = useTheme();
@@ -72,31 +85,7 @@ export default function AdminHeader(props: AdminHeaderProps) {
     router.prefetch('/profile');
   }, [router]);
 
-  // 计算面包屑
-  const breadcrumbItems = useMemo(() => {
-    const segments = pathname.split('/').filter(Boolean);
-    const items = [
-      {
-        href: '/dashboard',
-        title: (
-          <span>
-            <HomeOutlined style={{ marginRight: 4 }} />
-            首页
-          </span>
-        ),
-      },
-    ];
-    segments.forEach((seg, idx) => {
-      const isLast = idx === segments.length - 1;
-      const label = PAGE_META[seg]?.label ?? seg;
-      items.push(
-        isLast
-          ? { title: <span>{label}</span>, href: '' }
-          : { title: <span>{label}</span>, href: '/' + segments.slice(0, idx + 1).join('/') },
-      );
-    });
-    return items;
-  }, [pathname]);
+  const pageTitle = resolvePageMeta(pathname).label;
 
   const displayName = currentUser.nickname || currentUser.username || '?';
   const firstChar = displayName[0]?.toUpperCase() || '?';
@@ -150,22 +139,34 @@ export default function AdminHeader(props: AdminHeaderProps) {
         gap: 16,
       }}
     >
-      {/* 左侧：移动端汉堡 + 面包屑 */}
+      {/* 左侧：折叠/汉堡按钮 + 当前页标题 */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-        {showMobileMenu && (
+        {showMobileMenu ? (
           <Button
             type="text"
             icon={<MenuOutlined />}
             onClick={onMobileMenuClick}
             style={{ width: 32, height: 32 }}
+            aria-label="打开菜单"
           />
+        ) : (
+          canToggle && (
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={onToggleCollapse}
+              style={{ width: 32, height: 32, fontSize: 16 }}
+              aria-label={collapsed ? '展开侧栏' : '收起侧栏'}
+            />
+          )
         )}
-        <Breadcrumb
-          items={breadcrumbItems.map((it) => ({
-            title: it.href ? <a href={it.href}>{it.title}</a> : it.title,
-          }))}
-          style={{ fontSize: 13 }}
-        />
+        <Text
+          strong
+          style={{ fontSize: 16, color: 'var(--text-primary)' }}
+          ellipsis
+        >
+          {pageTitle}
+        </Text>
       </div>
 
       {/* 右侧：消息 + 主题 + 用户 */}

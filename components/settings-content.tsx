@@ -22,7 +22,6 @@ import {
   Tag,
   Tabs,
   Tooltip,
-  Typography,
 } from 'antd';
 import {
   AuditOutlined,
@@ -76,6 +75,8 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'user.suspend': { label: '暂停用户', color: 'warning' },
   'user.unsuspend': { label: '启用用户', color: 'success' },
   'user.reset_password': { label: '重置密码', color: 'purple' },
+  'user.login': { label: '用户登录', color: 'green' },
+  'user.password_change': { label: '修改密码', color: 'gold' },
   'settings.update': { label: '修改设置', color: 'geekblue' },
 };
 
@@ -603,6 +604,7 @@ const SettingsContent = () => {
     {
       title: '对象',
       key: 'target',
+      ellipsis: true,
       render: (_v, row) => {
         const t = row.targetLabel || row.targetId || '-';
         return <span>{row.targetType === 'settings' ? `设置：${t}` : t}</span>;
@@ -694,6 +696,9 @@ const SettingsContent = () => {
     },
     {
       key: 'security',
+      // 安全设置表单在初始化时即写入数据，但该标签页默认不激活；
+      // 强制渲染以保证 securityForm 始终与 Form 元素连接，避免 useForm 未连接告警
+      forceRender: true,
       label: (
         <span>
           <LockOutlined className="mr-1.5" />
@@ -727,7 +732,7 @@ const SettingsContent = () => {
                 { type: 'number', min: 1, max: 30, message: '请输入 1~30 之间的整数' },
               ]}
             >
-              <InputNumber min={1} max={30} precision={0} className={styles.narrowNumberInput} addonAfter="天" />
+              <InputNumber min={1} max={30} precision={0} className={styles.narrowNumberInput} suffix="天" />
             </Form.Item>
             <Form.Item
               label={<span className={settingsLabelClassName}>最大登录尝试次数</span>}
@@ -738,7 +743,7 @@ const SettingsContent = () => {
                 { type: 'number', min: 1, max: 20, message: '请输入 1~20 之间的整数' },
               ]}
             >
-              <InputNumber min={1} max={20} precision={0} className={styles.narrowNumberInput} addonAfter="次" />
+              <InputNumber min={1} max={20} precision={0} className={styles.narrowNumberInput} suffix="次" />
             </Form.Item>
             <Form.Item
               label={<span className={settingsLabelClassName}>允许用户注册</span>}
@@ -992,10 +997,10 @@ const SettingsContent = () => {
                         a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
                         a.click();
                         URL.revokeObjectURL(url);
-                        message.success(`已导出 ${auditLogs.length} 条`);
+                        message.success(`已导出本页 ${auditLogs.length} 条`);
                       }}
                     >
-                      导出 CSV
+                      导出本页 CSV
                     </Button>
                     <Button
                       icon={<ReloadOutlined />}
@@ -1044,10 +1049,6 @@ const SettingsContent = () => {
 
   return (
     <>
-      <Typography.Title level={4} className={styles.title}>
-        系统设置
-      </Typography.Title>
-
       <Tabs items={tabItems} onChange={handleTabChange} />
 
       <Modal

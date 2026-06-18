@@ -1,5 +1,11 @@
 /* 全部颜色使用 CSS 变量，明暗主题自动适配 */
 
+/* ── 卡片容器（与审计日志一致） ── */
+.tableCard {
+  border: 1px solid var(--border-subtle);
+}
+
+/* ── 表头 ── */
 .table :global(.ant-table-thead > tr > th) {
   background: var(--bg-subtle) !important;
   font-weight: 600;
@@ -16,6 +22,7 @@
   background: var(--bg-subtle) !important;
 }
 
+/* ── 表格行 ── */
 .table :global(.ant-table-tbody > tr > td) {
   border-bottom: 1px solid var(--border-subtle) !important;
   padding: 13px 16px !important;
@@ -24,14 +31,18 @@
   vertical-align: middle;
 }
 
-.table :global(.ant-table-tbody > tr:hover > td) {
-  background: var(--bg-hover) !important;
+/* 奇数行：白色 */
+.table :global(.ant-table-tbody > tr:nth-child(odd) > td) {
+  background: var(--bg-container);
 }
 
+/* 偶数行：明显的斑马底色 */
 .table :global(.ant-table-tbody > tr:nth-child(even) > td) {
-  background: var(--bg-subtle);
+  background: var(--table-stripe-bg, #ebf0f9);
 }
 
+/* hover 优先级最高 */
+.table :global(.ant-table-tbody > tr:hover > td),
 .table :global(.ant-table-tbody > tr:nth-child(even):hover > td) {
   background: var(--bg-hover) !important;
 }
@@ -45,8 +56,9 @@
 }
 
 .table :global(.ant-pagination) {
-  margin: 12px 0 0 0 !important;
-  padding: 0 4px;
+  margin: 0 !important;
+  padding: 10px 16px 12px !important;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .table :global(.ant-table-body::-webkit-scrollbar) {

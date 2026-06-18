@@ -25,7 +25,7 @@ import {
 } from '@ant-design/icons';
 import { request } from '@/lib/request';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 interface FeedbackFormValues {
@@ -95,9 +95,6 @@ export default function FeedbackContent() {
     <div style={{ padding: 24 }}>
       <Card>
         <Space direction="vertical" size={4} style={{ marginBottom: 20 }}>
-          <Title level={4} style={{ margin: 0 }}>
-            意见反馈
-          </Title>
           <Text type="secondary">
             使用过程中遇到问题，或者有想吐槽 / 想要的功能？告诉我们，让产品变得更好用。
           </Text>

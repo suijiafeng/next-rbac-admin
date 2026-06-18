@@ -230,7 +230,7 @@ function LoginHistoryTab() {
   ];
 
   return (
-    <Card title="操作记录" bordered={false}>
+    <Card title="操作记录" variant="borderless">
       <Table
         rowKey="id"
         size="small"
@@ -391,7 +391,7 @@ export default function ProfilePage() {
   const avatarSrc = profile?.avatar || undefined;
 
   const infoTab = (
-    <Card loading={loading} bordered={false}>
+    <Card loading={loading} variant="borderless">
       {/* 头像区域 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
         <div style={{ position: 'relative', display: 'inline-block' }}>

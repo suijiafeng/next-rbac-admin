@@ -28,7 +28,7 @@ import {
 import { request } from '@/lib/request';
 import styles from '@/components/permissions-content.module.css';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 interface PermissionItem {
   id: number;
@@ -382,11 +382,6 @@ const PermissionsContent = () => {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <div>
-          <Title level={4} style={{ color: 'var(--text-primary)' }}>
-            权限管理
-          </Title>
-        </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
           新建角色
         </Button>
@@ -395,7 +390,7 @@ const PermissionsContent = () => {
       <Row gutter={[16, 16]} className={styles.layoutRow}>
         <Col xs={24} xl={8} className={styles.stretchCol}>
           <Card
-            bordered={false}
+            variant="borderless"
             className={styles.fillCard}
             style={{ height: '100%' }}
             title={<Text strong>角色列表</Text>}
@@ -424,7 +419,7 @@ const PermissionsContent = () => {
 
         <Col xs={24} xl={16} className={styles.stretchCol}>
           <Card
-            bordered={false}
+            variant="borderless"
             className={styles.fillCard}
             style={{ height: '100%' }}
             title={
@@ -535,7 +530,7 @@ const PermissionsContent = () => {
         confirmLoading={submittingRoleModal}
         okText={roleModalMode === 'create' ? '创建' : '保存'}
         cancelText="取消"
-        destroyOnClose
+        destroyOnHidden
         width={460}
       >
         <Form form={roleForm} layout="vertical" className={styles.modalForm}>
