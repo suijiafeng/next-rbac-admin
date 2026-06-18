@@ -10,6 +10,7 @@ import {
   message,
   Modal,
   Popconfirm,
+  Radio,
   Space,
   Switch,
   Table,
@@ -27,14 +28,21 @@ import dayjs from 'dayjs';
 import { request } from '@/lib/request';
 import { formatDate } from '@/lib/format';
 import type { PageResponse } from '@/types/request';
+import {
+  ANNOUNCEMENT_LEVELS,
+  ANNOUNCEMENT_LEVEL_META,
+  normalizeAnnouncementLevel,
+  type AnnouncementLevel,
+} from '@/constants/announcement';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 interface AnnouncementItem {
   id: number;
   title: string;
   content: string;
+  level: AnnouncementLevel;
   publisherUsername: string;
   active: boolean;
   startsAt: string;
@@ -45,6 +53,7 @@ interface AnnouncementItem {
 interface AnnouncementFormValues {
   title: string;
   content: string;
+  level: AnnouncementLevel;
   active: boolean;
   startsAt?: unknown;
   expiresAt?: unknown;
@@ -83,7 +92,7 @@ export default function AnnouncementsContent() {
   const handleCreate = () => {
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ active: true });
+    form.setFieldsValue({ active: true, level: 'info' });
     setModalOpen(true);
   };
 
@@ -92,6 +101,7 @@ export default function AnnouncementsContent() {
     form.setFieldsValue({
       title: record.title,
       content: record.content,
+      level: normalizeAnnouncementLevel(record.level),
       active: record.active,
       startsAt: record.startsAt ? dayjs(record.startsAt) : undefined,
       expiresAt: record.expiresAt ? dayjs(record.expiresAt) : undefined,
@@ -116,9 +126,11 @@ export default function AnnouncementsContent() {
       const payload = {
         title: values.title,
         content: values.content,
+        level: values.level,
         active: values.active,
-        startsAt: values.startsAt ? dayjs(values.startsAt as Parameters<typeof dayjs>[0]).toISOString() : undefined,
-        expiresAt: values.expiresAt ? dayjs(values.expiresAt as Parameters<typeof dayjs>[0]).toISOString() : null,
+        // 生效时间取当天起点，过期时间取当天末尾（含当天整天），避免选「今天」即刻过期
+        startsAt: values.startsAt ? dayjs(values.startsAt as Parameters<typeof dayjs>[0]).startOf('day').toISOString() : undefined,
+        expiresAt: values.expiresAt ? dayjs(values.expiresAt as Parameters<typeof dayjs>[0]).endOf('day').toISOString() : null,
       };
       if (editing) {
         await request(`/api/admin/announcements/${editing.id}`, { method: 'PUT', data: payload });
@@ -136,16 +148,37 @@ export default function AnnouncementsContent() {
     }
   };
 
+  // 公告的「实际展示状态」：与 Dashboard 横幅的生效判定保持一致
+  const getDisplayStatus = (row: AnnouncementItem) => {
+    if (!row.active) return { color: 'default', label: '未启用' };
+    const now = dayjs();
+    if (row.startsAt && dayjs(row.startsAt).isAfter(now)) return { color: 'blue', label: '未开始' };
+    if (row.expiresAt && dayjs(row.expiresAt).isBefore(now)) return { color: 'orange', label: '已过期' };
+    return { color: 'green', label: '生效中' };
+  };
+
   const columns: ColumnsType<AnnouncementItem> = [
     {
       title: '标题',
       dataIndex: 'title',
-      render: (v: string, row: AnnouncementItem) => (
-        <Space size={6}>
-          {row.active ? <Tag color="green">生效</Tag> : <Tag>未启用</Tag>}
-          <Text strong style={{ fontSize: 13 }}>{v}</Text>
-        </Space>
-      ),
+      render: (v: string, row: AnnouncementItem) => {
+        const status = getDisplayStatus(row);
+        return (
+          <Space size={6}>
+            <Tag color={status.color}>{status.label}</Tag>
+            <Text strong style={{ fontSize: 13 }}>{v}</Text>
+          </Space>
+        );
+      },
+    },
+    {
+      title: '等级',
+      dataIndex: 'level',
+      width: 88,
+      render: (v: AnnouncementLevel) => {
+        const meta = ANNOUNCEMENT_LEVEL_META[normalizeAnnouncementLevel(v)];
+        return <Tag color={meta.tagColor}>{meta.label}</Tag>;
+      },
     },
     {
       title: '内容',
@@ -192,17 +225,14 @@ export default function AnnouncementsContent() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={4} style={{ color: 'var(--text-primary)', margin: 0 }}>
-          公告管理
-        </Title>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 16 }}>
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => load(page)} loading={loading}>刷新</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>发布公告</Button>
         </Space>
       </div>
 
-      <Card bordered={false}>
+      <Card variant="borderless">
         <Table
           rowKey="id"
           size="middle"
@@ -236,6 +266,24 @@ export default function AnnouncementsContent() {
           </Form.Item>
           <Form.Item label="内容" name="content" rules={[{ required: true, message: '请输入内容' }]}>
             <TextArea rows={4} placeholder="公告内容" maxLength={500} showCount />
+          </Form.Item>
+          <Form.Item
+            label="等级"
+            name="level"
+            rules={[{ required: true, message: '请选择等级' }]}
+            extra="紧急公告将以弹窗强提醒并需用户确认，且横幅不可关闭"
+          >
+            <Radio.Group>
+              <Space size={16}>
+                {ANNOUNCEMENT_LEVELS.map((lv) => (
+                  <Radio key={lv} value={lv}>
+                    <Tag color={ANNOUNCEMENT_LEVEL_META[lv].tagColor} style={{ marginInlineEnd: 0 }}>
+                      {ANNOUNCEMENT_LEVEL_META[lv].label}
+                    </Tag>
+                  </Radio>
+                ))}
+              </Space>
+            </Radio.Group>
           </Form.Item>
           <Form.Item label="是否生效" name="active" valuePropName="checked">
             <Switch checkedChildren="生效" unCheckedChildren="停用" />

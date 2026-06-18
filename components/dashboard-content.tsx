@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   Badge,
   Card,
   Col,
@@ -74,14 +73,6 @@ interface StatsData {
   loginFailCount: number;
 }
 
-interface AnnouncementItem {
-  id: number;
-  title: string;
-  content: string;
-  publisherUsername: string;
-  createdAt: string;
-}
-
 function KpiCard({
   title,
   value,
@@ -98,7 +89,7 @@ function KpiCard({
   tooltip?: string;
 }) {
   return (
-    <Card bordered={false} style={{ height: '100%' }}>
+    <Card variant="borderless" style={{ height: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -137,19 +128,12 @@ function KpiCard({
 
 export default function DashboardContent() {
   const [stats, setStats] = useState<StatsData | null>(null);
-  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     try {
-      const [statsRes, announcementsRes] = await Promise.allSettled([
-        request<StatsData>('/api/admin/stats'),
-        request<{ list: AnnouncementItem[] }>('/api/admin/announcements', {
-          params: { active: 'true', pageSize: 5 },
-        }),
-      ]);
-      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
-      if (announcementsRes.status === 'fulfilled') setAnnouncements(announcementsRes.value.data.list);
+      const statsRes = await request<StatsData>('/api/admin/stats');
+      setStats(statsRes.data);
     } catch {
       // 静默处理
     } finally {
@@ -192,27 +176,6 @@ export default function DashboardContent() {
 
   return (
     <div style={{ padding: 0 }}>
-      {/* 公告横幅 */}
-      {announcements.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          {announcements.map((ann) => (
-            <Alert
-              key={ann.id}
-              type="info"
-              showIcon
-              banner
-              message={
-                <span>
-                  <strong>{ann.title}</strong>
-                  <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>{ann.content}</Text>
-                </span>
-              }
-              style={{ marginBottom: 8 }}
-            />
-          ))}
-        </div>
-      )}
-
       {/* KPI 卡片行 */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} xl={6}>
@@ -258,7 +221,7 @@ export default function DashboardContent() {
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         {/* 近 30 天用户注册趋势 */}
         <Col xs={24} xl={16}>
-          <Card bordered={false} title={<Text strong>近 30 天用户注册趋势</Text>}>
+          <Card variant="borderless" title={<Text strong>近 30 天用户注册趋势</Text>}>
             {s?.newUsersTrend && s.newUsersTrend.length > 0 ? (
               <ResponsiveContainer width="100%" height={240}>
                 <AreaChart
@@ -308,7 +271,7 @@ export default function DashboardContent() {
 
         {/* 近 30 天审计事件分布 */}
         <Col xs={24} xl={8}>
-          <Card bordered={false} title={<Text strong>近 30 天操作分布</Text>} style={{ height: '100%' }}>
+          <Card variant="borderless" title={<Text strong>近 30 天操作分布</Text>} style={{ height: '100%' }}>
             {s?.auditActionCounts && s.auditActionCounts.length > 0 ? (
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
@@ -361,7 +324,7 @@ export default function DashboardContent() {
       {/* 近期审计事件 + 系统状态 */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} xl={16}>
-          <Card bordered={false} title={<Text strong>最近操作记录</Text>}>
+          <Card variant="borderless" title={<Text strong>最近操作记录</Text>}>
             {s?.recentAuditLogs && s.recentAuditLogs.length > 0 ? (
               <Timeline
                 style={{ marginTop: 8 }}
@@ -398,7 +361,7 @@ export default function DashboardContent() {
         </Col>
 
         <Col xs={24} xl={8}>
-          <Card bordered={false} title={<Text strong>系统状态</Text>} style={{ height: '100%' }}>
+          <Card variant="borderless" title={<Text strong>系统状态</Text>} style={{ height: '100%' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {[
                 {
@@ -471,7 +434,7 @@ export default function DashboardContent() {
       {/* 近 30 天每日分布柱图 */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={24}>
-          <Card bordered={false} title={<Text strong>近 30 天新增用户趋势</Text>}>
+          <Card variant="borderless" title={<Text strong>近 30 天新增用户趋势</Text>}>
             {s?.newUsersTrend ? (
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart
