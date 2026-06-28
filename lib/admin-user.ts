@@ -18,6 +18,7 @@ export async function getCurrentAdminUser() {
       username: true,
       nickname: true,
       email: true,
+      avatar: true,
       status: true,
       createdAt: true,
       updatedAt: true,

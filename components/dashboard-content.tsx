@@ -1,387 +1,338 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
+  Badge,
   Card,
   Col,
+  Empty,
   Row,
-  Typography,
-  Tabs,
-  DatePicker,
-  Progress,
-  Space,
-  Table,
-  Badge,
+  Spin,
+  Tag,
+  Timeline,
   Tooltip,
-  Dropdown,
-  message,
+  Typography,
 } from 'antd';
 import {
-  InfoCircleOutlined,
   ArrowUpOutlined,
-  ArrowDownOutlined,
-  EllipsisOutlined,
-  CaretUpOutlined,
-  CaretDownOutlined,
+  LockOutlined,
+  SafetyCertificateOutlined,
+  TeamOutlined,
+  UserOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import {
-  BarChart,
+  Area,
+  AreaChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip as ReTooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip as ReTooltip,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
-import dayjs from 'dayjs';
+import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
+import { request } from '@/lib/request';
 
-const { Text } = Typography;
-const { RangePicker } = DatePicker;
+const { Text, Title } = Typography;
 
-// ─── Mock data ─────────────────────────────────────────────────────────────
+const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+  'user.create': { label: '新增用户', color: 'cyan' },
+  'user.delete': { label: '删除用户', color: 'red' },
+  'role.grant_admin': { label: '授予管理员', color: 'blue' },
+  'role.revoke_admin': { label: '撤销管理员', color: 'orange' },
+  'user.suspend': { label: '暂停用户', color: 'warning' },
+  'user.unsuspend': { label: '启用用户', color: 'success' },
+  'user.reset_password': { label: '重置密码', color: 'purple' },
+  'settings.update': { label: '修改设置', color: 'geekblue' },
+  'user.login': { label: '用户登录', color: 'green' },
+  'user.password_change': { label: '修改密码', color: 'gold' },
+};
 
-const salesMonthly = [
-  { month: '1月', value: 780 },
-  { month: '2月', value: 1180 },
-  { month: '3月', value: 650 },
-  { month: '4月', value: 520 },
-  { month: '5月', value: 1080 },
-  { month: '6月', value: 1200 },
-  { month: '7月', value: 800 },
-  { month: '8月', value: 700 },
-  { month: '9月', value: 430 },
-  { month: '10月', value: 790 },
-  { month: '11月', value: 510 },
-  { month: '12月', value: 980 },
-];
+const PIE_COLORS = ['#1677ff', '#52c41a', '#fadb14', '#ff7a45', '#9254de', '#13c2c2', '#f5222d', '#faad14'];
 
-const visitMonthly = [
-  { month: '1月', value: 1200 },
-  { month: '2月', value: 980 },
-  { month: '3月', value: 1400 },
-  { month: '4月', value: 860 },
-  { month: '5月', value: 1600 },
-  { month: '6月', value: 1350 },
-  { month: '7月', value: 1100 },
-  { month: '8月', value: 900 },
-  { month: '9月', value: 700 },
-  { month: '10月', value: 1050 },
-  { month: '11月', value: 820 },
-  { month: '12月', value: 1300 },
-];
-
-const visitSparkline = [
-  { v: 300 }, { v: 500 }, { v: 350 }, { v: 700 }, { v: 450 },
-  { v: 600 }, { v: 400 }, { v: 750 }, { v: 500 }, { v: 680 },
-];
-
-const searchSparkline = [
-  { v: 200 }, { v: 350 }, { v: 280 }, { v: 420 }, { v: 320 },
-  { v: 510 }, { v: 380 }, { v: 450 }, { v: 300 }, { v: 490 },
-];
-
-const avgSearchSparkline = [
-  { v: 500 }, { v: 400 }, { v: 480 }, { v: 360 }, { v: 420 },
-  { v: 310 }, { v: 390 }, { v: 350 }, { v: 430 }, { v: 370 },
-];
-
-const paymentBars = [
-  { v: 60 }, { v: 90 }, { v: 70 }, { v: 110 }, { v: 80 },
-  { v: 130 }, { v: 100 }, { v: 150 }, { v: 90 }, { v: 120 },
-  { v: 140 }, { v: 160 }, { v: 110 }, { v: 80 }, { v: 130 },
-];
-
-const storeRanking = [
-  { rank: 1, name: '工专路 0 号店', value: 323234 },
-  { rank: 2, name: '工专路 1 号店', value: 323234 },
-  { rank: 3, name: '工专路 2 号店', value: 323234 },
-  { rank: 4, name: '工专路 3 号店', value: 323234 },
-  { rank: 5, name: '工专路 4 号店', value: 323234 },
-  { rank: 6, name: '工专路 5 号店', value: 323234 },
-  { rank: 7, name: '工专路 6 号店', value: 323234 },
-];
-
-const PIE_COLORS = ['#1677ff', '#52c41a', '#fadb14', '#ff7a45', '#9254de', '#13c2c2'];
-
-const categoryData = [
-  { name: '家用电器', value: 4544 },
-  { name: '母婴产品', value: 1231 },
-  { name: '个护健康', value: 3113 },
-  { name: '服饰箱包', value: 2341 },
-  { name: '食用酒水', value: 3321 },
-  { name: '其他', value: 1231 },
-];
-
-const categoryDataMap = {
-  all: categoryData,
-  online: [
-    { name: '家用电器', value: 5288 },
-    { name: '母婴产品', value: 1420 },
-    { name: '个护健康', value: 3550 },
-    { name: '服饰箱包', value: 2810 },
-    { name: '食用酒水', value: 2480 },
-    { name: '其他', value: 920 },
-  ],
-  store: [
-    { name: '家用电器', value: 2980 },
-    { name: '母婴产品', value: 1180 },
-    { name: '个护健康', value: 2640 },
-    { name: '服饰箱包', value: 1860 },
-    { name: '食用酒水', value: 3960 },
-    { name: '其他', value: 1310 },
-  ],
-} as const;
-
-const searchKeywords = Array.from({ length: 50 }, (_, i) => ({
-  key: i + 1,
-  rank: i + 1,
-  keyword: `搜索关键词-${i}`,
-  users: 120 + ((i * 137) % 900),
-  growth: (i * 17) % 100,
-  up: i % 4 !== 0,
-}));
-
-
-function TrendTag({ value, up }: { value: string; up: boolean }) {
-  return (
-    <Text style={{ fontSize: 12, color: up ? '#f5222d' : '#52c41a' }}>
-      {up ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {value}
-    </Text>
-  );
+interface StatsData {
+  userCount: number;
+  activeUserCount: number;
+  roleCount: number;
+  permissionCount: number;
+  newUsersTrend: Array<{ date: string; count: number }>;
+  auditActionCounts: Array<{ action: string; count: number }>;
+  recentAuditLogs: Array<{
+    id: number;
+    actorUsername: string;
+    action: string;
+    targetLabel: string | null;
+    createdAt: string;
+  }>;
+  loginFailCount: number;
 }
 
-function Sparkline({ data }: { data: { v: number }[] }) {
-  return (
-    <ResponsiveContainer width="100%" height={50}>
-      <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-        <defs>
-          <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#9254de" stopOpacity={0.25} />
-            <stop offset="95%" stopColor="#9254de" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <Area
-          type="monotone"
-          dataKey="v"
-          stroke="#9254de"
-          strokeWidth={1.5}
-          fill="url(#sparkGrad)"
-          dot={false}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
-  );
+interface AnnouncementItem {
+  id: number;
+  title: string;
+  content: string;
+  publisherUsername: string;
+  createdAt: string;
 }
 
-function MiniBarChart({ data }: { data: { v: number }[] }) {
+function KpiCard({
+  title,
+  value,
+  icon,
+  color,
+  sub,
+  tooltip,
+}: {
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+  color: string;
+  sub?: string;
+  tooltip?: string;
+}) {
   return (
-    <ResponsiveContainer width="100%" height={50}>
-      <BarChart data={data} barSize={4} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-        <Bar dataKey="v" fill="#1677ff" radius={[2, 2, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
+    <Card bordered={false} style={{ height: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Text type="secondary" style={{ fontSize: 13 }}>{title}</Text>
+            {tooltip && (
+              <Tooltip title={tooltip}>
+                <span style={{ cursor: 'default', color: 'var(--text-tertiary)', fontSize: 12 }}>?</span>
+              </Tooltip>
+            )}
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 700, margin: '10px 0 4px', color: 'var(--text-primary)' }}>
+            {value}
+          </div>
+          {sub && <Text type="secondary" style={{ fontSize: 12 }}>{sub}</Text>}
+        </div>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 10,
+            background: color,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            fontSize: 22,
+            flexShrink: 0,
+          }}
+        >
+          {icon}
+        </div>
+      </div>
+    </Card>
   );
 }
-
 
 export default function DashboardContent() {
-  const [chartTab, setChartTab] = useState('sales');
-  const [period, setPeriod] = useState('year');
-  const [categoryChannel, setCategoryChannel] = useState<'all' | 'online' | 'store'>('all');
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const chartData = chartTab === 'sales' ? salesMonthly : visitMonthly;
-  const currentCategoryData = useMemo(() => categoryDataMap[categoryChannel], [categoryChannel]);
+  const loadData = useCallback(async () => {
+    try {
+      const [statsRes, announcementsRes] = await Promise.allSettled([
+        request<StatsData>('/api/admin/stats'),
+        request<{ list: AnnouncementItem[] }>('/api/admin/announcements', {
+          params: { active: 'true', pageSize: 5 },
+        }),
+      ]);
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
+      if (announcementsRes.status === 'fulfilled') setAnnouncements(announcementsRes.value.data.list);
+    } catch {
+      // 静默处理
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const searchDropdownItems = [
-    { key: 'refresh', label: '刷新数据' },
-    { key: 'export', label: '导出报表' },
-    { key: 'detail', label: '查看详情' },
-  ];
+  useEffect(() => {
+    loadData();
+    const timer = setInterval(loadData, 60_000);
+    return () => clearInterval(timer);
+  }, [loadData]);
 
-  const categoryDropdownItems = [
-    { key: 'all', label: '切换到全部渠道' },
-    { key: 'online', label: '切换到线上' },
-    { key: 'store', label: '切换到门店' },
-  ];
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  const s = stats;
 
   return (
     <div style={{ padding: 0 }}>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} xl={6}>
-          <Card bordered={false} style={{ height: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text type="secondary" style={{ fontSize: 13 }}>总销售额</Text>
-              <Tooltip title="总销售额是当前所有订单金额之和">
-                <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
-              </Tooltip>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, margin: '12px 0 4px' }}>
-              ¥ 126,560
-            </div>
-            <Space size={16}>
-              <span><Text type="secondary" style={{ fontSize: 12 }}>周同比</Text> <TrendTag value="12%" up /></span>
-              <span><Text type="secondary" style={{ fontSize: 12 }}>日同比</Text> <TrendTag value="11%" up={false} /></span>
-            </Space>
-            <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 12, paddingTop: 12 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>日销售额</Text>
-              <Text strong style={{ marginLeft: 8, fontSize: 12 }}>¥ 12,423</Text>
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={12} xl={6}>
-          <Card bordered={false} style={{ height: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text type="secondary" style={{ fontSize: 13 }}>访问量</Text>
-              <Tooltip title="最近30天的网站总访问量">
-                <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
-              </Tooltip>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, margin: '12px 0 4px' }}>
-              8,846
-            </div>
-            <Sparkline data={visitSparkline} />
-            <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 8, paddingTop: 10 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>日访问量</Text>
-              <Text strong style={{ marginLeft: 8, fontSize: 12 }}>1,234</Text>
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={12} xl={6}>
-          <Card bordered={false} style={{ height: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text type="secondary" style={{ fontSize: 13 }}>支付笔数</Text>
-              <Tooltip title="当前已成功支付的订单数量">
-                <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
-              </Tooltip>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, margin: '12px 0 4px' }}>
-              6,560
-            </div>
-            <MiniBarChart data={paymentBars} />
-            <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 8, paddingTop: 10 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>转化率</Text>
-              <Text strong style={{ marginLeft: 8, fontSize: 12 }}>60%</Text>
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={12} xl={6}>
-          <Card bordered={false} style={{ height: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text type="secondary" style={{ fontSize: 13 }}>运营活动效果</Text>
-              <Tooltip title="当前运营活动整体效果评分">
-                <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
-              </Tooltip>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, margin: '12px 0 8px' }}>
-              78%
-            </div>
-            <Progress
-              percent={78}
-              showInfo={false}
-              strokeColor={{ from: '#108ee9', to: '#52c41a' }}
+      {/* 公告横幅 */}
+      {announcements.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          {announcements.map((ann) => (
+            <Alert
+              key={ann.id}
+              type="info"
+              showIcon
+              banner
+              message={
+                <span>
+                  <strong>{ann.title}</strong>
+                  <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>{ann.content}</Text>
+                </span>
+              }
               style={{ marginBottom: 8 }}
             />
-            <Space size={16}>
-              <span><Text type="secondary" style={{ fontSize: 12 }}>周同比</Text> <TrendTag value="12%" up /></span>
-              <span><Text type="secondary" style={{ fontSize: 12 }}>日同比</Text> <TrendTag value="11%" up={false} /></span>
-            </Space>
-          </Card>
+          ))}
+        </div>
+      )}
+
+      {/* KPI 卡片行 */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} xl={6}>
+          <KpiCard
+            title="注册用户总数"
+            value={s?.userCount ?? 0}
+            icon={<TeamOutlined />}
+            color="#1677ff"
+            sub={`活跃 ${s?.activeUserCount ?? 0} 人`}
+            tooltip="系统中所有注册用户数量"
+          />
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <KpiCard
+            title="角色数量"
+            value={s?.roleCount ?? 0}
+            icon={<SafetyCertificateOutlined />}
+            color="#52c41a"
+            sub="当前系统角色配置数"
+          />
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <KpiCard
+            title="权限条目"
+            value={s?.permissionCount ?? 0}
+            icon={<LockOutlined />}
+            color="#722ed1"
+            sub="已配置的权限项总数"
+          />
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <KpiCard
+            title="近 30 天登录失败"
+            value={s?.loginFailCount ?? 0}
+            icon={<WarningOutlined />}
+            color={((s?.loginFailCount ?? 0) > 50) ? '#ff4d4f' : '#faad14'}
+            sub="登录尝试失败累计次数"
+            tooltip="来自 LoginAttempt 表的失败次数合计"
+          />
         </Col>
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        {/* 近 30 天用户注册趋势 */}
         <Col xs={24} xl={16}>
-          <Card bordered={false}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-              <Tabs
-                activeKey={chartTab}
-                onChange={setChartTab}
-                style={{ marginBottom: 0 }}
-                items={[
-                  { key: 'sales', label: '销售额' },
-                  { key: 'visits', label: '访问量' },
-                ]}
-              />
-              <Space>
-                {(['today', 'week', 'month', 'year'] as const).map((p) => (
-                  <span
-                    key={p}
-                    onClick={() => setPeriod(p)}
-                    style={{
-                      cursor: 'pointer',
-                      padding: '2px 10px',
-                      borderRadius: 4,
-                      fontSize: 13,
-                      color: period === p ? 'var(--color-primary)' : 'var(--text-secondary)',
-                      fontWeight: period === p ? 600 : 400,
-                    }}
-                  >
-                    {p === 'today' ? '今日' : p === 'week' ? '本周' : p === 'month' ? '本月' : '本年'}
-                  </span>
-                ))}
-                <RangePicker
-                  size="small"
-                  defaultValue={[dayjs('2026-01-01'), dayjs('2026-12-31')]}
-                  style={{ marginLeft: 4 }}
-                />
-              </Space>
-            </div>
-
-            <ResponsiveContainer width="100%" height={260} style={{ marginTop: 16 }}>
-              <BarChart data={chartData} barSize={28} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" vertical={false} />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <ReTooltip cursor={{ fill: 'rgba(22,119,255,0.06)' }} />
-                <Bar dataKey="value" fill="#1677ff" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <Card bordered={false} title={<Text strong>近 30 天用户注册趋势</Text>}>
+            {s?.newUsersTrend && s.newUsersTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart
+                  data={s.newUsersTrend}
+                  margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="regGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#1677ff" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#1677ff" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={4}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <ReTooltip
+                    formatter={(v: ValueType | undefined) => [`${v ?? 0} 人`, '新增用户']}
+                    cursor={{ stroke: 'rgba(22,119,255,0.2)', strokeWidth: 1 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#1677ff"
+                    strokeWidth={2}
+                    fill="url(#regGrad)"
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <Empty description="暂无注册数据" style={{ padding: '40px 0' }} />
+            )}
           </Card>
         </Col>
 
+        {/* 近 30 天审计事件分布 */}
         <Col xs={24} xl={8}>
-          <Card bordered={false} style={{ height: '100%' }}>
-            <Text strong style={{ fontSize: 14 }}>门店销售额排名</Text>
-            <div style={{ marginTop: 16 }}>
-              {storeRanking.map((item) => (
-                <div
-                  key={item.rank}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: 14,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      background: item.rank <= 3 ? 'var(--text-primary)' : 'var(--bg-subtle)',
-                      color: item.rank <= 3 ? 'var(--bg-container)' : 'var(--text-tertiary)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                      marginRight: 10,
-                    }}
+          <Card bordered={false} title={<Text strong>近 30 天操作分布</Text>} style={{ height: '100%' }}>
+            {s?.auditActionCounts && s.auditActionCounts.length > 0 ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie
+                    data={s.auditActionCounts.map((r) => ({
+                      name: ACTION_LABELS[r.action]?.label ?? r.action,
+                      value: r.count,
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
                   >
-                    {item.rank}
-                  </span>
-                  <Text style={{ flex: 1, fontSize: 13 }}>{item.name}</Text>
-                  <Text style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {item.value.toLocaleString()}
-                  </Text>
+                    {s.auditActionCounts.map((_, idx) => (
+                      <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ReTooltip formatter={(v: ValueType | undefined, name: NameType | undefined) => [v ?? 0, name ?? '']} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <Empty description="暂无操作记录" style={{ padding: '40px 0' }} />
+            )}
+
+            <div style={{ marginTop: 8 }}>
+              {s?.auditActionCounts.slice(0, 5).map((r, idx) => (
+                <div key={r.action} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: PIE_COLORS[idx % PIE_COLORS.length],
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Text style={{ fontSize: 12 }}>{ACTION_LABELS[r.action]?.label ?? r.action}</Text>
+                  </div>
+                  <Badge count={r.count} style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }} />
                 </div>
               ))}
             </div>
@@ -389,194 +340,135 @@ export default function DashboardContent() {
         </Col>
       </Row>
 
+      {/* 近期审计事件 + 系统状态 */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} xl={12}>
-          <Card
-            bordered={false}
-            title={<Text strong>线上热门搜索</Text>}
-            extra={
-              <Dropdown
-                menu={{
-                  items: searchDropdownItems,
-                  onClick: ({ key }) => {
-                    if (key === 'refresh') message.success('热门搜索数据已刷新');
-                    if (key === 'export') message.success('已开始导出热门搜索报表');
-                    if (key === 'detail') message.info('可继续补充热门搜索详情页');
-                  },
-                }}
-                trigger={['click']}
-              >
-                <EllipsisOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
-              </Dropdown>
-            }
-          >
-            <Row gutter={16}>
-              <Col span={12}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  搜索用户数 <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
-                </Text>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
-                  <span style={{ fontSize: 22, fontWeight: 700 }}>17.1</span>
-                  <ArrowUpOutlined style={{ color: '#f5222d', fontSize: 12 }} />
-                </div>
-                <Sparkline data={searchSparkline} />
-              </Col>
-              <Col span={12}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  人均搜索次数 <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
-                </Text>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
-                  <span style={{ fontSize: 22, fontWeight: 700 }}>26.2</span>
-                  <ArrowDownOutlined style={{ color: '#52c41a', fontSize: 12 }} />
-                </div>
-                <Sparkline data={avgSearchSparkline} />
-              </Col>
-            </Row>
-
-            <Table
-              style={{ marginTop: 16 }}
-              size="small"
-              dataSource={searchKeywords}
-              pagination={{ pageSize: 5, showSizeChanger: false, size: 'small' }}
-              columns={[
-                {
-                  title: '排名',
-                  dataIndex: 'rank',
-                  width: 52,
-                  render: (v: number) => <Text type="secondary">{v}</Text>,
-                },
-                {
-                  title: '搜索关键词',
-                  dataIndex: 'keyword',
-                },
-                {
-                  title: (
-                    <span>
-                      用户数{' '}
-                      <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1, verticalAlign: 'middle', marginLeft: 2 }}>
-                        <CaretUpOutlined style={{ fontSize: 10, color: 'var(--text-tertiary)' }} />
-                        <CaretDownOutlined style={{ fontSize: 10, color: 'var(--text-tertiary)' }} />
-                      </span>
-                    </span>
-                  ),
-                  dataIndex: 'users',
-                  align: 'right' as const,
-                },
-                {
-                  title: (
-                    <span>
-                      周涨幅{' '}
-                      <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1, verticalAlign: 'middle', marginLeft: 2 }}>
-                        <CaretUpOutlined style={{ fontSize: 10, color: 'var(--text-tertiary)' }} />
-                        <CaretDownOutlined style={{ fontSize: 10, color: 'var(--text-tertiary)' }} />
-                      </span>
-                    </span>
-                  ),
-                  dataIndex: 'growth',
-                  align: 'right' as const,
-                  render: (v: number, row: { up: boolean }) => (
-                    <span style={{ color: row.up ? '#f5222d' : '#52c41a' }}>
-                      {v}%{' '}
-                      {row.up
-                        ? <CaretUpOutlined style={{ fontSize: 10 }} />
-                        : <CaretDownOutlined style={{ fontSize: 10 }} />}
-                    </span>
-                  ),
-                },
-              ]}
-            />
+        <Col xs={24} xl={16}>
+          <Card bordered={false} title={<Text strong>最近操作记录</Text>}>
+            {s?.recentAuditLogs && s.recentAuditLogs.length > 0 ? (
+              <Timeline
+                style={{ marginTop: 8 }}
+                items={s.recentAuditLogs.map((log) => {
+                  const meta = ACTION_LABELS[log.action];
+                  return {
+                    color: meta?.color === 'red' ? 'red' : meta?.color === 'warning' ? 'orange' : 'blue',
+                    children: (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <Tag
+                            color={meta?.color ?? 'default'}
+                            style={{ fontSize: 11, marginInlineEnd: 0 }}
+                          >
+                            {meta?.label ?? log.action}
+                          </Tag>
+                          <Text style={{ fontSize: 13 }}>
+                            <strong>{log.actorUsername}</strong>
+                            {log.targetLabel && ` → ${log.targetLabel}`}
+                          </Text>
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          {new Date(log.createdAt).toLocaleString('zh-CN')}
+                        </Text>
+                      </div>
+                    ),
+                  };
+                })}
+              />
+            ) : (
+              <Empty description="暂无操作记录" />
+            )}
           </Card>
         </Col>
 
-        <Col xs={24} xl={12}>
-          <Card
-            title={<Text strong>销售额类别占比</Text>}
-            extra={
-              <Space size={4}>
-                {['全部渠道', '线上', '门店'].map((c, i) => (
-                  <Badge
-                    key={c}
-                    count={c}
-                    onClick={() => setCategoryChannel(i === 0 ? 'all' : i === 1 ? 'online' : 'store')}
+        <Col xs={24} xl={8}>
+          <Card bordered={false} title={<Text strong>系统状态</Text>} style={{ height: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {[
+                {
+                  label: '总用户数',
+                  value: s?.userCount ?? 0,
+                  icon: <UserOutlined />,
+                  color: '#1677ff',
+                  sub: `其中活跃 ${s?.activeUserCount ?? 0} 人`,
+                },
+                {
+                  label: '近30天新增',
+                  value: s?.newUsersTrend.reduce((a, b) => a + b.count, 0) ?? 0,
+                  icon: <ArrowUpOutlined />,
+                  color: '#52c41a',
+                  sub: '过去30天注册用户',
+                },
+                {
+                  label: '角色 / 权限',
+                  value: `${s?.roleCount ?? 0} / ${s?.permissionCount ?? 0}`,
+                  icon: <SafetyCertificateOutlined />,
+                  color: '#722ed1',
+                  sub: '角色数 / 权限条目',
+                },
+                {
+                  label: '登录失败 (30d)',
+                  value: s?.loginFailCount ?? 0,
+                  icon: <WarningOutlined />,
+                  color: (s?.loginFailCount ?? 0) > 50 ? '#ff4d4f' : '#faad14',
+                  sub: '登录尝试失败次数',
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: 'var(--bg-subtle)',
+                  }}
+                >
+                  <div
                     style={{
-                      backgroundColor:
-                        categoryChannel === (i === 0 ? 'all' : i === 1 ? 'online' : 'store')
-                          ? 'var(--color-primary)'
-                          : 'transparent',
-                      color:
-                        categoryChannel === (i === 0 ? 'all' : i === 1 ? 'online' : 'store')
-                          ? '#fff'
-                          : 'var(--text-secondary)',
-                      border:
-                        categoryChannel === (i === 0 ? 'all' : i === 1 ? 'online' : 'store')
-                          ? 'none'
-                          : '1px solid var(--border-base)',
-                      borderRadius: 4,
-                      padding: '0 8px',
-                      fontSize: 12,
-                      cursor: 'pointer',
+                      width: 36,
+                      height: 36,
+                      borderRadius: 8,
+                      background: item.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: 16,
+                      flexShrink: 0,
                     }}
-                  />
-                ))}
-                <Dropdown
-                  menu={{
-                    items: categoryDropdownItems,
-                    onClick: ({ key }) => {
-                      setCategoryChannel(key as 'all' | 'online' | 'store');
-                    },
-                  }}
-                  trigger={['click']}
+                  >
+                    {item.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.3 }}>{item.value}</div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{item.label} · {item.sub}</Text>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* 近 30 天每日分布柱图 */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col span={24}>
+          <Card bordered={false} title={<Text strong>近 30 天审计事件频次</Text>}>
+            {s?.newUsersTrend ? (
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart
+                  data={s.newUsersTrend}
+                  barSize={10}
+                  margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
                 >
-                  <EllipsisOutlined style={{ fontSize: 18, cursor: 'pointer', marginLeft: 4 }} />
-                </Dropdown>
-              </Space>
-            }
-          >
-            <Text type="secondary" style={{ fontSize: 12 }}>销售额</Text>
-            <ResponsiveContainer width="100%" height={390}>
-              <PieChart>
-                <Pie
-                  data={currentCategoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={110}
-                  paddingAngle={2}
-                  dataKey="value"
-                  label={({ cx, cy, midAngle, outerRadius, name, value }) => {
-                    if (midAngle == null) return null;
-                    const RADIAN = Math.PI / 180;
-                    const sin = Math.sin(-RADIAN * midAngle);
-                    const cos = Math.cos(-RADIAN * midAngle);
-                    const sx = cx + (outerRadius + 10) * cos;
-                    const sy = cy + (outerRadius + 10) * sin;
-                    const mx = cx + (outerRadius + 30) * cos;
-                    const my = cy + (outerRadius + 30) * sin;
-                    const ex = mx + (cos >= 0 ? 1 : -1) * 20;
-                    const ey = my;
-                    const textAnchor = cos >= 0 ? 'start' : 'end';
-                    return (
-                      <g>
-                        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="rgba(128,128,128,0.5)" fill="none" strokeWidth={1} />
-                        <circle cx={ex} cy={ey} r={2} fill="rgba(128,128,128,0.5)" />
-                        <text x={ex + (cos >= 0 ? 4 : -4)} y={ey} textAnchor={textAnchor} fill="rgba(128,128,128,0.9)" fontSize={12}>
-                          {name}:{' '}
-                        </text>
-                        <text x={ex + (cos >= 0 ? 4 : -4)} y={ey} dy={14} textAnchor={textAnchor} fill="rgba(128,128,128,0.7)" fontSize={11}>
-                          {value.toLocaleString()}
-                        </text>
-                      </g>
-                    );
-                  }}
-                  labelLine={false}
-                >
-                  {currentCategoryData.map((_, idx) => (
-                    <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <ReTooltip />
-              </PieChart>
-            </ResponsiveContainer>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.12)" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} interval={4} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <ReTooltip formatter={(v: ValueType | undefined) => [v ?? 0, '新增用户']} />
+                  <Bar dataKey="count" fill="#1677ff" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : null}
           </Card>
         </Col>
       </Row>
