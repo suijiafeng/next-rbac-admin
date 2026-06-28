@@ -38,6 +38,7 @@ export async function recordFailedAttempt(key: string): Promise<void> {
       count: {
         increment: 1,
       },
+      resetAt, // 每次失败刷新窗口，防止攻击者卡在窗口边缘绕过限制
     },
   });
 }

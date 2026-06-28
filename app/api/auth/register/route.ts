@@ -42,17 +42,14 @@ export async function POST(request: NextRequest) {
     const { username, nickname, password, confirmPassword, email } = body;
 
     if (!username || !nickname || !password) {
-      await recordFailedAttempt(ipKey);
       return apiError('用户名、昵称和密码不能为空', 400);
     }
 
     if (password !== confirmPassword) {
-      await recordFailedAttempt(ipKey);
       return apiError('两次输入的密码不一致', 400);
     }
 
     if (password.length < 6) {
-      await recordFailedAttempt(ipKey);
       return apiError('密码长度不能少于 6 位', 400);
     }
 
@@ -66,6 +63,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existedUser) {
+      // 用户名/邮箱已存在才计入失败次数，防止攻击者用无效请求耗尽配额
       await recordFailedAttempt(ipKey);
       return apiError('用户名或邮箱已存在', 400);
     }
