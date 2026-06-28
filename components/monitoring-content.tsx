@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Card,
@@ -8,7 +8,6 @@ import {
   Divider,
   Progress,
   Row,
-  Skeleton,
   Segmented,
   Space,
   Table,
@@ -26,11 +25,8 @@ import {
   ExclamationCircleFilled,
   GlobalOutlined,
   InfoCircleFilled,
-  LockOutlined,
   ThunderboltOutlined,
-  UserOutlined,
   WarningFilled,
-  WarningOutlined,
 } from '@ant-design/icons';
 import {
   Area,
@@ -47,22 +43,11 @@ import {
   YAxis,
 } from 'recharts';
 import styles from '@/components/monitoring-content.module.css';
-import { request } from '@/lib/request';
 
 const { Text } = Typography;
 
 type MonitoringPeriod = '1h' | '24h' | '7d';
 type KpiMetricKey = 'pv' | 'uv' | 'conversion' | 'latency' | 'errors' | 'availability';
-
-interface StatsData {
-  userCount: number;
-  activeUserCount: number;
-  roleCount: number;
-  permissionCount: number;
-  newUsersTrend: Array<{ date: string; count: number }>;
-  auditActionCounts: Array<{ action: string; count: number }>;
-  loginFailCount: number;
-}
 
 interface TrendDataPoint {
   time: string;
@@ -273,25 +258,6 @@ const MonitoringTrendLegend = () => {
 
 const MonitoringContent = () => {
   const [period, setPeriod] = useState<MonitoringPeriod>('24h');
-  const [stats, setStats] = useState<StatsData | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-
-  const loadStats = useCallback(async () => {
-    try {
-      const res = await request<StatsData>('/api/admin/stats');
-      setStats(res.data);
-    } catch {
-      // 静默失败
-    } finally {
-      setStatsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadStats();
-    const timer = setInterval(loadStats, 60_000);
-    return () => clearInterval(timer);
-  }, [loadStats]);
 
   const periodMetrics = kpiByPeriod[period];
   const trendData = useMemo(() => trendDataMap[period], [period]);

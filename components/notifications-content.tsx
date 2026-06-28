@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Button,
   Card,
@@ -122,14 +122,6 @@ export default function AuditLogsContent() {
   const [dateRange, setDateRange] = useState<[string, string] | null>(null);
 
   const [detail, setDetail] = useState<AuditLogItem | null>(null);
-
-  const riskOverview = useMemo(() => {
-    const high = list.filter((item) => getRiskMeta(item.action).label === '高').length;
-    const medium = list.filter((item) => getRiskMeta(item.action).label === '中').length;
-    const low = list.filter((item) => getRiskMeta(item.action).label === '低').length;
-
-    return { high, medium, low };
-  }, [list]);
 
   const load = useCallback(
     async (
