@@ -74,10 +74,22 @@ export async function PUT(
       where: {
         id,
       },
+      include: {
+        userRoles: {
+          select: {
+            role: { select: { name: true } },
+          },
+        },
+      },
     });
 
     if (!currentUser) {
       return apiError('用户不存在', 404);
+    }
+
+    const targetUserRole = resolveRoleFromNames(currentUser.userRoles.map((ur) => ur.role.name));
+    if (targetUserRole === 'SUPER_ADMIN') {
+      return apiError('不能编辑超级管理员账号', 403);
     }
 
 

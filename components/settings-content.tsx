@@ -194,8 +194,8 @@ const getUserPermissionColumns = (options: {
               </Button>
             </Popconfirm>
             <Popconfirm
-              title="重置该用户密码为默认值 123456？"
-              description="重置后请通知用户尽快修改密码"
+              title="确认重置该用户密码？"
+              description="重置后会生成随机临时密码，请通知用户尽快修改"
               onConfirm={() => onResetPassword(user)}
               okText="确认"
               cancelText="取消"

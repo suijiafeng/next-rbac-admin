@@ -36,6 +36,12 @@ interface ProfileInfo {
   createdAt: string;
 }
 
+interface ProfileApiResponse {
+  user: ProfileInfo;
+  role: string;
+  permissions: string[];
+}
+
 type EditableField = 'nickname' | 'email';
 
 // 只读展示行
@@ -156,8 +162,8 @@ export default function ProfilePage() {
   const getProfile = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await request<ProfileInfo>('/api/profile');
-      const user = result.data;
+      const result = await request<ProfileApiResponse>('/api/profile');
+      const user = result.data.user;
       setProfile(user);
       form.setFieldsValue({
         nickname: user.nickname,

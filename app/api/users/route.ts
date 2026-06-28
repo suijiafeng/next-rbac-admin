@@ -102,6 +102,11 @@ export async function POST(request: Request) {
       return apiError('角色不存在', 400);
     }
 
+    // 非超级管理员不能创建超级管理员账号（防止权限提升）
+    if (targetRole.name === 'SUPER_ADMIN' && actor.role !== 'SUPER_ADMIN') {
+      return apiError('无权限创建超级管理员账号', 403);
+    }
+
     const initialPassword = generateInitialPassword();
 
     const user = await prisma.user.create({

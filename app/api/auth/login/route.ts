@@ -87,6 +87,12 @@ export async function POST(request: Request) {
       return apiError('系统处于维护模式，仅超级管理员可登录', 503);
     }
 
+    const sessionDurationSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'session_duration' },
+    });
+    const sessionDurationDays = Number(sessionDurationSetting?.value) || 7;
+    const sessionMaxAge = sessionDurationDays * 24 * 60 * 60;
+
     // 登录成功，重置失败计数
     resetAttempts(username);
 
@@ -102,17 +108,20 @@ export async function POST(request: Request) {
       message: '登录成功',
     });
 
-    const sessionToken = await createAdminSessionToken({
-      userId: adminUser.id,
-      username: adminUser.username,
-      nickname: adminUser.nickname ?? adminUser.username,
-      role,
-    });
+    const sessionToken = await createAdminSessionToken(
+      {
+        userId: adminUser.id,
+        username: adminUser.username,
+        nickname: adminUser.nickname ?? adminUser.username,
+        role,
+      },
+      sessionMaxAge,
+    );
 
     response.cookies.set(
       ADMIN_SESSION_COOKIE,
       sessionToken,
-      getAdminSessionCookieOptions(),
+      getAdminSessionCookieOptions(sessionMaxAge),
     );
 
     return response;

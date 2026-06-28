@@ -4,8 +4,8 @@ interface PaginationOptions {
 }
 
 function toInteger(value: string | null, fallback: number) {
+  if (value === null || value === '') return fallback;
   const parsed = Number(value);
-
   return Number.isInteger(parsed) ? parsed : fallback;
 }
 

@@ -70,10 +70,13 @@ async function signSessionPayload(payload: string) {
   return Buffer.from(signature).toString('base64url');
 }
 
-export async function createAdminSessionToken(session: Omit<AdminSessionPayload, 'exp'>) {
+export async function createAdminSessionToken(
+  session: Omit<AdminSessionPayload, 'exp'>,
+  maxAge = SESSION_MAX_AGE,
+) {
   const payload: AdminSessionPayload = {
     ...session,
-    exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE,
+    exp: Math.floor(Date.now() / 1000) + maxAge,
   };
   const encodedPayload = toBase64Url(JSON.stringify(payload));
   const signature = await signSessionPayload(encodedPayload);
