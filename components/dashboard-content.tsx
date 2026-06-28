@@ -453,7 +453,7 @@ export default function DashboardContent() {
       {/* 近 30 天每日分布柱图 */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={24}>
-          <Card bordered={false} title={<Text strong>近 30 天审计事件频次</Text>}>
+          <Card bordered={false} title={<Text strong>近 30 天新增用户趋势</Text>}>
             {s?.newUsersTrend ? (
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart

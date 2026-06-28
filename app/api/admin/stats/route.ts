@@ -73,15 +73,16 @@ export async function GET() {
 
     // 将新增用户按日期聚合
     const dayMap = new Map<string, number>();
+    const pad = (n: number) => String(n).padStart(2, '0');
     for (let i = 0; i < 30; i++) {
       const d = new Date(thirtyDaysAgo);
       d.setDate(thirtyDaysAgo.getDate() + i);
-      const key = `${d.getMonth() + 1}/${d.getDate()}`;
+      const key = `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
       dayMap.set(key, 0);
     }
     newUsersRaw.forEach((u) => {
       const d = u.createdAt;
-      const key = `${d.getMonth() + 1}/${d.getDate()}`;
+      const key = `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
       if (dayMap.has(key)) {
         dayMap.set(key, (dayMap.get(key) ?? 0) + 1);
       }

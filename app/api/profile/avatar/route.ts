@@ -33,7 +33,8 @@ export async function POST(request: Request) {
       return apiError('文件大小不能超过 2 MB', 400);
     }
 
-    const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
+    const rawExt = file.type.split('/')[1] ?? 'jpg';
+    const ext = rawExt.replace('jpeg', 'jpg');
     const filename = `${currentUser.id}.${ext}`;
     const avatarsDir = path.join(process.cwd(), 'public', 'avatars');
 
