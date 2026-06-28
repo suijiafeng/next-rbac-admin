@@ -4,8 +4,7 @@ import { PERMISSIONS } from '@/constants/permission';
 
 describe('getPermissionsByRole', () => {
   it('USER 只有 user:view 权限', () => {
-    const perms = getPermissionsByRole('USER');
-    expect(perms).toEqual([PERMISSIONS.USER_VIEW]);
+    expect(getPermissionsByRole('USER')).toEqual([PERMISSIONS.USER_VIEW]);
   });
 
   it('ADMIN 包含 user:view、user:create、user:edit、role:view', () => {
@@ -17,16 +16,17 @@ describe('getPermissionsByRole', () => {
   });
 
   it('ADMIN 不拥有 user:delete', () => {
-    const perms = getPermissionsByRole('ADMIN');
-    expect(perms).not.toContain(PERMISSIONS.USER_DELETE);
+    expect(getPermissionsByRole('ADMIN')).not.toContain(PERMISSIONS.USER_DELETE);
   });
 
   it('SUPER_ADMIN 拥有全部权限', () => {
     const perms = getPermissionsByRole('SUPER_ADMIN');
-    const allPermissions = Object.values(PERMISSIONS);
-    for (const p of allPermissions) {
-      expect(perms).toContain(p);
-    }
+    Object.values(PERMISSIONS).forEach((p) => expect(perms).toContain(p));
+  });
+
+  it('未知角色返回空数组（?? [] 回退分支）', () => {
+    // @ts-expect-error 故意传入未知角色以触发回退分支
+    expect(getPermissionsByRole('UNKNOWN')).toEqual([]);
   });
 });
 
@@ -48,9 +48,8 @@ describe('hasPermission', () => {
   });
 
   it('SUPER_ADMIN 拥有所有权限', () => {
-    const allPermissions = Object.values(PERMISSIONS);
-    for (const p of allPermissions) {
-      expect(hasPermission('SUPER_ADMIN', p)).toBe(true);
-    }
+    Object.values(PERMISSIONS).forEach((p) =>
+      expect(hasPermission('SUPER_ADMIN', p)).toBe(true),
+    );
   });
 });

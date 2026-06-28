@@ -184,18 +184,6 @@ prisma/schema.prisma
 
 ---
 
-## 新增一个后台页面
-
-机械五步，无须思考：
-
-1. `components/xxx-content.tsx` —— 业务内容
-2. `app/(admin)/xxx/page.tsx` —— `return null`（让路由生效）
-3. `lib/page-meta.ts` —— 加 tab 标题
-4. `lib/page-registry.tsx` —— 加路径→组件映射 + 权限要求
-5. `components/admin-sider.tsx` —— 加菜单项
-
----
-
 ## 快速开始
 
 ```bash
@@ -229,23 +217,6 @@ npm run dev
 
 ---
 
-## 意见反馈（自底向上）
-
-反馈数据沿权限层级**自底向上**流动，同级互不可见：
-
-| 提交者 | 谁能收到 | 入口 |
-|---|---|---|
-| 普通用户 USER | 管理员 + 超级管理员 | 侧栏「意见反馈」提交 |
-| 管理员 ADMIN | 仅超级管理员 | 侧栏「意见反馈」提交 |
-| 超级管理员 | —（已在顶层，无需提交） | 无提交入口 |
-
-- **提交**：USER / ADMIN 在侧栏「意见反馈」填写表单（`components/feedback-content.tsx` → `POST /api/feedback`）。超级管理员没有该菜单项。
-- **接收**：收到的反馈在**顶部通知铃铛**汇总，带未读角标；点开标题进入详情弹窗（`components/notification-bell.tsx` + `FeedbackDetailModal`），查看即标记为已读（按接收者维度记录在 `feedback_reads`）。
-- **可见性规则**：服务端按角色层级 `USER(1) < ADMIN(2) < SUPER_ADMIN(3)` 过滤，只返回「严格低于」当前查看者的提交（`lib/feedback.ts`）。
-
-> 启用前需在本地同步数据库（见下方「快速开始」），迁移文件位于 `prisma/migrations/*_add_feedback`。
-
----
 
 ## 单元测试
 

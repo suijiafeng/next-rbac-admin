@@ -17,11 +17,32 @@ const BASE_SESSION = {
 beforeEach(() => {
   process.env.NODE_ENV = 'test';
   delete process.env.AUTH_SECRET;
+  delete process.env.NEXTAUTH_SECRET;
 });
 
 describe('ADMIN_SESSION_COOKIE', () => {
   it('常量值为 admin_session', () => {
     expect(ADMIN_SESSION_COOKIE).toBe('admin_session');
+  });
+});
+
+describe('getSessionSecret（通过 createAdminSessionToken 间接触发）', () => {
+  it('AUTH_SECRET 环境变量存在时使用该密钥（生成 token 不报错）', async () => {
+    process.env.AUTH_SECRET = 'my-test-secret';
+    await expect(createAdminSessionToken(BASE_SESSION)).resolves.toContain('.');
+    delete process.env.AUTH_SECRET;
+  });
+
+  it('NEXTAUTH_SECRET 环境变量存在时使用该密钥', async () => {
+    process.env.NEXTAUTH_SECRET = 'my-nextauth-secret';
+    await expect(createAdminSessionToken(BASE_SESSION)).resolves.toContain('.');
+    delete process.env.NEXTAUTH_SECRET;
+  });
+
+  it('生产环境缺少密钥时抛出错误', async () => {
+    process.env.NODE_ENV = 'production';
+    await expect(createAdminSessionToken(BASE_SESSION)).rejects.toThrow('生产环境必须配置 AUTH_SECRET');
+    process.env.NODE_ENV = 'test';
   });
 });
 
@@ -96,6 +117,11 @@ describe('verifyAdminSessionToken', () => {
 
   it('已过期的 token 返回 null', async () => {
     const token = await createAdminSessionToken(BASE_SESSION, -10);
+    expect(await verifyAdminSessionToken(token)).toBeNull();
+  });
+
+  it('payload 中 userId 为 0（falsy）时返回 null', async () => {
+    const token = await createAdminSessionToken({ ...BASE_SESSION, userId: 0 as unknown as number });
     expect(await verifyAdminSessionToken(token)).toBeNull();
   });
 

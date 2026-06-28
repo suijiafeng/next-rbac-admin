@@ -72,6 +72,35 @@ describe('request', () => {
     await expect(request('/api/users', { method: 'POST' })).rejects.toThrow('用户名已存在');
   });
 
+  it('params 为空对象时 URL 无查询字符串', async () => {
+    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    vi.stubGlobal('fetch', fetchMock);
+    await request('/api/users', { params: {} });
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/users');
+  });
+
+  it('不传 params 时 URL 无查询字符串', async () => {
+    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    vi.stubGlobal('fetch', fetchMock);
+    await request('/api/users');
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/users');
+  });
+
+  it('code !== 0 且 message 为空时抛出默认业务错误文案', async () => {
+    vi.stubGlobal('fetch', () => makeFetchResponse({ code: 1, data: null, message: '' }));
+    await expect(request('/api/users')).rejects.toThrow('业务处理失败');
+  });
+
+  it('自定义 headers 被合并到请求中', async () => {
+    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    vi.stubGlobal('fetch', fetchMock);
+    await request('/api/users', { headers: { 'X-Custom': 'value' } });
+    const [, init] = fetchMock.mock.calls[0];
+    expect((init as RequestInit).headers).toMatchObject({ 'X-Custom': 'value' });
+  });
+
   it('JSON 解析失败时抛出格式异常', async () => {
     vi.stubGlobal('fetch', () => Promise.resolve({
       ok: true,

@@ -31,6 +31,13 @@ const MOCK_USER = {
 
 beforeEach(() => vi.clearAllMocks());
 
+describe('getPermissionsByRole（permission.ts 内部实现）', () => {
+  it('未知角色返回空数组（?? [] 回退分支）', () => {
+    // @ts-expect-error 故意传入未知角色
+    expect(getPermissionsByRole('UNKNOWN' as Role)).toEqual([]);
+  });
+});
+
 describe('getPermissionsByRole', () => {
   it('USER 只有 user:view', () => {
     expect(getPermissionsByRole(Role.USER)).toEqual([PERMISSIONS.USER_VIEW]);
