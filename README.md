@@ -247,6 +247,40 @@ npm run dev
 
 ---
 
+## 单元测试
+
+项目使用 **Vitest + Node Environment** 进行单元测试，主要覆盖 `lib/**` 下的纯函数与工具模块。
+
+### 运行命令
+
+```bash
+# 运行全部单元测试
+npm test
+
+# 监听模式
+npm run test:watch
+
+# 覆盖率报告（text + lcov）
+npm run test:coverage
+
+# 仅运行某一个测试文件
+npm test -- --run __tests__/lib/page-meta.test.ts
+```
+
+### 测试目录
+
+- `__tests__/lib/*.test.ts`：工具层与权限/分页/响应封装等核心逻辑
+- `vitest.config.ts`：测试环境、别名、覆盖率策略配置
+
+### 覆盖率说明
+
+- 覆盖率统计范围：`lib/**/*.ts`
+- 排除文件：`lib/prisma.ts`
+
+如果本地执行时报 `vitest: command not found`，请先执行 `npm install` 安装依赖。
+
+---
+
 ## 已知权衡
 
 - **隐藏 tab 仍挂载**：当前 6 个菜单页可控；将来如果有动态详情页（`/users/:id` 这种），需要 LRU 控制 tab 数量
