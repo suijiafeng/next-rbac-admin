@@ -13,9 +13,15 @@ import {
   isLockedOut,
   recordFailedAttempt,
   resetAttempts,
+  LOCKOUT_DURATION_MINUTES,
 } from '@/lib/login-attempt';
 
 const DEFAULT_MAX_ATTEMPTS = 5;
+
+function parseMaxAttempts(settingValue: string | undefined): number {
+  const parsed = Number(settingValue);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_MAX_ATTEMPTS;
+}
 
 export async function POST(request: Request) {
   try {
@@ -30,14 +36,14 @@ export async function POST(request: Request) {
     const attemptsSetting = await prisma.systemSetting.findUnique({
       where: { key: 'max_login_attempts' },
     });
-    const parsedMax = Number(attemptsSetting?.value);
-    const maxAttempts = Number.isInteger(parsedMax) && parsedMax > 0
-      ? parsedMax
-      : DEFAULT_MAX_ATTEMPTS;
+    const maxAttempts = parseMaxAttempts(attemptsSetting?.value);
 
     // 检查是否已被锁定
     if (isLockedOut(username, maxAttempts)) {
-      return apiError('登录失败次数过多，请 15 分钟后再试', 429);
+      return apiError(
+        `登录失败次数过多，请 ${LOCKOUT_DURATION_MINUTES} 分钟后再试`,
+        429,
+      );
     }
 
     const adminUser = await prisma.user.findFirst({

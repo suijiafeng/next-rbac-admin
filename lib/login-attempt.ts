@@ -5,6 +5,7 @@
  */
 
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 锁定时长：15 分钟
+export const LOCKOUT_DURATION_MINUTES = LOCKOUT_DURATION_MS / 60_000;
 const CLEANUP_INTERVAL = 50; // 每 50 次操作清理一次过期记录
 
 interface AttemptRecord {
@@ -15,11 +16,14 @@ interface AttemptRecord {
 const store = new Map<string, AttemptRecord>();
 let operationCount = 0;
 
+function isRecordExpired(record: AttemptRecord): boolean {
+  return Date.now() >= record.resetAt;
+}
+
 /** 清理已过期的记录，防止内存无限增长 */
 function purgeExpired() {
-  const now = Date.now();
   store.forEach((record, key) => {
-    if (now >= record.resetAt) {
+    if (isRecordExpired(record)) {
       store.delete(key);
     }
   });
@@ -41,7 +45,7 @@ function maybeCleanup() {
 export function isLockedOut(username: string, maxAttempts: number): boolean {
   const record = store.get(username);
   if (!record) return false;
-  if (Date.now() >= record.resetAt) {
+  if (isRecordExpired(record)) {
     store.delete(username);
     return false;
   }
@@ -53,7 +57,7 @@ export function recordFailedAttempt(username: string) {
   const now = Date.now();
   const existing = store.get(username);
 
-  if (!existing || now >= existing.resetAt) {
+  if (!existing || isRecordExpired(existing)) {
     store.set(username, { count: 1, resetAt: now + LOCKOUT_DURATION_MS });
   } else {
     existing.count += 1;
