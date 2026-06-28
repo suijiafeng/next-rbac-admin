@@ -9,6 +9,13 @@ import {
 import { getPermissionsByRole, type Role } from '@/lib/permission';
 import { resolveRoleFromNames } from '@/lib/user-role';
 import { apiError } from '@/lib/api-response';
+import {
+  isLockedOut,
+  recordFailedAttempt,
+  resetAttempts,
+} from '@/lib/login-attempt';
+
+const DEFAULT_MAX_ATTEMPTS = 5;
 
 export async function POST(request: Request) {
   try {
@@ -17,6 +24,19 @@ export async function POST(request: Request) {
 
     if (!username || !password) {
       return apiError('用户名和密码不能为空', 400);
+    }
+
+    // 读取系统设置中的最大登录尝试次数
+    const attemptsSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'max_login_attempts' },
+    });
+    const maxAttempts = attemptsSetting
+      ? Math.max(1, Number(attemptsSetting.value) || DEFAULT_MAX_ATTEMPTS)
+      : DEFAULT_MAX_ATTEMPTS;
+
+    // 检查是否已被锁定
+    if (isLockedOut(username, maxAttempts)) {
+      return apiError('登录失败次数过多，请 15 分钟后再试', 429);
     }
 
     const adminUser = await prisma.user.findFirst({
@@ -35,6 +55,7 @@ export async function POST(request: Request) {
     });
 
     if (!adminUser || !adminUser.password) {
+      recordFailedAttempt(username);
       return apiError('用户名或密码错误', 401);
     }
 
@@ -45,6 +66,7 @@ export async function POST(request: Request) {
     const isPasswordValid = await bcrypt.compare(password, adminUser.password);
 
     if (!isPasswordValid) {
+      recordFailedAttempt(username);
       return apiError('用户名或密码错误', 401);
     }
 
@@ -57,6 +79,9 @@ export async function POST(request: Request) {
     if (maintenanceSetting?.value === 'true' && role !== 'SUPER_ADMIN') {
       return apiError('系统处于维护模式，仅超级管理员可登录', 503);
     }
+
+    // 登录成功，重置失败计数
+    resetAttempts(username);
 
     const response = NextResponse.json({
       code: 0,

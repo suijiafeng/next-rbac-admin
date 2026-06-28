@@ -39,3 +39,28 @@ export const PERMISSIONS = {
 
 export type PermissionValue =
   (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+/** 各角色拥有的权限列表（单一数据源，lib/permission.ts 和 lib/permission-map.ts 均引用此处） */
+export const ROLE_PERMISSION_MAP: Record<Role, PermissionValue[]> = {
+  [Role.USER]: [
+    PERMISSIONS.USER_VIEW,
+  ],
+  [Role.ADMIN]: [
+    PERMISSIONS.USER_VIEW,
+    PERMISSIONS.USER_CREATE,
+    PERMISSIONS.USER_EDIT,
+    PERMISSIONS.ROLE_VIEW,
+  ],
+  [Role.SUPER_ADMIN]: [
+    PERMISSIONS.USER_VIEW,
+    PERMISSIONS.USER_CREATE,
+    PERMISSIONS.USER_EDIT,
+    PERMISSIONS.USER_DELETE,
+    PERMISSIONS.SETTINGS_VIEW,
+    PERMISSIONS.SETTINGS_EDIT,
+    PERMISSIONS.ROLE_VIEW,
+    PERMISSIONS.ROLE_CREATE,
+    PERMISSIONS.ROLE_EDIT,
+    PERMISSIONS.ROLE_DELETE,
+  ],
+};

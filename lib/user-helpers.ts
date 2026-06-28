@@ -1,0 +1,50 @@
+import { resolveRoleFromNames } from '@/lib/user-role';
+
+export const userSelect = {
+  id: true,
+  username: true,
+  nickname: true,
+  email: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  userRoles: {
+    select: {
+      role: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  },
+} as const;
+
+export type UserWithRoles = {
+  id: number;
+  username: string;
+  nickname: string | null;
+  email: string | null;
+  status: number;
+  createdAt: Date;
+  updatedAt: Date;
+  userRoles: Array<{ role: { name: string } }>;
+};
+
+export function formatUser(user: UserWithRoles) {
+  const { userRoles, ...rest } = user;
+
+  return {
+    ...rest,
+    nickname: rest.nickname ?? '',
+    role: resolveRoleFromNames(userRoles.map((item) => item.role.name)),
+  };
+}
+
+/** 生成随机初始密码（12位，含大小写字母和数字，剔除易混淆字符） */
+export function generateInitialPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  return Array.from(
+    { length: 12 },
+    () => chars[Math.floor(Math.random() * chars.length)],
+  ).join('');
+}

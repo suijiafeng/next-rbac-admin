@@ -1,50 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/lib/permission';
 import { PERMISSIONS } from '@/constants/permission';
-import { resolveRoleFromNames } from '@/lib/user-role';
 import bcrypt from 'bcryptjs';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
 import { parsePagination } from '@/lib/pagination';
+import { userSelect, formatUser, generateInitialPassword } from '@/lib/user-helpers';
+import { writeAuditLog } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
-
-const userSelect = {
-  id: true,
-  username: true,
-  nickname: true,
-  email: true,
-  status: true,
-  createdAt: true,
-  updatedAt: true,
-  userRoles: {
-    select: {
-      role: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  },
-} as const;
-
-function formatUser(user: {
-  id: number;
-  username: string;
-  nickname: string | null;
-  email: string | null;
-  status: number;
-  createdAt: Date;
-  updatedAt: Date;
-  userRoles: Array<{ role: { name: string } }>;
-}) {
-  const { userRoles, ...rest } = user;
-
-  return {
-    ...rest,
-    nickname: rest.nickname ?? '',
-    role: resolveRoleFromNames(userRoles.map((item) => item.role.name)),
-  };
-}
 
 export async function GET(request: Request) {
   try {
@@ -104,7 +67,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await requirePermission(PERMISSIONS.USER_CREATE);
+    const { user: actor } = await requirePermission(PERMISSIONS.USER_CREATE);
 
     const body = await request.json();
     const { username, nickname, email, status, role } = body;
@@ -139,12 +102,14 @@ export async function POST(request: Request) {
       return apiError('角色不存在', 400);
     }
 
+    const initialPassword = generateInitialPassword();
+
     const user = await prisma.user.create({
       data: {
         username,
         nickname,
         email: email || null,
-        password: await bcrypt.hash('123456', 10),
+        password: await bcrypt.hash(initialPassword, 10),
         status: userStatus,
         userRoles: {
           create: {
@@ -155,7 +120,19 @@ export async function POST(request: Request) {
       select: userSelect,
     });
 
-    return apiSuccess(formatUser(user), '新增成功');
+    await writeAuditLog({
+      actorId: actor.id,
+      actorUsername: actor.username,
+      action: 'user.create',
+      targetType: 'user',
+      targetId: user.id,
+      targetLabel: user.username,
+    });
+
+    return apiSuccess(
+      { ...formatUser(user), initialPassword },
+      '新增成功',
+    );
   } catch (error) {
     return handleApiError(error, '新增用户失败', 'POST /api/users error');
   }
