@@ -34,7 +34,8 @@ export async function POST(request: Request) {
       return apiError('旧密码不正确', 400);
     }
 
-    if (oldPassword === newPassword) {
+    const isSameAsOld = await bcrypt.compare(newPassword, user.password);
+    if (isSameAsOld) {
       return apiError('新密码不能与旧密码相同', 400);
     }
 
