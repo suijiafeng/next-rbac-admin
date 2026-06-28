@@ -15,6 +15,7 @@ import {
   resetAttempts,
   LOCKOUT_DURATION_MINUTES,
 } from '@/lib/login-attempt';
+import { writeAuditLog } from '@/lib/audit-log';
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 
@@ -95,6 +96,21 @@ export async function POST(request: Request) {
 
     // 登录成功，重置失败计数
     await resetAttempts(username);
+
+    // 记录登录审计日志（异步，不阻塞响应）
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    writeAuditLog({
+      actorId: adminUser.id,
+      actorUsername: adminUser.username,
+      action: 'user.login',
+      targetType: 'user',
+      targetId: adminUser.id,
+      targetLabel: adminUser.username,
+      detail: { ip },
+    });
 
     const response = NextResponse.json({
       code: 0,

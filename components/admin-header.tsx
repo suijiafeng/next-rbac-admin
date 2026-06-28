@@ -8,12 +8,15 @@ import {
   Layout,
   Space,
   Tag,
+  Tooltip,
   Typography,
 } from 'antd';
 import {
   HomeOutlined,
   LogoutOutlined,
   MenuOutlined,
+  MoonOutlined,
+  SunOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import NotificationBell from './notification-bell';
@@ -21,6 +24,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import type { MenuProps } from 'antd';
 import { PAGE_META } from '@/lib/page-meta';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 const { Text } = Typography;
 const { Header } = Layout;
@@ -62,6 +66,7 @@ export default function AdminHeader(props: AdminHeaderProps) {
   const { currentUser, onOpenProfile, onMobileMenuClick, showMobileMenu } = props;
   const router = useRouter();
   const pathname = usePathname();
+  const { resolved, toggle } = useTheme();
 
   useEffect(() => {
     router.prefetch('/profile');
@@ -163,9 +168,19 @@ export default function AdminHeader(props: AdminHeaderProps) {
         />
       </div>
 
-      {/* 右侧：消息 + 用户 */}
+      {/* 右侧：消息 + 主题 + 用户 */}
       <Space size={4} align="center">
         <NotificationBell role={currentUser.role} />
+
+        <Tooltip title={resolved === 'dark' ? '切换亮色' : '切换暗色'}>
+          <Button
+            type="text"
+            icon={resolved === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+            onClick={toggle}
+            style={{ width: 36, height: 36, fontSize: 17 }}
+            aria-label="切换主题"
+          />
+        </Tooltip>
 
         <div
           style={{

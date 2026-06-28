@@ -16,6 +16,7 @@ model User {
   password   String
   nickname   String?
   email      String?    @unique
+  avatar     String?    // 头像 URL（/avatars/{userId}.{ext} 或外部链接）
   status     Int        @default(1) // 1:启用 0:禁用
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
@@ -145,4 +146,22 @@ model FeedbackRead {
   @@unique([feedbackId, userId])
   @@index([userId])
   @@map("feedback_reads")
+}
+
+/// 公告：由 ADMIN/SUPER_ADMIN 发布，展示在仪表盘
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  publisherId Int
+  publisherUsername String
+  active      Boolean  @default(true)   // 是否生效
+  startsAt    DateTime @default(now())  // 生效时间
+  expiresAt   DateTime?                 // 过期时间（null 表示永不过期）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+  @@index([startsAt])
+  @@map("announcements")
 }

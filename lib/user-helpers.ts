@@ -5,6 +5,7 @@ export const userSelect = {
   username: true,
   nickname: true,
   email: true,
+  avatar: true,
   status: true,
   createdAt: true,
   updatedAt: true,
@@ -24,6 +25,7 @@ export type UserWithRoles = {
   username: string;
   nickname: string | null;
   email: string | null;
+  avatar: string | null;
   status: number;
   createdAt: Date;
   updatedAt: Date;
@@ -36,6 +38,7 @@ export function formatUser(user: UserWithRoles) {
   return {
     ...rest,
     nickname: rest.nickname ?? '',
+    avatar: rest.avatar ?? null,
     role: resolveRoleFromNames(userRoles.map((item) => item.role.name)),
   };
 }

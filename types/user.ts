@@ -3,6 +3,7 @@ export interface UserItem {
   username: string;
   nickname: string;
   email: string | null;
+  avatar: string | null;
   role: string;
   status: number;
   createdAt: string;

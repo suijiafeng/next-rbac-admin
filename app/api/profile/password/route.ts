@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { requireAdminUser } from '@/lib/permission';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
+import { writeAuditLog } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,15 @@ export async function POST(request: Request) {
     await prisma.user.update({
       where: { id: currentUser.id },
       data: { password: await bcrypt.hash(newPassword, 10) },
+    });
+
+    writeAuditLog({
+      actorId: currentUser.id,
+      actorUsername: currentUser.username,
+      action: 'user.password_change',
+      targetType: 'user',
+      targetId: currentUser.id,
+      targetLabel: currentUser.username,
     });
 
     return apiSuccess(null, '密码修改成功');

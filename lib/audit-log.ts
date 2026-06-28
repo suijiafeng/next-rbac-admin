@@ -8,6 +8,8 @@ export type AuditAction =
   | 'user.suspend'
   | 'user.unsuspend'
   | 'user.reset_password'
+  | 'user.login'
+  | 'user.password_change'
   | 'settings.update';
 
 export interface AuditLogInput {
