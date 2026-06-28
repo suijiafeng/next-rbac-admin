@@ -8,8 +8,13 @@ import {
   LOCKOUT_DURATION_MINUTES,
 } from '@/lib/login-attempt';
 
-/** 同一 IP 在锁定窗口内最多尝试注册的次数 */
-const REGISTER_MAX_ATTEMPTS = 10;
+/** 同一 IP 在锁定窗口内最多尝试注册的次数（宽松，避免共享 IP 误伤） */
+const REGISTER_MAX_ATTEMPTS_IP = 30;
+/** 同一设备令牌在锁定窗口内最多尝试注册的次数（精准，针对单一设备） */
+const REGISTER_MAX_ATTEMPTS_DEVICE = 10;
+
+/** UUID v4 格式校验，防止攻击者注入任意字符串作为 key */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
@@ -17,11 +22,29 @@ function getClientIp(request: NextRequest): string {
   return `register_ip:${ip}`;
 }
 
+function getDeviceKey(request: NextRequest): string | null {
+  const token = request.headers.get('x-device-token');
+  if (token && UUID_REGEX.test(token)) {
+    return `register_dev:${token}`;
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // IP 频率限制：同一 IP 10 次/15 分钟
     const ipKey = getClientIp(request);
-    if (await isLockedOut(ipKey, REGISTER_MAX_ATTEMPTS)) {
+    const deviceKey = getDeviceKey(request);
+
+    // IP 维度检查（宽松阈值，减少共享 IP 误伤）
+    if (await isLockedOut(ipKey, REGISTER_MAX_ATTEMPTS_IP)) {
+      return apiError(
+        `注册请求过于频繁，请 ${LOCKOUT_DURATION_MINUTES} 分钟后再试`,
+        429,
+      );
+    }
+
+    // 设备维度检查（精准阈值，仅当请求携带合法设备令牌时生效）
+    if (deviceKey && await isLockedOut(deviceKey, REGISTER_MAX_ATTEMPTS_DEVICE)) {
       return apiError(
         `注册请求过于频繁，请 ${LOCKOUT_DURATION_MINUTES} 分钟后再试`,
         429,
@@ -63,8 +86,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (existedUser) {
-      // 用户名/邮箱已存在才计入失败次数，防止攻击者用无效请求耗尽配额
-      await recordFailedAttempt(ipKey);
+      // 用户名/邮箱已存在才计入失败次数，同时更新 IP 和设备两个维度
+      await Promise.all([
+        recordFailedAttempt(ipKey),
+        deviceKey ? recordFailedAttempt(deviceKey) : Promise.resolve(),
+      ]);
       return apiError('用户名或邮箱已存在', 400);
     }
 
