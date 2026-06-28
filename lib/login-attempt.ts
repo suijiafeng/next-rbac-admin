@@ -1,72 +1,48 @@
 /**
- * 登录失败次数追踪（基于用户名，内存存储）。
+ * 登录/注册失败次数追踪（数据库持久化）。
  *
- * 注意：此实现在单实例下有效；多实例/无服务器部署时应替换为共享缓存（如 Redis）。
+ * key 可以是用户名（登录场景）或 "ip:x.x.x.x"（注册场景），
+ * 数据持久化在 login_attempts 表中，支持多实例 / Serverless 部署。
  */
+import { prisma } from '@/lib/prisma';
 
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 锁定时长：15 分钟
 export const LOCKOUT_DURATION_MINUTES = LOCKOUT_DURATION_MS / 60_000;
-const CLEANUP_INTERVAL = 50; // 每 50 次操作清理一次过期记录
-
-interface AttemptRecord {
-  count: number;
-  resetAt: number; // Unix timestamp（毫秒）
-}
-
-const store = new Map<string, AttemptRecord>();
-let operationCount = 0;
-
-function isRecordExpired(record: AttemptRecord): boolean {
-  return Date.now() >= record.resetAt;
-}
-
-/** 清理已过期的记录，防止内存无限增长 */
-function purgeExpired() {
-  store.forEach((record, key) => {
-    if (isRecordExpired(record)) {
-      store.delete(key);
-    }
-  });
-}
-
-/** 每隔固定次数操作后做一次确定性清理 */
-function maybeCleanup() {
-  operationCount += 1;
-  if (operationCount >= CLEANUP_INTERVAL) {
-    operationCount = 0;
-    purgeExpired();
-  }
-}
 
 /**
- * 判断指定用户名当前是否被锁定。
- * @returns true = 已锁定，拒绝登录
+ * 判断指定 key 当前是否被锁定。
+ * @returns true = 已锁定，拒绝操作
  */
-export function isLockedOut(username: string, maxAttempts: number): boolean {
-  const record = store.get(username);
+export async function isLockedOut(
+  key: string,
+  maxAttempts: number,
+): Promise<boolean> {
+  const record = await prisma.loginAttempt.findUnique({ where: { key } });
   if (!record) return false;
-  if (isRecordExpired(record)) {
-    store.delete(username);
+  if (new Date() >= record.resetAt) {
+    // 已过期，清除并放行
+    await prisma.loginAttempt.delete({ where: { key } }).catch(() => null);
     return false;
   }
   return record.count >= maxAttempts;
 }
 
-/** 登录失败时记录一次尝试 */
-export function recordFailedAttempt(username: string) {
-  const now = Date.now();
-  const existing = store.get(username);
+/** 失败时记录一次尝试 */
+export async function recordFailedAttempt(key: string): Promise<void> {
+  const resetAt = new Date(Date.now() + LOCKOUT_DURATION_MS);
 
-  if (!existing || isRecordExpired(existing)) {
-    store.set(username, { count: 1, resetAt: now + LOCKOUT_DURATION_MS });
-  } else {
-    existing.count += 1;
-  }
-
-  maybeCleanup();
+  await prisma.loginAttempt.upsert({
+    where: { key },
+    create: { key, count: 1, resetAt },
+    update: {
+      count: {
+        increment: 1,
+      },
+    },
+  });
 }
 
-/** 登录成功后重置记录 */
-export function resetAttempts(username: string) {
-  store.delete(username);
+/** 操作成功后重置记录 */
+export async function resetAttempts(key: string): Promise<void> {
+  await prisma.loginAttempt.delete({ where: { key } }).catch(() => null);
 }

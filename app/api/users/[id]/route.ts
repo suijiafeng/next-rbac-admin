@@ -162,6 +162,17 @@ export async function DELETE(
       return apiError('用户 ID 不合法', 400);
     }
 
+    const currentUser = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        userRoles: {
+          select: {
+            role: { select: { name: true } },
+          },
+        },
+      },
+    });
+
     if (!currentUser) {
       return apiError('用户不存在', 404);
     }

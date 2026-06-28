@@ -1,9 +1,33 @@
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { apiError, apiSuccess } from '@/lib/api-response';
+import {
+  isLockedOut,
+  recordFailedAttempt,
+  LOCKOUT_DURATION_MINUTES,
+} from '@/lib/login-attempt';
 
-export async function POST(request: Request) {
+/** 同一 IP 在锁定窗口内最多尝试注册的次数 */
+const REGISTER_MAX_ATTEMPTS = 10;
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+  return `register_ip:${ip}`;
+}
+
+export async function POST(request: NextRequest) {
   try {
+    // IP 频率限制：同一 IP 10 次/15 分钟
+    const ipKey = getClientIp(request);
+    if (await isLockedOut(ipKey, REGISTER_MAX_ATTEMPTS)) {
+      return apiError(
+        `注册请求过于频繁，请 ${LOCKOUT_DURATION_MINUTES} 分钟后再试`,
+        429,
+      );
+    }
+
     // 检查系统是否开放注册
     const allowRegisterSetting = await prisma.systemSetting.findUnique({
       where: { key: 'allow_register' },
@@ -18,14 +42,17 @@ export async function POST(request: Request) {
     const { username, nickname, password, confirmPassword, email } = body;
 
     if (!username || !nickname || !password) {
+      await recordFailedAttempt(ipKey);
       return apiError('用户名、昵称和密码不能为空', 400);
     }
 
     if (password !== confirmPassword) {
+      await recordFailedAttempt(ipKey);
       return apiError('两次输入的密码不一致', 400);
     }
 
     if (password.length < 6) {
+      await recordFailedAttempt(ipKey);
       return apiError('密码长度不能少于 6 位', 400);
     }
 
@@ -39,6 +66,7 @@ export async function POST(request: Request) {
     });
 
     if (existedUser) {
+      await recordFailedAttempt(ipKey);
       return apiError('用户名或邮箱已存在', 400);
     }
 

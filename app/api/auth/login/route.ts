@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const maxAttempts = parseMaxAttempts(attemptsSetting?.value);
 
     // 检查是否已被锁定
-    if (isLockedOut(username, maxAttempts)) {
+    if (await isLockedOut(username, maxAttempts)) {
       return apiError(
         `登录失败次数过多，请 ${LOCKOUT_DURATION_MINUTES} 分钟后再试`,
         429,
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     });
 
     if (!adminUser || !adminUser.password) {
-      recordFailedAttempt(username);
+      await recordFailedAttempt(username);
       return apiError('用户名或密码错误', 401);
     }
 
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     const isPasswordValid = await bcrypt.compare(password, adminUser.password);
 
     if (!isPasswordValid) {
-      recordFailedAttempt(username);
+      await recordFailedAttempt(username);
       return apiError('用户名或密码错误', 401);
     }
 
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     const sessionMaxAge = sessionDurationDays * 24 * 60 * 60;
 
     // 登录成功，重置失败计数
-    resetAttempts(username);
+    await resetAttempts(username);
 
     const response = NextResponse.json({
       code: 0,
