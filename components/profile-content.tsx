@@ -19,6 +19,7 @@ import {
   CloseOutlined,
   EditOutlined,
   ExclamationCircleFilled,
+  LockOutlined,
 } from '@ant-design/icons';
 
 import { request } from '@/lib/request';
@@ -261,32 +262,131 @@ export default function ProfilePage() {
     ];
 
   return (
-      <Card loading={loading} title="个人信息">
-        <Form form={form} onFieldsChange={() => forceUpdate((n) => n + 1)}>
-          <Row gutter={[24, 20]}>
-            {rows.map((row) => (
-              <Col span={12} key={row.key}>
-                {row.editable && editingField === row.editable ? (
-                  <EditableRow
-                    label={row.label}
-                    fieldName={row.editable}
-                    rules={row.rules || []}
-                    form={form}
-                    submitLoading={submitLoading}
-                    onConfirm={() => handleConfirm(row.editable!)}
-                    onCancel={() => handleCancel(row.editable!)}
-                  />
-                ) : (
-                  <ReadonlyRow
-                    label={row.label}
-                    value={row.editable ? (form.getFieldValue(row.editable) || displayValue(row.key)) : displayValue(row.key)}
-                    onEdit={row.editable && editingField === null ? () => handleEdit(row.editable!) : undefined}
-                  />
-                )}
-              </Col>
-            ))}
-          </Row>
-        </Form>
-      </Card>
+    <Row gutter={[0, 16]}>
+      <Col span={24}>
+        <Card loading={loading} title="个人信息">
+          <Form form={form} onFieldsChange={() => forceUpdate((n) => n + 1)}>
+            <Row gutter={[24, 20]}>
+              {rows.map((row) => (
+                <Col span={12} key={row.key}>
+                  {row.editable && editingField === row.editable ? (
+                    <EditableRow
+                      label={row.label}
+                      fieldName={row.editable}
+                      rules={row.rules || []}
+                      form={form}
+                      submitLoading={submitLoading}
+                      onConfirm={() => handleConfirm(row.editable!)}
+                      onCancel={() => handleCancel(row.editable!)}
+                    />
+                  ) : (
+                    <ReadonlyRow
+                      label={row.label}
+                      value={row.editable ? (form.getFieldValue(row.editable) || displayValue(row.key)) : displayValue(row.key)}
+                      onEdit={row.editable && editingField === null ? () => handleEdit(row.editable!) : undefined}
+                    />
+                  )}
+                </Col>
+              ))}
+            </Row>
+          </Form>
+        </Card>
+      </Col>
+      <Col span={24}>
+        <ChangePasswordCard />
+      </Col>
+    </Row>
+  );
+}
+
+interface ChangePasswordFormValues {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+function ChangePasswordCard() {
+  const [pwForm] = Form.useForm<ChangePasswordFormValues>();
+  const [pwLoading, setPwLoading] = useState(false);
+
+  const handleChangePassword = async () => {
+    try {
+      const values = await pwForm.validateFields();
+      setPwLoading(true);
+      await request('/api/profile/password', {
+        method: 'POST',
+        data: {
+          oldPassword: values.oldPassword,
+          newPassword: values.newPassword,
+        },
+      });
+      message.success('密码修改成功');
+      pwForm.resetFields();
+    } catch (error) {
+      if (error instanceof Error) {
+        message.error(error.message);
+      }
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
+  return (
+    <Card
+      title={
+        <Space>
+          <LockOutlined />
+          修改密码
+        </Space>
+      }
+    >
+      <Form
+        form={pwForm}
+        layout="vertical"
+        style={{ maxWidth: 360 }}
+        autoComplete="off"
+      >
+        <Form.Item
+          label="旧密码"
+          name="oldPassword"
+          rules={[{ required: true, message: '请输入旧密码' }]}
+        >
+          <Input.Password placeholder="请输入当前密码" />
+        </Form.Item>
+        <Form.Item
+          label="新密码"
+          name="newPassword"
+          rules={[
+            { required: true, message: '请输入新密码' },
+            { min: 6, message: '密码长度不能少于 6 位' },
+          ]}
+        >
+          <Input.Password placeholder="请输入新密码（至少 6 位）" />
+        </Form.Item>
+        <Form.Item
+          label="确认新密码"
+          name="confirmPassword"
+          dependencies={['newPassword']}
+          rules={[
+            { required: true, message: '请再次输入新密码' },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('newPassword') === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(new Error('两次输入的密码不一致'));
+              },
+            }),
+          ]}
+        >
+          <Input.Password placeholder="请再次输入新密码" />
+        </Form.Item>
+        <Form.Item style={{ marginBottom: 0 }}>
+          <Button type="primary" loading={pwLoading} onClick={handleChangePassword}>
+            确认修改
+          </Button>
+        </Form.Item>
+      </Form>
+    </Card>
   );
 }

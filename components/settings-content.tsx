@@ -67,6 +67,8 @@ interface AuditLogItem {
 const settingsLabelClassName = 'inline-block w-[110px]';
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+  'user.create': { label: '新增用户', color: 'cyan' },
+  'user.delete': { label: '删除用户', color: 'red' },
   'role.grant_admin': { label: '授予管理员', color: 'blue' },
   'role.revoke_admin': { label: '撤销管理员', color: 'orange' },
   'user.suspend': { label: '暂停用户', color: 'warning' },
