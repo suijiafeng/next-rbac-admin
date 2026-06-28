@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rbac_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rbac}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rbac_password}
+      POSTGRES_DB: ${POSTGRES_DB:-rbac_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-rbac} -d ${POSTGRES_DB:-rbac_db}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rbac_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rbac}:${POSTGRES_PASSWORD:-rbac_password}@postgres:5432/${POSTGRES_DB:-rbac_db}?sslmode=disable
+      AUTH_SECRET: ${AUTH_SECRET}
+      NODE_ENV: production
+    ports:
+      - '3000:3000'
+
+volumes:
+  postgres_data:
