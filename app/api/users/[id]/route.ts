@@ -162,28 +162,6 @@ export async function DELETE(
       return apiError('用户 ID 不合法', 400);
     }
 
-    // 防止删除自己
-    if (actor.id === id) {
-      return apiError('不能删除自己的账号', 400);
-    }
-
-    const currentUser = await prisma.user.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        userRoles: {
-          select: {
-            role: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
     if (!currentUser) {
       return apiError('用户不存在', 404);
     }
@@ -194,6 +172,11 @@ export async function DELETE(
 
     if (currentUserRole === 'SUPER_ADMIN') {
       return apiError('超级管理员不能删除', 403);
+    }
+
+    // 防止删除自己（在角色检查之后，避免信息泄露）
+    if (actor.id === id) {
+      return apiError('不能删除自己的账号', 400);
     }
 
     await prisma.user.delete({
