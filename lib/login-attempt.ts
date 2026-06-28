@@ -5,6 +5,7 @@
  */
 
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 锁定时长：15 分钟
+const CLEANUP_INTERVAL = 50; // 每 50 次操作清理一次过期记录
 
 interface AttemptRecord {
   count: number;
@@ -12,6 +13,7 @@ interface AttemptRecord {
 }
 
 const store = new Map<string, AttemptRecord>();
+let operationCount = 0;
 
 /** 清理已过期的记录，防止内存无限增长 */
 function purgeExpired() {
@@ -21,6 +23,15 @@ function purgeExpired() {
       store.delete(key);
     }
   });
+}
+
+/** 每隔固定次数操作后做一次确定性清理 */
+function maybeCleanup() {
+  operationCount += 1;
+  if (operationCount >= CLEANUP_INTERVAL) {
+    operationCount = 0;
+    purgeExpired();
+  }
 }
 
 /**
@@ -48,10 +59,7 @@ export function recordFailedAttempt(username: string) {
     existing.count += 1;
   }
 
-  // 低频清理，避免内存无限积累
-  if (Math.random() < 0.05) {
-    purgeExpired();
-  }
+  maybeCleanup();
 }
 
 /** 登录成功后重置记录 */

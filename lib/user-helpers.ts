@@ -43,8 +43,7 @@ export function formatUser(user: UserWithRoles) {
 /** 生成随机初始密码（12位，含大小写字母和数字，剔除易混淆字符） */
 export function generateInitialPassword(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  return Array.from(
-    { length: 12 },
-    () => chars[Math.floor(Math.random() * chars.length)],
-  ).join('');
+  const randomBytes = new Uint8Array(12);
+  crypto.getRandomValues(randomBytes);
+  return Array.from(randomBytes, (byte) => chars[byte % chars.length]).join('');
 }

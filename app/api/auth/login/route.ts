@@ -30,8 +30,9 @@ export async function POST(request: Request) {
     const attemptsSetting = await prisma.systemSetting.findUnique({
       where: { key: 'max_login_attempts' },
     });
-    const maxAttempts = attemptsSetting
-      ? Math.max(1, Number(attemptsSetting.value) || DEFAULT_MAX_ATTEMPTS)
+    const parsedMax = Number(attemptsSetting?.value);
+    const maxAttempts = Number.isInteger(parsedMax) && parsedMax > 0
+      ? parsedMax
       : DEFAULT_MAX_ATTEMPTS;
 
     // 检查是否已被锁定
