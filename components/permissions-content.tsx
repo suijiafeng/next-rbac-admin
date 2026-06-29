@@ -20,6 +20,7 @@ import {
 import {
   DeleteOutlined,
   EditOutlined,
+  InfoCircleOutlined,
   KeyOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
@@ -380,13 +381,22 @@ const PermissionsContent = () => {
   }, [roleList, selectedRoleId]);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
+    <Card
+      variant="borderless"
+      title={
+        <Space size={6}>
+          <span>权限管理</span>
+          <Tooltip title="统一管理角色与权限分配，关键变更可与审批中心、临时授权协同使用。">
+            <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
+          </Tooltip>
+        </Space>
+      }
+      extra={
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
           新建角色
         </Button>
-      </div>
-
+      }
+    >
       <Row gutter={[16, 16]} className={styles.layoutRow}>
         <Col xs={24} xl={8} className={styles.stretchCol}>
           <Card
@@ -551,7 +561,7 @@ const PermissionsContent = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </Card>
   );
 };
 

@@ -257,3 +257,77 @@ npm test -- --run __tests__/lib/page-meta.test.ts
 - **隐藏 tab 仍挂载**：当前 6 个菜单页可控；将来如果有动态详情页（`/users/:id` 这种），需要 LRU 控制 tab 数量
 - **Antd Modal Portal**：modal 渲染到 `document.body`，切 tab 时若 modal 未关会浮在新 tab 上——低频场景，未处理
 - **根路径首屏**：`/` 是 CSR 跳 `/dashboard`，已加 Spin 兜底；想要瞬时跳转可在 middleware 里加服务端 redirect
+
+## 🛡️ 权限治理（Governance）
+
+在基础 RBAC 之上叠加了一套「变更受治理」的能力：敏感的角色变更不再直接生效，而是 **发起 → 看清 diff → 风险提示 → 审批 → 生效 → 留痕**；临时权限 **到期自动回收**。所有治理动作都写入既有的「审计日志」。
+
+### 能力
+
+- **审批中心 `/approvals`**：发起角色变更（展示 `当前角色 → 目标角色` 的 diff 与风险提示），超级管理员在「待我审批」中通过 / 驳回；通过后才在事务中真正修改用户角色并留痕。
+- **临时授权 `/temp-grants`**：把「普通用户」临时提升为管理员并设定时长，到期由系统自动回收（拉取列表时懒回收 + Vercel Cron 定时兜底），也可由超级管理员立即回收。
+- **审计回溯**：`change.submit / change.approve / change.reject / temp.grant / temp.revoke / temp.expire` 全部进入「审计日志」，可按操作人 / 动作 / 时间检索。
+
+### 分权设计
+
+| 角色 | 能力 |
+| --- | --- |
+| `ADMIN` | 发起角色变更、授予临时权限、查看 |
+| `SUPER_ADMIN` | 以上全部 + 审批（通过/驳回）+ 立即回收（特权闸门） |
+
+即「提议」与「批准」分离：管理员能发起，但只有超级管理员能批准生效。
+
+### 关键约定（与本项目原有架构一致）
+
+- 角色变更通过增删 `UserRole` 实现（用户无单一 `role` 字段，有效角色由 `lib/user-role.ts` 取最高优先级）。
+- 所有写操作走 API Route Handler + `requirePermission`，前端三层守卫只是体验层。
+- 新增表 `change_requests` / `temp_grants`，沿用日志类表「反范式存 actorId + username、不建外键」的风格；审计复用既有 `audit_logs` 与 `lib/audit-log.ts`。
+
+### 涉及文件
+
+```
+prisma/schema.prisma                         # +ChangeRequest +TempGrant
+constants/permission.ts                      # +change:* / temp:* 权限码与角色映射
+lib/governance.ts                            # 角色标签 / 风险评估 / diff（纯函数）
+lib/temp-grant.ts                            # 到期自动回收
+lib/audit-log.ts                             # 扩展审计动作类型
+app/api/change-requests/**                   # 列表 / 发起 / 审批决策
+app/api/temp-grants/**                       # 列表 / 授予 / 回收
+app/api/cron/expire-grants/route.ts          # 定时回收（Vercel Cron）
+app/(admin)/approvals · /temp-grants         # 页面壳（return null）
+components/approvals-content.tsx · temp-grants-content.tsx
+```
+
+### 体验治理闭环
+
+```bash
+npm install
+npm run db:push      # 同步新表
+npm run db:seed      # 写入治理权限 + 示例数据（含 1 条待审批、1 条生效中的临时授权）
+npm run dev
+```
+
+默认账号：`super_admin` / `admin` / `user`，密码均为 `123456`。
+用 `admin` 登录在「审批中心」发起一条角色变更，再用 `super_admin` 登录审批通过，最后在「审计日志」即可看到完整链路。
+
+### v1.1 增量：ABAC 约束 + 治理指标
+
+- **ABAC 时间窗约束**：授予临时权限时可勾选「仅工作时间」（09:00–21:00）。约束在鉴权边界 `lib/admin-user.ts` 评估——时段外该临时角色自动挂起（不删除记录，时段内恢复），到期仍由自动回收清除。这让权限从纯 RBAC 扩展为「角色 + 上下文属性」的 RBAC/ABAC。
+- **治理指标概览**：审批中心顶部展示待审批、已通过/已驳回、生效中的临时授权、已自动回收、按时回收率，直接对应治理成效（数据来自 `GET /api/governance/stats`）。
+
+> 说明：ABAC 时间窗使用服务运行环境的本地时间（Vercel 上为 UTC）；评估失败时降级为基础角色解析，不影响鉴权可用性。
+
+### v1.2 增量：信息架构聚焦
+
+菜单按"治理"主线重新归组,移除与主题无关的填充页,让产品一眼是「权限治理平台」而非通用模板:
+
+```
+工作台    · 治理概览（首页：原仪表盘顶部叠加治理 KPI——待审批/生效中临时授权/已自动回收/按时回收率）
+权限治理  · 用户管理 · 权限管理 · 审批中心 · 临时授权 · 审计日志
+系统      · 系统设置
+其他      · 意见反馈（USER / ADMIN）
+```
+
+- 移除「数据监控」「公告管理」两个与治理主题无关的页面(路由已下线;组件文件保留在仓库,可按需删除)。
+- 审计日志路由由 `/notifications` 规范化为 **`/audit`**(标签与 URL 一致);审计页已识别全部治理事件(发起/通过/驳回/临时授权/回收/到期)。
+- 全站表格、按钮、字号由 `ThemeProvider` 的全局 `ConfigProvider` 统一(表格字号 13、按钮高 32、基础字号 14 等),新增页面均继承同一套 token,卡片统一为 `borderless` 风格。

@@ -22,6 +22,7 @@ import {
   Tag,
   Tabs,
   Tooltip,
+  Typography,
 } from 'antd';
 import {
   AuditOutlined,
@@ -29,7 +30,6 @@ import {
   GlobalOutlined,
   InfoCircleOutlined,
   KeyOutlined,
-  LockOutlined,
   PlusOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
@@ -42,6 +42,8 @@ import type { PageResponse } from '@/types/request';
 import type { TabsProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import styles from '@/components/settings-content.module.css';
+
+const { Text } = Typography;
 
 interface SystemSettings {
   site_name: string;
@@ -220,14 +222,12 @@ const SettingsContent = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [siteForm] = Form.useForm();
-  const [securityForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
   const [currentRole, setCurrentRole] = useState<string>('');
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   const [siteDirty, setSiteDirty] = useState(false);
-  const [securityDirty, setSecurityDirty] = useState(false);
-  const [maintenanceOn, setMaintenanceOn] = useState(false);
+  const maintenanceOn = Boolean(Form.useWatch('maintenance_mode', siteForm));
 
   // —— 权限管理 tab：用户 + 角色 —— //
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
@@ -265,25 +265,18 @@ const SettingsContent = () => {
       const result = await request<SystemSettings>('/api/settings');
       const settings = result.data;
       siteForm.setFieldsValue({
-        site_name: settings.site_name,
-        site_description: settings.site_description,
-        site_logo: settings.site_logo,
-      });
-      securityForm.setFieldsValue({
         session_duration: Number(settings.session_duration),
         max_login_attempts: Number(settings.max_login_attempts),
         allow_register: settings.allow_register === 'true',
         maintenance_mode: settings.maintenance_mode === 'true',
       });
-      setMaintenanceOn(settings.maintenance_mode === 'true');
       setSiteDirty(false);
-      setSecurityDirty(false);
     } catch (error) {
       message.error(error instanceof Error ? error.message : '获取设置失败');
     } finally {
       setLoading(false);
     }
-  }, [siteForm, securityForm]);
+  }, [siteForm]);
 
   const loadCurrentUser = useCallback(async () => {
     try {
@@ -511,35 +504,17 @@ const SettingsContent = () => {
     try {
       const values = await siteForm.validateFields();
       setSaving(true);
-      await request('/api/settings', { method: 'PUT', data: values });
-      message.success('站点设置已保存');
-      setSiteDirty(false);
-
-    } catch (error) {
-      if (error instanceof Error) {
-        message.error(error.message);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveSecurity = async () => {
-    try {
-      const values = await securityForm.validateFields();
-      setSaving(true);
       await request('/api/settings', {
         method: 'PUT',
         data: {
-          session_duration: values.session_duration,
-          max_login_attempts: values.max_login_attempts,
+          session_duration: String(values.session_duration),
+          max_login_attempts: String(values.max_login_attempts),
           allow_register: String(values.allow_register),
           maintenance_mode: String(values.maintenance_mode),
         },
       });
-      message.success('安全设置已保存');
-      setSecurityDirty(false);
-      setMaintenanceOn(Boolean(values.maintenance_mode));
+      message.success('网站设置已保存');
+      setSiteDirty(false);
 
     } catch (error) {
       if (error instanceof Error) {
@@ -632,7 +607,7 @@ const SettingsContent = () => {
       label: (
         <span>
           <GlobalOutlined className="mr-1.5" />
-          站点设置
+          网站设置
           {siteDirty && <span className={styles.dirtyBadge}>· 未保存</span>}
         </span>
       ),
@@ -641,44 +616,63 @@ const SettingsContent = () => {
           <Form
             form={siteForm}
             layout="vertical"
-            className={styles.form}
+            className={`${styles.form} ${styles.websiteForm}`}
             onValuesChange={() => setSiteDirty(true)}
           >
-            <Form.Item
-              label={<span className={settingsLabelClassName}>站点名称</span>}
-              name="site_name"
-              rules={[{ required: true, message: '请输入站点名称' }]}
-            >
-              <Input placeholder="请输入站点名称" />
-            </Form.Item>
-            <Form.Item
-              label={<span className={settingsLabelClassName}>站点描述</span>}
-              name="site_description"
-            >
-              <Input.TextArea placeholder="请输入站点描述" autoSize={{ minRows: 2, maxRows: 4 }} />
-            </Form.Item>
-            <Form.Item
-              label={<span className={settingsLabelClassName}>Logo URL</span>}
-              name="site_logo"
-              rules={[{ type: 'url', message: '请输入合法的 URL' }]}
-            >
-              <Input placeholder="https://example.com/logo.png" />
-            </Form.Item>
-            <Form.Item shouldUpdate={(prev, curr) => prev.site_logo !== curr.site_logo} noStyle>
-              {({ getFieldValue, getFieldError }) => {
-                const url = getFieldValue('site_logo');
-                const hasError = getFieldError('site_logo').length > 0;
-                if (!url || hasError) return null;
-                return (
-                  <Form.Item>
-                    <div className={styles.logoPreview}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt="Logo 预览" className={styles.logoPreviewImg} />
-                    </div>
-                  </Form.Item>
-                );
-              }}
-            </Form.Item>
+            <div className={styles.settingSection}>
+              <Text strong className={styles.settingSectionTitle}>安全策略</Text>
+              <Text type="secondary" className={styles.settingSectionHint}>会话、登录限制与维护窗口配置</Text>
+
+              {maintenanceOn && (
+                <Alert
+                  type="warning"
+                  showIcon
+                  className={styles.maintenanceAlert}
+                  message="维护模式已开启"
+                  description="当前仅超级管理员可登录系统，普通用户与管理员将被拒绝。如需对外恢复服务，请关闭维护模式后保存。"
+                />
+              )}
+
+              <Form.Item
+                label={<span className={settingsLabelClassName}>会话时长（天）</span>}
+                name="session_duration"
+                extra="用户登录后 Token 的有效期，超时后需重新登录"
+                rules={[
+                  { required: true, message: '请输入会话时长' },
+                  { type: 'number', min: 1, max: 30, message: '请输入 1~30 之间的整数' },
+                ]}
+              >
+                <InputNumber min={1} max={30} precision={0} className={styles.narrowNumberInput} suffix="天" />
+              </Form.Item>
+              <Form.Item
+                label={<span className={settingsLabelClassName}>最大登录尝试次数</span>}
+                name="max_login_attempts"
+                extra="密码连续错误达到上限后，账号将被临时锁定"
+                rules={[
+                  { required: true, message: '请输入最大登录尝试次数' },
+                  { type: 'number', min: 1, max: 20, message: '请输入 1~20 之间的整数' },
+                ]}
+              >
+                <InputNumber min={1} max={20} precision={0} className={styles.narrowNumberInput} suffix="次" />
+              </Form.Item>
+              <Form.Item
+                label={<span className={settingsLabelClassName}>允许用户注册</span>}
+                name="allow_register"
+                valuePropName="checked"
+                extra="关闭后新用户将无法自行注册，仅可由管理员手动添加"
+              >
+                <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+              </Form.Item>
+              <Form.Item
+                label={<span className={settingsLabelClassName}>维护模式</span>}
+                name="maintenance_mode"
+                valuePropName="checked"
+                extra="开启后仅超级管理员可登录系统，其余用户登录将被拒绝"
+              >
+                <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+              </Form.Item>
+            </div>
+
             <Form.Item className="mb-0">
               <Button
                 type="primary"
@@ -687,89 +681,7 @@ const SettingsContent = () => {
                 disabled={!siteDirty}
                 onClick={handleSaveSite}
               >
-                保存设置
-              </Button>
-            </Form.Item>
-          </Form>
-        </Card>
-      ),
-    },
-    {
-      key: 'security',
-      // 安全设置表单在初始化时即写入数据，但该标签页默认不激活；
-      // 强制渲染以保证 securityForm 始终与 Form 元素连接，避免 useForm 未连接告警
-      forceRender: true,
-      label: (
-        <span>
-          <LockOutlined className="mr-1.5" />
-          安全设置
-          {securityDirty && <span className={styles.dirtyBadge}>· 未保存</span>}
-        </span>
-      ),
-      children: (
-        <Card loading={loading} variant="borderless">
-          {maintenanceOn && (
-            <Alert
-              type="warning"
-              showIcon
-              className={styles.maintenanceAlert}
-              message="维护模式已开启"
-              description="当前仅超级管理员可登录系统，普通用户与管理员将被拒绝。如需对外恢复服务，请关闭维护模式后保存。"
-            />
-          )}
-          <Form
-            form={securityForm}
-            layout="vertical"
-            className={styles.form}
-            onValuesChange={() => setSecurityDirty(true)}
-          >
-            <Form.Item
-              label={<span className={settingsLabelClassName}>会话时长（天）</span>}
-              name="session_duration"
-              extra="用户登录后 Token 的有效期，超时后需重新登录"
-              rules={[
-                { required: true, message: '请输入会话时长' },
-                { type: 'number', min: 1, max: 30, message: '请输入 1~30 之间的整数' },
-              ]}
-            >
-              <InputNumber min={1} max={30} precision={0} className={styles.narrowNumberInput} suffix="天" />
-            </Form.Item>
-            <Form.Item
-              label={<span className={settingsLabelClassName}>最大登录尝试次数</span>}
-              name="max_login_attempts"
-              extra="密码连续错误达到上限后，账号将被临时锁定"
-              rules={[
-                { required: true, message: '请输入最大登录尝试次数' },
-                { type: 'number', min: 1, max: 20, message: '请输入 1~20 之间的整数' },
-              ]}
-            >
-              <InputNumber min={1} max={20} precision={0} className={styles.narrowNumberInput} suffix="次" />
-            </Form.Item>
-            <Form.Item
-              label={<span className={settingsLabelClassName}>允许用户注册</span>}
-              name="allow_register"
-              valuePropName="checked"
-              extra="关闭后新用户将无法自行注册，仅可由管理员手动添加"
-            >
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
-            </Form.Item>
-            <Form.Item
-              label={<span className={settingsLabelClassName}>维护模式</span>}
-              name="maintenance_mode"
-              valuePropName="checked"
-              extra="开启后仅超级管理员可登录系统，其余用户登录将被拒绝"
-            >
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
-            </Form.Item>
-            <Form.Item className="mb-0">
-              <Button
-                type="primary"
-                icon={<SaveOutlined />}
-                loading={saving}
-                disabled={!securityDirty}
-                onClick={handleSaveSecurity}
-              >
-                保存设置
+                保存网站设置
               </Button>
             </Form.Item>
           </Form>
@@ -1049,7 +961,31 @@ const SettingsContent = () => {
 
   return (
     <>
-      <Tabs items={tabItems} onChange={handleTabChange} />
+      <Card
+        variant="borderless"
+        title={
+          <Space size={6}>
+            <span>系统设置</span>
+            <Tooltip title="管理安全策略、账户密码以及管理员专属权限与审计配置。">
+              <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
+            </Tooltip>
+          </Space>
+        }
+        extra={
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              loadSettings();
+              loadCurrentUser();
+            }}
+            loading={loading}
+          >
+            刷新设置
+          </Button>
+        }
+      >
+        <Tabs items={tabItems} onChange={handleTabChange} />
+      </Card>
 
       <Modal
         title={<><UserSwitchOutlined /> 分配角色</>}

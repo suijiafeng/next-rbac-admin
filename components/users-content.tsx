@@ -23,6 +23,7 @@ import {
   DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
+  InfoCircleOutlined,
   MailOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -483,157 +484,158 @@ export default function UsersPage() {
 
   return (
     <>
-      <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
-        <div ref={toolbarRef}>
-          <div className="mb-4 flex items-center justify-end">
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreate}
-              className="rounded-md font-medium shadow-sm"
-            >
-              新增用户
-            </Button>
+      <Card
+        variant="borderless"
+        title={(
+          <Space size={6}>
+            <span>用户管理</span>
+            <Tooltip title="管理用户账号、状态与批量操作，角色调整将按审批流程生效。">
+              <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
+            </Tooltip>
+          </Space>
+        )}
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+            新增用户
+          </Button>
+        }
+      >
+        <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
+          <div ref={toolbarRef}>
+            <div style={{ marginBottom: 12 }}>
+              <Form
+                form={form}
+                layout="inline"
+                onFinish={(values) => {
+                  getList({ username: values.username || '', status: values.status }, { current: 1 });
+                }}
+              >
+                <Form.Item name="username" label="用户名" className={styles.formItemInline}>
+                  <Input
+                    placeholder="搜索用户名"
+                    allowClear
+                    className="w-[190px] rounded-md"
+                    prefix={(
+                      <SearchOutlined
+                        className="text-[13px]"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      />
+                    )}
+                  />
+                </Form.Item>
+
+                <Form.Item name="status" label="状态" className={styles.formItemInline}>
+                  <Select
+                    allowClear
+                    placeholder="全部状态"
+                    className="w-[130px]"
+                    options={[
+                      { label: '启用', value: 1 },
+                      { label: '禁用', value: 0 },
+                    ]}
+                  />
+                </Form.Item>
+
+                <Form.Item className={styles.formItemInline}>
+                  <Space size={8}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      icon={<SearchOutlined />}
+                      className="rounded-md"
+                      loading={tableLoading}
+                    >
+                      查询
+                    </Button>
+                    <Button
+                      icon={<ReloadOutlined />}
+                      className="rounded-md"
+                      disabled={tableLoading}
+                      onClick={() => {
+                        form.resetFields();
+                        getList({ username: '', status: undefined }, { current: 1 });
+                      }}
+                    >
+                      重置
+                    </Button>
+                  </Space>
+                </Form.Item>
+              </Form>
+            </div>
           </div>
 
-          <div
-            className="px-3.5 pb-3.5 pt-1"
-            style={{ borderBottom: '1px solid var(--border-subtle)' }}
-          >
-            <Form
-              form={form}
-              layout="inline"
-              onFinish={(values) => {
-                getList({ username: values.username || '', status: values.status }, { current: 1 });
+          {/* 批量操作浮条：选中后出现 */}
+          {selectedKeys.length > 0 && (
+            <div
+              ref={bulkBarRef}
+              style={{
+                marginBottom: 12,
+                padding: '8px 12px',
+                borderRadius: 8,
+                background: 'var(--fill-quaternary, #fafafa)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                flexWrap: 'wrap',
               }}
             >
-              <Form.Item name="username" label="用户名" className={styles.formItemInline}>
-                <Input
-                  placeholder="搜索用户名"
-                  allowClear
-                  className="w-[190px] rounded-md"
-                  prefix={(
-                    <SearchOutlined
-                      className="text-[13px]"
-                      style={{ color: 'var(--text-tertiary)' }}
-                    />
-                  )}
-                />
-              </Form.Item>
-
-              <Form.Item name="status" label="状态" className={styles.formItemInline}>
-                <Select
-                  allowClear
-                  placeholder="全部状态"
-                  className="w-[130px]"
-                  options={[
-                    { label: '启用', value: 1 },
-                    { label: '禁用', value: 0 },
-                  ]}
-                />
-              </Form.Item>
-
-              <Form.Item className={styles.formItemInline}>
-                <Space size={8}>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    icon={<SearchOutlined />}
-                    className="rounded-md"
-                    loading={tableLoading}
-                  >
-                    查询
-                  </Button>
-                  <Button
-                    icon={<ReloadOutlined />}
-                    className="rounded-md"
-                    disabled={tableLoading}
-                    onClick={() => {
-                      form.resetFields();
-                      getList({ username: '', status: undefined }, { current: 1 });
-                    }}
-                  >
-                    重置
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </div>
-        </div>
-
-        {/* 批量操作浮条：选中后出现 */}
-        {selectedKeys.length > 0 && (
-          <div
-            ref={bulkBarRef}
-            style={{
-              marginTop: 12,
-              padding: '8px 12px',
-              borderRadius: 6,
-              background: 'var(--bg-active)',
-              border: '1px solid var(--color-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-              <span style={{ color: 'var(--color-primary)', fontWeight: 500 }}>
-                已选 {selectedKeys.length} 项
-              </span>
-              <Button type="link" size="small" onClick={() => setSelectedKeys([])}>
-                取消选择
-              </Button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                <span style={{ color: 'var(--color-primary)', fontWeight: 500 }}>
+                  已选 {selectedKeys.length} 项
+                </span>
+                <Button type="link" size="small" onClick={() => setSelectedKeys([])}>
+                  取消选择
+                </Button>
+              </div>
+              <Space size={4} wrap>
+                <Button
+                  size="small"
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => handleBulkToggleStatus(1)}
+                  loading={bulkLoading}
+                >
+                  批量启用
+                </Button>
+                <Button
+                  size="small"
+                  icon={<StopOutlined />}
+                  onClick={() => handleBulkToggleStatus(0)}
+                  loading={bulkLoading}
+                >
+                  批量禁用
+                </Button>
+                <Button
+                  size="small"
+                  icon={<UserSwitchOutlined />}
+                  onClick={() => setBulkRoleModalOpen(true)}
+                  loading={bulkLoading}
+                >
+                  分配角色
+                </Button>
+                <Button
+                  size="small"
+                  icon={<DownloadOutlined />}
+                  onClick={handleExportCsv}
+                >
+                  导出 CSV
+                </Button>
+                <Button
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={handleBulkDelete}
+                  loading={bulkLoading}
+                >
+                  批量删除
+                </Button>
+              </Space>
             </div>
-            <Space size={4} wrap>
-              <Button
-                size="small"
-                icon={<CheckCircleOutlined />}
-                onClick={() => handleBulkToggleStatus(1)}
-                loading={bulkLoading}
-              >
-                批量启用
-              </Button>
-              <Button
-                size="small"
-                icon={<StopOutlined />}
-                onClick={() => handleBulkToggleStatus(0)}
-                loading={bulkLoading}
-              >
-                批量禁用
-              </Button>
-              <Button
-                size="small"
-                icon={<UserSwitchOutlined />}
-                onClick={() => setBulkRoleModalOpen(true)}
-                loading={bulkLoading}
-              >
-                分配角色
-              </Button>
-              <Button
-                size="small"
-                icon={<DownloadOutlined />}
-                onClick={handleExportCsv}
-              >
-                导出 CSV
-              </Button>
-              <Button
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={handleBulkDelete}
-                loading={bulkLoading}
-              >
-                批量删除
-              </Button>
-            </Space>
-          </div>
-        )}
+          )}
 
-        <Card variant="borderless" className={`min-h-0 flex-1 mt-3.5 ${styles.tableCard}`} styles={{ body: {height: '100%', display: 'flex', flexDirection: 'column' } }}>
+          <Card variant="borderless" className="min-h-0 flex-1" styles={{ body: {height: '100%', display: 'flex', flexDirection: 'column' } }}>
           <Table
-            className={styles.table}
             rowKey="id"
             loading={tableLoading}
             dataSource={list}
@@ -660,8 +662,9 @@ export default function UsersPage() {
             }}
             columns={columns}
           />
-        </Card>
-      </div>
+          </Card>
+        </div>
+      </Card>
 
       <UserModal
         open={modalOpen}

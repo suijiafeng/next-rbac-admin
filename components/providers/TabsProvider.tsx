@@ -43,7 +43,7 @@ const STORAGE_KEY = 'next-admin-tabs';
 const HOME_TAB: TabItem = {
   key: '/dashboard',
   path: '/dashboard',
-  label: '仪表盘',
+  label: '治理概览',
   closable: false,
 };
 

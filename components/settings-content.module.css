@@ -11,6 +11,36 @@
   max-width: 520px;
 }
 
+.websiteForm {
+  max-width: none;
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.settingSection {
+  margin-bottom: 20px;
+  padding: 14px 14px 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+}
+
+.settingSectionTitle {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.settingSectionHint {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
 .narrowNumberInput {
   width: 160px;
 }
@@ -46,4 +76,14 @@
 
 .maintenanceAlert {
   margin-bottom: 16px;
+}
+
+@media (max-width: 992px) {
+  .settingsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .settingSection {
+    margin-bottom: 0;
+  }
 }
