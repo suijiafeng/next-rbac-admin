@@ -2,14 +2,12 @@
 
 import React from 'react';
 import DashboardContent from '@/components/dashboard-content';
-import MonitoringContent from '@/components/monitoring-content';
 import UsersContent from '@/components/users-content';
 import PermissionsContent from '@/components/permissions-content';
 import SettingsContent from '@/components/settings-content';
 import ProfileContent from '@/components/profile-content';
 import FeedbackContent from '@/components/feedback-content';
 import NotificationsContent from '@/components/notifications-content';
-import AnnouncementsContent from '@/components/announcements-content';
 import ApprovalsContent from '@/components/approvals-content';
 import TempGrantsContent from '@/components/temp-grants-content';
 import PermissionGuard from '@/components/permission-guard';
@@ -33,7 +31,6 @@ interface PageEntry {
  */
 export const PAGE_REGISTRY: Record<string, PageEntry> = {
   '/dashboard': { Component: DashboardContent },
-  '/monitoring': { Component: MonitoringContent },
   '/users': {
     Component: UsersContent,
     guard: { allowedRoles: [Role.SUPER_ADMIN, Role.ADMIN], fallback: <NoPermission /> },
@@ -41,6 +38,18 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   '/permissions': {
     Component: PermissionsContent,
     guard: { permissions: [PERMISSIONS.ROLE_VIEW], fallback: <NoPermission /> },
+  },
+  '/approvals': {
+    Component: ApprovalsContent,
+    guard: { permissions: [PERMISSIONS.CHANGE_VIEW], fallback: <NoPermission /> },
+  },
+  '/temp-grants': {
+    Component: TempGrantsContent,
+    guard: { permissions: [PERMISSIONS.TEMP_VIEW], fallback: <NoPermission /> },
+  },
+  '/audit': {
+    Component: NotificationsContent,
+    guard: { allowedRoles: [Role.SUPER_ADMIN], fallback: <NoPermission /> },
   },
   '/settings': {
     Component: SettingsContent,
@@ -53,22 +62,6 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   '/feedback': {
     Component: FeedbackContent,
     guard: { allowedRoles: [Role.ADMIN, Role.USER], fallback: <NoPermission /> },
-  },
-  '/notifications': {
-    Component: NotificationsContent,
-    guard: { allowedRoles: [Role.SUPER_ADMIN], fallback: <NoPermission /> },
-  },
-  '/announcements': {
-    Component: AnnouncementsContent,
-    guard: { allowedRoles: [Role.SUPER_ADMIN, Role.ADMIN], fallback: <NoPermission /> },
-  },
-  '/approvals': {
-    Component: ApprovalsContent,
-    guard: { permissions: [PERMISSIONS.CHANGE_VIEW], fallback: <NoPermission /> },
-  },
-  '/temp-grants': {
-    Component: TempGrantsContent,
-    guard: { permissions: [PERMISSIONS.TEMP_VIEW], fallback: <NoPermission /> },
   },
 };
 

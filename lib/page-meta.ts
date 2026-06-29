@@ -14,17 +14,15 @@ export interface PageMeta {
  * 以 pathname 第一段（如 'dashboard'）作为 key
  */
 export const PAGE_META: Record<string, PageMeta> = {
-  dashboard: { label: '仪表盘', closable: false },
-  monitoring: { label: '数据监控', closable: true },
+  dashboard: { label: '治理概览', closable: false },
   users: { label: '用户管理', closable: true },
   permissions: { label: '权限管理', closable: true },
+  approvals: { label: '审批中心', closable: true },
+  'temp-grants': { label: '临时授权', closable: true },
+  audit: { label: '审计日志', closable: true },
   settings: { label: '系统设置', closable: true },
   profile: { label: '个人中心', closable: true },
   feedback: { label: '意见反馈', closable: true },
-  notifications: { label: '审计日志', closable: true },
-  announcements: { label: '公告管理', closable: true },
-  approvals: { label: '审批中心', closable: true },
-  'temp-grants': { label: '临时授权', closable: true },
 };
 
 /** 根据完整 pathname 解析出页面元信息 */

@@ -7,7 +7,6 @@ export const rolePageMap = {
   [Role.SUPER_ADMIN]: ['*'],
   [Role.ADMIN]: [
     '/dashboard',
-    '/monitoring',
     '/users',
     '/profile',
     '/feedback',
@@ -16,7 +15,6 @@ export const rolePageMap = {
   ],
   [Role.USER]: [
     '/dashboard',
-    '/monitoring',
     '/profile',
     '/feedback',
   ],

@@ -160,13 +160,6 @@ export default function AdminHeader(props: AdminHeaderProps) {
             />
           )
         )}
-        <Text
-          strong
-          style={{ fontSize: 16, color: 'var(--text-primary)' }}
-          ellipsis
-        >
-          {pageTitle}
-        </Text>
       </div>
 
       {/* 右侧：消息 + 主题 + 用户 */}
