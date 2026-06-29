@@ -4,11 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Button,
   Card,
+  Col,
   Form,
   Input,
   Modal,
+  Row,
   Select,
   Space,
+  Statistic,
   Table,
   Tabs,
   Tag,
@@ -56,6 +59,18 @@ interface UserOption {
   role: string;
 }
 
+interface GovStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  decided: number;
+  totalChanges: number;
+  activeGrants: number;
+  expiredGrants: number;
+  revokedGrants: number;
+  autoReclaimRate: number | null;
+}
+
 const STATUS_TAG: Record<string, { color: string; text: string }> = {
   PENDING: { color: 'processing', text: '待审批' },
   APPROVED: { color: 'success', text: '已通过' },
@@ -93,6 +108,7 @@ export default function ApprovalsContent() {
   const [list, setList] = useState<ChangeRequestItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [deciding, setDeciding] = useState<number | null>(null);
+  const [stats, setStats] = useState<GovStats | null>(null);
 
   // 发起变更弹窗
   const [open, setOpen] = useState(false);
@@ -102,6 +118,15 @@ export default function ApprovalsContent() {
   const selectedUserId = Form.useWatch('targetUserId', form);
   const selectedToRole = Form.useWatch('toRole', form);
 
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await request<GovStats>('/api/governance/stats');
+      setStats(res.data);
+    } catch {
+      // 指标加载失败不阻塞主流程
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -109,12 +134,13 @@ export default function ApprovalsContent() {
         params: { scope, pageSize: 100 },
       });
       setList(res.data.list);
+      loadStats();
     } catch (e) {
       message.error(e instanceof Error ? e.message : '加载失败');
     } finally {
       setLoading(false);
     }
-  }, [scope]);
+  }, [scope, loadStats]);
 
   useEffect(() => {
     load();
@@ -261,6 +287,7 @@ export default function ApprovalsContent() {
 
   return (
     <Card
+      variant="borderless"
       title="审批中心"
       extra={
         <Button type="primary" icon={<PlusOutlined />} onClick={openModal}>
@@ -268,6 +295,36 @@ export default function ApprovalsContent() {
         </Button>
       }
     >
+      {stats && (
+        <Row gutter={16} style={{ marginBottom: 8 }}>
+          <Col xs={12} sm={8} md={4}>
+            <Statistic
+              title="待审批"
+              value={stats.pending}
+              valueStyle={stats.pending ? { color: '#d46b08' } : undefined}
+            />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <Statistic title="已通过" value={stats.approved} valueStyle={{ color: '#389e0d' }} />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <Statistic title="已驳回" value={stats.rejected} />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <Statistic title="生效中临时授权" value={stats.activeGrants} />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <Statistic title="已自动回收" value={stats.expiredGrants} />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <Statistic
+              title="按时回收率"
+              value={stats.autoReclaimRate ?? '—'}
+              suffix={stats.autoReclaimRate != null ? '%' : ''}
+            />
+          </Col>
+        </Row>
+      )}
       <Tabs
         activeKey={scope}
         onChange={(k) => setScope(k as 'todo' | 'mine')}

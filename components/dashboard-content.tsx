@@ -3,21 +3,22 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Badge,
+  Button,
   Card,
   Col,
   Empty,
   Row,
+  Space,
   Spin,
   Tag,
-  Timeline,
   Tooltip,
   Typography,
 } from 'antd';
 import {
   ArrowUpOutlined,
-  LockOutlined,
+  InfoCircleOutlined,
+  ReloadOutlined,
   SafetyCertificateOutlined,
-  TeamOutlined,
   UserOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
@@ -37,7 +38,6 @@ import {
 } from 'recharts';
 import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import { request } from '@/lib/request';
-import { formatDateTime } from '@/lib/format';
 
 const { Text } = Typography;
 
@@ -52,6 +52,12 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'settings.update': { label: '修改设置', color: 'geekblue' },
   'user.login': { label: '用户登录', color: 'green' },
   'user.password_change': { label: '修改密码', color: 'gold' },
+  'change.submit': { label: '发起变更', color: 'blue' },
+  'change.approve': { label: '审批通过', color: 'green' },
+  'change.reject': { label: '审批驳回', color: 'red' },
+  'temp.grant': { label: '临时授权', color: 'geekblue' },
+  'temp.revoke': { label: '回收授权', color: 'orange' },
+  'temp.expire': { label: '到期回收', color: 'default' },
 };
 
 const PIE_COLORS = ['#1677ff', '#52c41a', '#fadb14', '#ff7a45', '#9254de', '#13c2c2', '#f5222d', '#faad14'];
@@ -63,67 +69,7 @@ interface StatsData {
   permissionCount: number;
   newUsersTrend: Array<{ date: string; count: number }>;
   auditActionCounts: Array<{ action: string; count: number }>;
-  recentAuditLogs: Array<{
-    id: number;
-    actorUsername: string;
-    action: string;
-    targetLabel: string | null;
-    createdAt: string;
-  }>;
   loginFailCount: number;
-}
-
-function KpiCard({
-  title,
-  value,
-  icon,
-  color,
-  sub,
-  tooltip,
-}: {
-  title: string;
-  value: number | string;
-  icon: React.ReactNode;
-  color: string;
-  sub?: string;
-  tooltip?: string;
-}) {
-  return (
-    <Card variant="borderless" style={{ height: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Text type="secondary" style={{ fontSize: 13 }}>{title}</Text>
-            {tooltip && (
-              <Tooltip title={tooltip}>
-                <span style={{ cursor: 'default', color: 'var(--text-tertiary)', fontSize: 12 }}>?</span>
-              </Tooltip>
-            )}
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 700, margin: '10px 0 4px', color: 'var(--text-primary)' }}>
-            {value}
-          </div>
-          {sub && <Text type="secondary" style={{ fontSize: 12 }}>{sub}</Text>}
-        </div>
-        <div
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 10,
-            background: color,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            fontSize: 22,
-            flexShrink: 0,
-          }}
-        >
-          {icon}
-        </div>
-      </div>
-    </Card>
-  );
 }
 
 export default function DashboardContent() {
@@ -175,52 +121,26 @@ export default function DashboardContent() {
   const s = stats;
 
   return (
-    <div style={{ padding: 0 }}>
-      {/* KPI 卡片行 */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} xl={6}>
-          <KpiCard
-            title="注册用户总数"
-            value={s?.userCount ?? 0}
-            icon={<TeamOutlined />}
-            color="#1677ff"
-            sub={`活跃 ${s?.activeUserCount ?? 0} 人`}
-            tooltip="系统中所有注册用户数量"
-          />
-        </Col>
-        <Col xs={24} sm={12} xl={6}>
-          <KpiCard
-            title="角色数量"
-            value={s?.roleCount ?? 0}
-            icon={<SafetyCertificateOutlined />}
-            color="#52c41a"
-            sub="当前系统角色配置数"
-          />
-        </Col>
-        <Col xs={24} sm={12} xl={6}>
-          <KpiCard
-            title="权限条目"
-            value={s?.permissionCount ?? 0}
-            icon={<LockOutlined />}
-            color="#722ed1"
-            sub="已配置的权限项总数"
-          />
-        </Col>
-        <Col xs={24} sm={12} xl={6}>
-          <KpiCard
-            title="近 30 天登录失败"
-            value={s?.loginFailCount ?? 0}
-            icon={<WarningOutlined />}
-            color={((s?.loginFailCount ?? 0) > 50) ? '#ff4d4f' : '#faad14'}
-            sub="登录尝试失败累计次数"
-            tooltip="来自 LoginAttempt 表的失败次数合计"
-          />
-        </Col>
-      </Row>
-
+    <Card
+      variant="borderless"
+      title={
+        <Space size={6}>
+          <span>治理概览</span>
+          <Tooltip title="查看治理与系统核心指标，支持轮询自动刷新与手动刷新。">
+            <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
+          </Tooltip>
+        </Space>
+      }
+      extra={
+        <Button icon={<ReloadOutlined />} onClick={loadData}>
+          刷新数据
+        </Button>
+      }
+    >
+      <div style={{ padding: 0 }}>
+      {/* 近 30 天用户注册趋势（独占） */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        {/* 近 30 天用户注册趋势 */}
-        <Col xs={24} xl={16}>
+        <Col span={24}>
           <Card variant="borderless" title={<Text strong>近 30 天用户注册趋势</Text>}>
             {s?.newUsersTrend && s.newUsersTrend.length > 0 ? (
               <ResponsiveContainer width="100%" height={240}>
@@ -268,9 +188,34 @@ export default function DashboardContent() {
             )}
           </Card>
         </Col>
+      </Row>
 
-        {/* 近 30 天审计事件分布 */}
-        <Col xs={24} xl={8}>
+      {/* 近 30 天新增用户趋势（独占） */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col span={24}>
+          <Card variant="borderless" title={<Text strong>近 30 天新增用户趋势</Text>}>
+            {s?.newUsersTrend ? (
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart
+                  data={s.newUsersTrend}
+                  barSize={10}
+                  margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.12)" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} interval={4} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <ReTooltip formatter={(v: ValueType | undefined) => [v ?? 0, '新增用户']} />
+                  <Bar dataKey="count" fill="#1677ff" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : null}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* 底部面板：操作分布 / 系统状态 各占 50% */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} xl={12}>
           <Card variant="borderless" title={<Text strong>近 30 天操作分布</Text>} style={{ height: '100%' }}>
             {s?.auditActionCounts && s.auditActionCounts.length > 0 ? (
               <ResponsiveContainer width="100%" height={240}>
@@ -319,48 +264,8 @@ export default function DashboardContent() {
             </div>
           </Card>
         </Col>
-      </Row>
 
-      {/* 近期审计事件 + 系统状态 */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} xl={16}>
-          <Card variant="borderless" title={<Text strong>最近操作记录</Text>}>
-            {s?.recentAuditLogs && s.recentAuditLogs.length > 0 ? (
-              <Timeline
-                style={{ marginTop: 8 }}
-                items={s.recentAuditLogs.map((log) => {
-                  const meta = ACTION_LABELS[log.action];
-                  return {
-                    color: meta?.color === 'red' ? 'red' : meta?.color === 'warning' ? 'orange' : 'blue',
-                    children: (
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                          <Tag
-                            color={meta?.color ?? 'default'}
-                            style={{ fontSize: 11, marginInlineEnd: 0 }}
-                          >
-                            {meta?.label ?? log.action}
-                          </Tag>
-                          <Text style={{ fontSize: 13 }}>
-                            <strong>{log.actorUsername}</strong>
-                            {log.targetLabel && ` → ${log.targetLabel}`}
-                          </Text>
-                        </div>
-                        <Text type="secondary" style={{ fontSize: 11 }}>
-                          {formatDateTime(log.createdAt)}
-                        </Text>
-                      </div>
-                    ),
-                  };
-                })}
-              />
-            ) : (
-              <Empty description="暂无操作记录" />
-            )}
-          </Card>
-        </Col>
-
-        <Col xs={24} xl={8}>
+        <Col xs={24} xl={12}>
           <Card variant="borderless" title={<Text strong>系统状态</Text>} style={{ height: '100%' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {[
@@ -430,29 +335,7 @@ export default function DashboardContent() {
           </Card>
         </Col>
       </Row>
-
-      {/* 近 30 天每日分布柱图 */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col span={24}>
-          <Card variant="borderless" title={<Text strong>近 30 天新增用户趋势</Text>}>
-            {s?.newUsersTrend ? (
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart
-                  data={s.newUsersTrend}
-                  barSize={10}
-                  margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.12)" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} interval={4} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <ReTooltip formatter={(v: ValueType | undefined) => [v ?? 0, '新增用户']} />
-                  <Bar dataKey="count" fill="#1677ff" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : null}
-          </Card>
-        </Col>
-      </Row>
-    </div>
+      </div>
+    </Card>
   );
 }

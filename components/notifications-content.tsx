@@ -17,6 +17,7 @@ import {
 } from 'antd';
 import {
   DownloadOutlined,
+  InfoCircleOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -50,6 +51,12 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'user.password_change': { label: '修改密码', color: 'gold' },
   'settings.update': { label: '修改设置', color: 'geekblue' },
   'user.login': { label: '用户登录', color: 'green' },
+  'change.submit': { label: '发起变更', color: 'blue' },
+  'change.approve': { label: '审批通过', color: 'green' },
+  'change.reject': { label: '审批驳回', color: 'red' },
+  'temp.grant': { label: '临时授权', color: 'geekblue' },
+  'temp.revoke': { label: '回收授权', color: 'orange' },
+  'temp.expire': { label: '到期回收', color: 'default' },
 };
 
 const TARGET_TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -68,6 +75,12 @@ const ACTION_RISK: Record<string, { label: string; color: string }> = {
   'user.unsuspend': { label: '低', color: 'lime' },
   'user.password_change': { label: '低', color: 'cyan' },
   'user.login': { label: '低', color: 'success' },
+  'change.submit': { label: '低', color: 'green' },
+  'change.approve': { label: '中', color: 'gold' },
+  'change.reject': { label: '低', color: 'lime' },
+  'temp.grant': { label: '中', color: 'gold' },
+  'temp.revoke': { label: '低', color: 'lime' },
+  'temp.expire': { label: '低', color: 'cyan' },
 };
 
 const RISK_SCORE: Record<string, number> = {
@@ -312,8 +325,33 @@ export default function AuditLogsContent() {
   ];
 
   return (
-    <div className={styles.page}>
-      <Card variant="borderless" className={styles.filterCard}>
+    <>
+      <Card
+        variant="borderless"
+        title={
+          <Space size={6}>
+            <span>审计日志</span>
+            <Tooltip title="追踪关键操作事件，支持按动作、操作人、时间范围筛选与导出。">
+              <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
+            </Tooltip>
+          </Space>
+        }
+        extra={
+          <Space>
+            <Button icon={<DownloadOutlined />} onClick={handleExport}>
+              导出 CSV
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => load(page, pageSize, actionFilter, actorFilter, dateRange)}
+              loading={loading}
+            >
+              刷新
+            </Button>
+          </Space>
+        }
+      >
+        <Card variant="borderless" className={styles.filterCard} style={{ marginBottom: 12 }}>
         <div className={styles.filterRow}>
           <Select
             allowClear
@@ -357,20 +395,10 @@ export default function AuditLogsContent() {
             查询
           </Button>
           <Button onClick={handleReset}>重置</Button>
-          <Button icon={<DownloadOutlined />} onClick={handleExport}>
-            导出 CSV
-          </Button>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => load(page, pageSize, actionFilter, actorFilter, dateRange)}
-            loading={loading}
-          >
-            刷新
-          </Button>
         </div>
-      </Card>
+        </Card>
 
-      <Card variant="borderless" className={styles.tableCard}>
+        <Card variant="borderless" className={styles.tableCard}>
         <Table
           rowKey="id"
           size="middle"
@@ -401,6 +429,7 @@ export default function AuditLogsContent() {
             onChange: (p, s) => load(p, s, actionFilter, actorFilter, dateRange),
           }}
         />
+        </Card>
       </Card>
 
       <Modal
@@ -436,6 +465,6 @@ export default function AuditLogsContent() {
           </div>
         )}
       </Modal>
-    </div>
+    </>
   );
 }
