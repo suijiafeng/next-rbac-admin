@@ -11,6 +11,8 @@ export const rolePageMap = {
     '/users',
     '/profile',
     '/feedback',
+    '/approvals',
+    '/temp-grants',
   ],
   [Role.USER]: [
     '/dashboard',
@@ -35,6 +37,15 @@ export const PERMISSIONS = {
   ROLE_CREATE: 'role:create',
   ROLE_EDIT: 'role:edit',
   ROLE_DELETE: 'role:delete',
+
+  // —— 权限治理（变更审批 / 临时授权）——
+  CHANGE_VIEW: 'change:view',     // 查看变更请求（无审批权者仅看自己发起的）
+  CHANGE_SUBMIT: 'change:submit', // 发起变更请求
+  CHANGE_APPROVE: 'change:approve', // 审批（通过/驳回）—— 特权闸门
+
+  TEMP_VIEW: 'temp:view',
+  TEMP_GRANT: 'temp:grant',       // 授予临时权限
+  TEMP_REVOKE: 'temp:revoke',     // 立即回收 —— 特权闸门
 } as const;
 
 export type PermissionValue =
@@ -50,6 +61,11 @@ export const ROLE_PERMISSION_MAP: Record<Role, PermissionValue[]> = {
     PERMISSIONS.USER_CREATE,
     PERMISSIONS.USER_EDIT,
     PERMISSIONS.ROLE_VIEW,
+    // 治理：管理员能发起变更、能授予临时权限，但不能自己审批/强制回收
+    PERMISSIONS.CHANGE_VIEW,
+    PERMISSIONS.CHANGE_SUBMIT,
+    PERMISSIONS.TEMP_VIEW,
+    PERMISSIONS.TEMP_GRANT,
   ],
   [Role.SUPER_ADMIN]: [
     PERMISSIONS.USER_VIEW,
@@ -62,5 +78,12 @@ export const ROLE_PERMISSION_MAP: Record<Role, PermissionValue[]> = {
     PERMISSIONS.ROLE_CREATE,
     PERMISSIONS.ROLE_EDIT,
     PERMISSIONS.ROLE_DELETE,
+    // 治理：超管拥有审批与强制回收的特权
+    PERMISSIONS.CHANGE_VIEW,
+    PERMISSIONS.CHANGE_SUBMIT,
+    PERMISSIONS.CHANGE_APPROVE,
+    PERMISSIONS.TEMP_VIEW,
+    PERMISSIONS.TEMP_GRANT,
+    PERMISSIONS.TEMP_REVOKE,
   ],
 };

@@ -10,6 +10,8 @@ import ProfileContent from '@/components/profile-content';
 import FeedbackContent from '@/components/feedback-content';
 import NotificationsContent from '@/components/notifications-content';
 import AnnouncementsContent from '@/components/announcements-content';
+import ApprovalsContent from '@/components/approvals-content';
+import TempGrantsContent from '@/components/temp-grants-content';
 import PermissionGuard from '@/components/permission-guard';
 import NoPermission from '@/components/403/page';
 import { Role, PERMISSIONS, type PermissionValue } from '@/constants/permission';
@@ -59,6 +61,14 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   '/announcements': {
     Component: AnnouncementsContent,
     guard: { allowedRoles: [Role.SUPER_ADMIN, Role.ADMIN], fallback: <NoPermission /> },
+  },
+  '/approvals': {
+    Component: ApprovalsContent,
+    guard: { permissions: [PERMISSIONS.CHANGE_VIEW], fallback: <NoPermission /> },
+  },
+  '/temp-grants': {
+    Component: TempGrantsContent,
+    guard: { permissions: [PERMISSIONS.TEMP_VIEW], fallback: <NoPermission /> },
   },
 };
 

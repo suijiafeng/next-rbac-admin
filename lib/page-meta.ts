@@ -23,6 +23,8 @@ export const PAGE_META: Record<string, PageMeta> = {
   feedback: { label: '意见反馈', closable: true },
   notifications: { label: '审计日志', closable: true },
   announcements: { label: '公告管理', closable: true },
+  approvals: { label: '审批中心', closable: true },
+  'temp-grants': { label: '临时授权', closable: true },
 };
 
 /** 根据完整 pathname 解析出页面元信息 */

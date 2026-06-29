@@ -10,6 +10,8 @@ import {
   MessageOutlined,
   AuditOutlined,
   NotificationOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -81,6 +83,20 @@ const menuConfig: MenuItemConfig[] = [
     key: '/announcements',
     icon: <NotificationOutlined />,
     label: '公告管理',
+    group: '系统管理',
+    roles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/approvals',
+    icon: <CheckCircleOutlined />,
+    label: '审批中心',
+    group: '系统管理',
+    roles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/temp-grants',
+    icon: <ClockCircleOutlined />,
+    label: '临时授权',
     group: '系统管理',
     roles: ['ADMIN', 'SUPER_ADMIN'],
   },

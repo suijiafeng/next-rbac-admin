@@ -10,7 +10,14 @@ export type AuditAction =
   | 'user.reset_password'
   | 'user.login'
   | 'user.password_change'
-  | 'settings.update';
+  | 'settings.update'
+  // —— 权限治理事件 ——
+  | 'change.submit'
+  | 'change.approve'
+  | 'change.reject'
+  | 'temp.grant'
+  | 'temp.revoke'
+  | 'temp.expire';
 
 export interface AuditLogInput {
   actorId: number | null;

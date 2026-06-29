@@ -167,3 +167,47 @@ model Announcement {
   @@index([startsAt])
   @@map("announcements")
 }
+/// 变更请求：敏感角色变更先提案，审批通过后才生效（治理升级）
+/// 沿用本项目"日志/流程类表反范式存 actorId + username、不建 FK"的风格
+model ChangeRequest {
+  id                Int       @id @default(autoincrement())
+  type              String    // ASSIGN_ROLE
+  status            String    @default("PENDING") // PENDING / APPROVED / REJECTED
+  targetUserId      Int
+  targetUsername    String
+  fromRole          String
+  toRole            String
+  reason            String?
+  risks             String?   // JSON 字符串：[{ level, text }]
+  requesterId       Int
+  requesterUsername String
+  decidedById       Int?
+  decidedByUsername String?
+  decidedAt         DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("change_requests")
+}
+
+/// 临时授权：把普通用户临时提升为管理员，到期由系统自动回收
+model TempGrant {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  username          String
+  grantedRole       String    // ADMIN
+  fromRole          String
+  reason            String?
+  status            String    @default("ACTIVE") // ACTIVE / EXPIRED / REVOKED
+  grantedById       Int
+  grantedByUsername String
+  grantedAt         DateTime  @default(now())
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  revokedByUsername String?
+
+  @@index([status])
+  @@index([expiresAt])
+  @@map("temp_grants")
+}

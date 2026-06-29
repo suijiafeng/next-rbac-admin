@@ -367,6 +367,137 @@ async function main() {
     console.log('✅ 示例反馈数据创建完成 (3 条)');
   }
 
+  /**
+   * 7. 权限治理：权限码 + 角色绑定 + 示例数据
+   */
+  const governancePermissions = [
+    { code: PERMISSIONS.CHANGE_VIEW, name: '查看变更请求', description: '查看角色变更审批请求' },
+    { code: PERMISSIONS.CHANGE_SUBMIT, name: '发起变更请求', description: '发起角色变更审批' },
+    { code: PERMISSIONS.CHANGE_APPROVE, name: '审批变更请求', description: '通过或驳回角色变更（特权）' },
+    { code: PERMISSIONS.TEMP_VIEW, name: '查看临时授权', description: '查看临时授权列表' },
+    { code: PERMISSIONS.TEMP_GRANT, name: '授予临时权限', description: '把普通用户临时提升为管理员' },
+    { code: PERMISSIONS.TEMP_REVOKE, name: '回收临时授权', description: '立即回收临时授权（特权）' },
+  ];
+  for (const p of governancePermissions) {
+    await prisma.permission.upsert({ where: { code: p.code }, update: {}, create: p });
+  }
+
+  // 绑定：SUPER_ADMIN 拥有全部；ADMIN 仅查看/发起/授予（不含审批与强制回收）
+  const adminGovernanceCodes: string[] = [
+    PERMISSIONS.CHANGE_VIEW,
+    PERMISSIONS.CHANGE_SUBMIT,
+    PERMISSIONS.TEMP_VIEW,
+    PERMISSIONS.TEMP_GRANT,
+  ];
+  const govPermRows = await prisma.permission.findMany({
+    where: { code: { in: governancePermissions.map((p) => p.code) } },
+  });
+  for (const perm of govPermRows) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: superAdminRole!.id, permissionId: perm.id } },
+      update: {},
+      create: { roleId: superAdminRole!.id, permissionId: perm.id },
+    });
+    if (adminGovernanceCodes.includes(perm.code)) {
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId: adminRole!.id, permissionId: perm.id } },
+        update: {},
+        create: { roleId: adminRole!.id, permissionId: perm.id },
+      });
+    }
+  }
+  console.log('✅ 治理权限绑定完成');
+
+  // 示例变更请求（仅当为空时）
+  const changeRequestCount = await prisma.changeRequest.count();
+  if (changeRequestCount === 0) {
+    const dev1 = await prisma.user.findUnique({ where: { username: 'developer1' } });
+    const dev2 = await prisma.user.findUnique({ where: { username: 'developer2' } });
+    if (dev1) {
+      await prisma.changeRequest.create({
+        data: {
+          type: 'ASSIGN_ROLE',
+          status: 'PENDING',
+          targetUserId: dev1.id,
+          targetUsername: dev1.username,
+          fromRole: 'USER',
+          toRole: 'ADMIN',
+          reason: '接手运营后台，需要管理员权限',
+          risks: JSON.stringify([
+            { level: 'medium', text: '普通用户提升为管理员，将获得用户与角色管理能力' },
+          ]),
+          requesterId: adminUser.id,
+          requesterUsername: adminUser.username,
+        },
+      });
+    }
+    if (dev2) {
+      await prisma.changeRequest.create({
+        data: {
+          type: 'ASSIGN_ROLE',
+          status: 'APPROVED',
+          targetUserId: dev2.id,
+          targetUsername: dev2.username,
+          fromRole: 'USER',
+          toRole: 'ADMIN',
+          reason: '项目交接，已确认',
+          requesterId: adminUser.id,
+          requesterUsername: adminUser.username,
+          decidedById: superAdminUser.id,
+          decidedByUsername: superAdminUser.username,
+          decidedAt: new Date(),
+        },
+      });
+    }
+    console.log('✅ 示例变更请求创建完成');
+  }
+
+  // 示例临时授权（仅当为空时）
+  const tempGrantCount = await prisma.tempGrant.count();
+  if (tempGrantCount === 0) {
+    const dev3 = await prisma.user.findUnique({ where: { username: 'developer3' } });
+    const dev4 = await prisma.user.findUnique({ where: { username: 'developer4' } });
+    if (dev3) {
+      // 生效中的临时授权：同步补一条 ADMIN 的 UserRole，使权限与展示一致
+      await prisma.userRole.upsert({
+        where: { userId_roleId: { userId: dev3.id, roleId: adminRole!.id } },
+        update: {},
+        create: { userId: dev3.id, roleId: adminRole!.id },
+      });
+      await prisma.tempGrant.create({
+        data: {
+          userId: dev3.id,
+          username: dev3.username,
+          grantedRole: 'ADMIN',
+          fromRole: 'USER',
+          reason: '临时支援大促值班',
+          status: 'ACTIVE',
+          grantedById: adminUser.id,
+          grantedByUsername: adminUser.username,
+          expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
+        },
+      });
+    }
+    if (dev4) {
+      await prisma.tempGrant.create({
+        data: {
+          userId: dev4.id,
+          username: dev4.username,
+          grantedRole: 'ADMIN',
+          fromRole: 'USER',
+          reason: '临时处理工单（已到期自动回收）',
+          status: 'EXPIRED',
+          grantedById: adminUser.id,
+          grantedByUsername: adminUser.username,
+          grantedAt: new Date(Date.now() - 10 * 60 * 60 * 1000),
+          expiresAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+          revokedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+        },
+      });
+    }
+    console.log('✅ 示例临时授权创建完成');
+  }
+
   console.log('🎉 RBAC 初始化完成！');
   console.log('');
   console.log('📋 默认用户账户:');

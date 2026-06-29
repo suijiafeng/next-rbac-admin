@@ -417,11 +417,16 @@ export default function UsersPage() {
       return;
     }
     runBulk(
-      `批量分配为${bulkTargetRole === 'ADMIN' ? '管理员' : '普通用户'}`,
+      `提交角色变更审批（${bulkTargetRole === 'ADMIN' ? '管理员' : '普通用户'}）`,
       (u) =>
-        request(`/api/users/${u.id}/role`, {
-          method: 'PATCH',
-          data: { role: bulkTargetRole },
+        request(`/api/change-requests`, {
+          method: 'POST',
+          data: {
+            type: 'ASSIGN_ROLE',
+            targetUserId: u.id,
+            toRole: bulkTargetRole,
+            reason: '用户管理页发起的角色调整',
+          },
         }),
       targets,
     );
@@ -673,13 +678,13 @@ export default function UsersPage() {
         open={bulkRoleModalOpen}
         onCancel={() => setBulkRoleModalOpen(false)}
         onOk={handleBulkAssignRole}
-        okText="确认分配"
+        okText="提交审批"
         okButtonProps={{ loading: bulkLoading }}
         destroyOnHidden
       >
         <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--text-secondary)' }}>
-          将对所选 <b style={{ color: 'var(--color-primary)' }}>{selectedKeys.length}</b> 个用户分配角色
-          （超级管理员将被自动跳过）
+          将为所选 <b style={{ color: 'var(--color-primary)' }}>{selectedKeys.length}</b> 个用户
+          <b>发起角色变更审批</b>，通过后才生效（超级管理员将被自动跳过）
         </div>
         <Radio.Group
           value={bulkTargetRole}
