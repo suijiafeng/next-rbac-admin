@@ -580,3 +580,54 @@ a {
     text-wrap: balance;
   }
 }
+
+/* ============================================================
+ * 管理页视觉精修 —— 在既有"数据密集风"上做克制的质感提升
+ *   原则：保持紧凑密度不变，只增强「层级感 / 利落感 / 跟手感」
+ *   作用域：仅后台内容区（.ant-layout-content），不影响登录页与侧栏
+ * ============================================================ */
+
+/* 1) 卡片：用上已定义却闲置的阴影令牌，从「平铺融底」升级为「轻浮起的表面」 */
+.ant-layout-content .ant-card {
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease;
+}
+/* 可交互卡片（标记 hoverable）悬浮时轻微抬升，反馈跟手而不浮夸 */
+.ant-layout-content .ant-card.ant-card-hoverable:hover {
+  box-shadow: var(--shadow-elevated);
+}
+
+/* 2) 卡片标题：略增字重，标题与正文的层级更分明 */
+.ant-layout-content .ant-card-head-title {
+  font-weight: 600;
+}
+
+/* 3) 数字统一等宽（tabular-nums）：统计值 / 分页 / 表格内数字竖向对齐，更专业利落 */
+.ant-layout-content .ant-statistic-content,
+.ant-layout-content .ant-table,
+.ant-layout-content .ant-pagination {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* 4) 表头字重更稳；行高亮过渡更顺滑（扫读体验更好） */
+.ant-layout-content .ant-table-thead > tr > th {
+  font-weight: 600;
+}
+.ant-layout-content .ant-table-tbody > tr > td {
+  transition: background 0.18s ease;
+}
+
+/* 5) 主按钮：叠一道与品牌色呼应的极轻投影，从「贴纸感」变「实体感」
+ *    仅限内容区，登录页的渐变按钮不受影响（不同 DOM 子树，选择器不命中） */
+.ant-layout-content .ant-btn-primary:not(:disabled) {
+  box-shadow: 0 1px 2px rgba(22, 119, 255, 0.16), 0 2px 6px rgba(22, 119, 255, 0.10);
+}
+.ant-layout-content .ant-btn-primary:not(:disabled):hover {
+  box-shadow: 0 2px 4px rgba(22, 119, 255, 0.20), 0 4px 12px rgba(22, 119, 255, 0.14);
+}
+
+/* 6) 标签圆角与整体令牌统一（细节一致性） */
+.ant-layout-content .ant-tag {
+  border-radius: var(--radius-sm);
+}
