@@ -9,17 +9,25 @@ import {
   Modal,
   Select,
   Space,
+  Switch,
   Table,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
-import { PlusOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined, PlusOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { request } from '@/lib/request';
 import { usePermission } from '@/hooks/usePermission';
 import { PERMISSIONS } from '@/constants/permission';
-import { roleLabel, evalTempGrantRisks, type Risk } from '@/lib/governance';
+import {
+  roleLabel,
+  evalTempGrantRisks,
+  conditionLabel,
+  isConditionSatisfiedNow,
+  type Risk,
+} from '@/lib/governance';
 
 const { Text } = Typography;
 
@@ -29,6 +37,7 @@ interface TempGrantItem {
   username: string;
   grantedRole: string;
   fromRole: string;
+  condition: string | null;
   reason: string | null;
   status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
   grantedByUsername: string;
@@ -71,7 +80,12 @@ export default function TempGrantsContent() {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [users, setUsers] = useState<UserOption[]>([]);
-  const [form] = Form.useForm<{ targetUserId: number; hours: number; reason?: string }>();
+  const [form] = Form.useForm<{
+    targetUserId: number;
+    hours: number;
+    reason?: string;
+    businessHoursOnly?: boolean;
+  }>();
   const hours = Form.useWatch('hours', form);
 
   const load = useCallback(async () => {
@@ -117,6 +131,7 @@ export default function TempGrantsContent() {
           grantedRole: 'ADMIN',
           hours: values.hours,
           reason: values.reason,
+          businessHoursOnly: values.businessHoursOnly || false,
         },
       });
       message.success(res.message || '已授予');
@@ -153,6 +168,25 @@ export default function TempGrantsContent() {
       dataIndex: 'grantedRole',
       width: 110,
       render: (v: string) => <Tag color="blue">{roleLabel(v)}</Tag>,
+    },
+    {
+      title: '生效约束',
+      dataIndex: 'condition',
+      width: 190,
+      render: (c: string | null, r) => {
+        if (!c) return <Text type="secondary">无约束</Text>;
+        const label = conditionLabel(c);
+        if (r.status !== 'ACTIVE') return <Tag>{label}</Tag>;
+        const effective = isConditionSatisfiedNow(c);
+        return (
+          <Space direction="vertical" size={0}>
+            <Tag color="geekblue">{label}</Tag>
+            <Text type={effective ? 'success' : 'secondary'} style={{ fontSize: 12 }}>
+              {effective ? '● 时段内 · 生效中' : '○ 时段外 · 已挂起'}
+            </Text>
+          </Space>
+        );
+      },
     },
     {
       title: '状态',
@@ -207,18 +241,21 @@ export default function TempGrantsContent() {
 
   return (
     <Card
-      title="临时授权"
+      variant="borderless"
+      title={
+        <Space size={6}>
+          <span>临时授权</span>
+          <Tooltip title="把普通用户临时提升为管理员，到期由系统自动回收（每次拉取列表与定时任务都会扫描回收）。">
+            <InfoCircleOutlined style={{ color: 'var(--text-tertiary)' }} />
+          </Tooltip>
+        </Space>
+      }
       extra={
         <Button type="primary" icon={<PlusOutlined />} onClick={openModal}>
           授予临时权限
         </Button>
       }
     >
-      <div style={{ marginBottom: 12 }}>
-        <Text type="secondary">
-          把「普通用户」临时提升为管理员，到期由系统自动回收（每次拉取列表与定时任务都会扫描回收）。
-        </Text>
-      </div>
       <Table<TempGrantItem>
         rowKey="id"
         loading={loading}
@@ -264,6 +301,15 @@ export default function TempGrantsContent() {
             rules={[{ required: true, message: '请选择时长' }]}
           >
             <Select placeholder="选择有效时长" options={HOUR_OPTIONS} />
+          </Form.Item>
+
+          <Form.Item
+            label="仅工作时间内生效（ABAC 约束）"
+            name="businessHoursOnly"
+            valuePropName="checked"
+            tooltip="开启后，该临时管理员权限仅在 09:00–21:00 生效；时段外自动挂起，到期前不会删除记录"
+          >
+            <Switch checkedChildren="仅工作时间" unCheckedChildren="不限时段" />
           </Form.Item>
 
           {hours ? (

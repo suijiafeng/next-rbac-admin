@@ -198,6 +198,7 @@ model TempGrant {
   username          String
   grantedRole       String    // ADMIN
   fromRole          String
+  condition         String?   // ABAC 约束(JSON)：如「仅工作时间」；null 表示无约束
   reason            String?
   status            String    @default("ACTIVE") // ACTIVE / EXPIRED / REVOKED
   grantedById       Int

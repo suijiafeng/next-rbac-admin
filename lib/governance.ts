@@ -52,3 +52,66 @@ export function parseRisks(raw?: string | null): Risk[] {
     return [];
   }
 }
+
+/* ============================================================
+ * ABAC 约束（属性条件）—— 让授权可以附带"上下文条件"
+ * v1 支持「仅工作时间」时间窗；纯函数，服务端鉴权与客户端展示共用。
+ * ========================================================== */
+
+export interface BusinessHoursCondition {
+  type: 'business_hours';
+  startHour: number; // 含
+  endHour: number; // 不含
+}
+
+export type AccessCondition = BusinessHoursCondition;
+
+export const BUSINESS_HOURS: BusinessHoursCondition = {
+  type: 'business_hours',
+  startHour: 9,
+  endHour: 21,
+};
+
+export function parseCondition(raw?: string | null): AccessCondition | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.type === 'business_hours') {
+      return {
+        type: 'business_hours',
+        startHour: Number(parsed.startHour),
+        endHour: Number(parsed.endHour),
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 当前是否满足约束。无约束 / 解析失败 → 视为满足（fail-open，避免误伤可用性）。
+ * 注意：使用服务运行环境的本地时间（Vercel 上为 UTC）。
+ */
+export function isConditionSatisfiedNow(raw?: string | null, now: Date = new Date()): boolean {
+  const cond = parseCondition(raw);
+  if (!cond) return true;
+  if (cond.type === 'business_hours') {
+    const hour = now.getHours();
+    return hour >= cond.startHour && hour < cond.endHour;
+  }
+  return true;
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+export function conditionLabel(raw?: string | null): string {
+  const cond = parseCondition(raw);
+  if (!cond) return '无约束';
+  if (cond.type === 'business_hours') {
+    return `仅工作时间 ${pad2(cond.startHour)}:00–${pad2(cond.endHour)}:00`;
+  }
+  return '自定义约束';
+}

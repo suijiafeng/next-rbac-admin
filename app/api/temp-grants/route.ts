@@ -6,7 +6,7 @@ import { parsePagination } from '@/lib/pagination';
 import { resolveRoleFromNames } from '@/lib/user-role';
 import { writeAuditLog } from '@/lib/audit-log';
 import { expireDueGrants } from '@/lib/temp-grant';
-import { roleLabel } from '@/lib/governance';
+import { roleLabel, BUSINESS_HOURS } from '@/lib/governance';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,11 +39,12 @@ export async function POST(request: Request) {
     const { user: actor } = await requirePermission(PERMISSIONS.TEMP_GRANT);
 
     const body = await request.json();
-    const { targetUserId, grantedRole, hours, reason } = body as {
+    const { targetUserId, grantedRole, hours, reason, businessHoursOnly } = body as {
       targetUserId?: number;
       grantedRole?: string;
       hours?: number;
       reason?: string;
+      businessHoursOnly?: boolean;
     };
 
     if (!targetUserId || grantedRole !== 'ADMIN') {
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
     }
 
     const expiresAt = new Date(Date.now() + h * 60 * 60 * 1000);
+    const condition = businessHoursOnly ? JSON.stringify(BUSINESS_HOURS) : null;
 
     await prisma.userRole.upsert({
       where: { userId_roleId: { userId: target.id, roleId: adminRole.id } },
@@ -90,6 +92,7 @@ export async function POST(request: Request) {
         username: target.username,
         grantedRole: 'ADMIN',
         fromRole,
+        condition,
         reason: reason || null,
         status: 'ACTIVE',
         grantedById: actor.id,
@@ -105,7 +108,7 @@ export async function POST(request: Request) {
       targetType: 'user',
       targetId: target.id,
       targetLabel: target.username,
-      detail: { grantedRole: 'ADMIN', hours: h, expiresAt },
+      detail: { grantedRole: 'ADMIN', hours: h, expiresAt, businessHoursOnly: Boolean(businessHoursOnly) },
     });
 
     return apiSuccess(grant, `已临时授予 ${target.username} ${roleLabel('ADMIN')}（${h} 小时后自动回收）`);

@@ -470,6 +470,7 @@ async function main() {
           username: dev3.username,
           grantedRole: 'ADMIN',
           fromRole: 'USER',
+          condition: JSON.stringify({ type: 'business_hours', startHour: 9, endHour: 21 }),
           reason: '临时支援大促值班',
           status: 'ACTIVE',
           grantedById: adminUser.id,
