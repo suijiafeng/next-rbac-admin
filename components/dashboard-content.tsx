@@ -10,7 +10,6 @@ import {
   Row,
   Space,
   Spin,
-  Tag,
   Tooltip,
   Typography,
 } from 'antd';

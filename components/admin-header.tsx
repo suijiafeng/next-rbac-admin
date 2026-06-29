@@ -20,10 +20,9 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import NotificationBell from './notification-bell';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import type { MenuProps } from 'antd';
-import { resolvePageMeta } from '@/lib/page-meta';
 import { useTheme } from '@/components/providers/ThemeProvider';
 
 const { Text } = Typography;
@@ -78,14 +77,11 @@ export default function AdminHeader(props: AdminHeaderProps) {
     canToggle,
   } = props;
   const router = useRouter();
-  const pathname = usePathname();
   const { resolved, toggle } = useTheme();
 
   useEffect(() => {
     router.prefetch('/profile');
   }, [router]);
-
-  const pageTitle = resolvePageMeta(pathname).label;
 
   const displayName = currentUser.nickname || currentUser.username || '?';
   const firstChar = displayName[0]?.toUpperCase() || '?';
