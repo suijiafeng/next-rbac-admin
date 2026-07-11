@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { request } from '@/lib/request';
+import { request, setRequestErrorHandler } from '@/lib/request';
 
 function makeFetchResponse(body: unknown, ok = true, status = 200) {
   return Promise.resolve({
@@ -11,6 +11,7 @@ function makeFetchResponse(body: unknown, ok = true, status = 200) {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  setRequestErrorHandler(undefined);
 });
 
 describe('request', () => {
@@ -108,5 +109,85 @@ describe('request', () => {
       json: () => Promise.reject(new SyntaxError('Unexpected token')),
     } as Response));
     await expect(request('/api/users')).rejects.toThrow('服务端返回格式异常');
+  });
+
+  it('GET 请求遇到可重试错误会自动重试并成功', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('network error'))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ code: 0, data: { ok: true }, message: 'ok' }),
+      } as Response);
+
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await request('/api/retry-success');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.data).toEqual({ ok: true });
+  });
+
+  it('非 GET 请求默认不重试', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('network error'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      request('/api/retry-post', { method: 'POST', data: { a: 1 } }),
+    ).rejects.toThrow('network error');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('超时会中断请求并返回统一超时文案', async () => {
+    const fetchMock = vi.fn((_: string, init?: RequestInit) =>
+      new Promise((_, reject) => {
+        const signal = init?.signal as AbortSignal;
+        signal.addEventListener('abort', () => {
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+        });
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(request('/api/timeout', { timeoutMs: 10, retries: 0 })).rejects.toThrow(
+      '请求超时，请稍后重试',
+    );
+  });
+
+  it('请求失败时会调用全局错误钩子', async () => {
+    const errorHandler = vi.fn();
+    setRequestErrorHandler(errorHandler);
+    vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')));
+
+    await expect(request('/api/hook-test', { retries: 0 })).rejects.toThrow('offline');
+
+    expect(errorHandler).toHaveBeenCalledTimes(1);
+    expect(errorHandler).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        url: '/api/hook-test',
+        method: 'GET',
+        attempts: 1,
+      }),
+    );
+  });
+
+  it('请求失败时会调用当前请求的错误钩子', async () => {
+    const onError = vi.fn();
+    vi.stubGlobal('fetch', () => Promise.reject(new Error('boom')));
+
+    await expect(request('/api/local-hook', { retries: 0, onError })).rejects.toThrow('boom');
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        url: '/api/local-hook',
+        method: 'GET',
+        attempts: 1,
+      }),
+    );
   });
 });
