@@ -1,6 +1,6 @@
 # next-rbac-admin
 
-一个基于 **Next.js 14 App Router + Antd 5 + Prisma + Neon** 的 RBAC 中后台模板。
+一个基于 **Next.js 14 App Router + Antd 5 + Prisma + PostgreSQL** 的 RBAC 中后台模板。
 
 不是又一个 "Hello Admin"——这个模板把"做后台真正会遇到的问题"都给了答案：渲染模式怎么选、权限怎么落、多标签怎么 keep-alive、请求反馈怎么做、主题怎么切不闪屏。
 
@@ -237,19 +237,19 @@ npm run db:push && npm run db:generate && npm run db:seed
 npm run dev
 ```
 
-打开 http://localhost:3000，用 `super_admin / 123456` 登录（登录页已默认预填超级管理员账号）。
+打开 http://localhost:3000，用 `super_admin / 请修改为强密码` 登录（登录页已默认预填超级管理员账号）。
 
 种子数据：21 个测试用户，3 个角色梯度。
 
 ### 默认账号
 
-三个角色的默认账号密码统一为 `123456`，登录后请尽快修改；生产环境请勿保留默认密码。
+三个角色的默认账号密码统一为 `请修改为强密码`，登录后请尽快修改；生产环境请勿保留默认密码。
 
 | 用户名 | 密码 | 角色 | 权限范围 | 能看到的页面 |
 |---|---|---|---|---|
-| `super_admin` | `123456` | 超级管理员 SUPER_ADMIN | 全部权限 | 全部 |
-| `admin` | `123456` | 管理员 ADMIN | 除「删除」类外全部 | 仪表盘 / 监控 / 用户 / 个人 |
-| `user` | `123456` | 普通用户 USER | 仅查看类 | 仪表盘 / 监控 / 个人 |
+| `super_admin` | `请修改为强密码` | 超级管理员 SUPER_ADMIN | 全部权限 | 全部 |
+| `admin` | `请修改为强密码` | 管理员 ADMIN | 除「删除」类外全部 | 仪表盘 / 监控 / 用户 / 个人 |
+| `user` | `请修改为强密码` | 普通用户 USER | 仅查看类 | 仪表盘 / 监控 / 个人 |
 
 ---
 
@@ -343,7 +343,7 @@ npm run db:seed      # 写入治理权限 + 示例数据（含 1 条待审批、
 npm run dev
 ```
 
-默认账号：`super_admin` / `admin` / `user`，密码均为 `123456`。
+默认账号：`super_admin` / `admin` / `user`，密码均为 `请修改为强密码`，生产环境请修改。
 用 `admin` 登录在「审批中心」发起一条角色变更，再用 `super_admin` 登录审批通过，最后在「审计日志」即可看到完整链路。
 
 ### v1.1 增量：ABAC 约束 + 治理指标
@@ -370,3 +370,7 @@ npm run dev
 
 ---
 > **声明**：本仓库为个人项目，仅供学习交流。
+
+## License
+
+MIT
