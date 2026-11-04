@@ -23,7 +23,7 @@ describe('request', () => {
   });
 
   it('GET 请求不发送 body', async () => {
-    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    const fetchMock = vi.fn((_url: string, _init?: RequestInit) => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
     vi.stubGlobal('fetch', fetchMock);
     await request('/api/users', { method: 'GET' });
     const [, init] = fetchMock.mock.calls[0];
@@ -31,7 +31,7 @@ describe('request', () => {
   });
 
   it('POST 请求携带 JSON body', async () => {
-    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    const fetchMock = vi.fn((_url: string, _init?: RequestInit) => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
     vi.stubGlobal('fetch', fetchMock);
     await request('/api/users', { method: 'POST', data: { username: 'test' } });
     const [, init] = fetchMock.mock.calls[0];
@@ -39,7 +39,7 @@ describe('request', () => {
   });
 
   it('params 构建查询字符串', async () => {
-    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    const fetchMock = vi.fn((_url: string, _init?: RequestInit) => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
     vi.stubGlobal('fetch', fetchMock);
     await request('/api/users', { params: { page: 1, username: 'alice' } });
     const [url] = fetchMock.mock.calls[0];
@@ -48,7 +48,7 @@ describe('request', () => {
   });
 
   it('params 中 null/undefined/空字符串 被过滤', async () => {
-    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    const fetchMock = vi.fn((_url: string, _init?: RequestInit) => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
     vi.stubGlobal('fetch', fetchMock);
     await request('/api/users', { params: { a: null, b: undefined, c: '', d: 'keep' } });
     const [url] = fetchMock.mock.calls[0];
@@ -74,7 +74,7 @@ describe('request', () => {
   });
 
   it('params 为空对象时 URL 无查询字符串', async () => {
-    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    const fetchMock = vi.fn((_url: string, _init?: RequestInit) => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
     vi.stubGlobal('fetch', fetchMock);
     await request('/api/users', { params: {} });
     const [url] = fetchMock.mock.calls[0];
@@ -82,7 +82,7 @@ describe('request', () => {
   });
 
   it('不传 params 时 URL 无查询字符串', async () => {
-    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    const fetchMock = vi.fn((_url: string, _init?: RequestInit) => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
     vi.stubGlobal('fetch', fetchMock);
     await request('/api/users');
     const [url] = fetchMock.mock.calls[0];
@@ -95,7 +95,7 @@ describe('request', () => {
   });
 
   it('自定义 headers 被合并到请求中', async () => {
-    const fetchMock = vi.fn(() => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
+    const fetchMock = vi.fn((_url: string, _init?: RequestInit) => makeFetchResponse({ code: 0, data: null, message: 'ok' }));
     vi.stubGlobal('fetch', fetchMock);
     await request('/api/users', { headers: { 'X-Custom': 'value' } });
     const [, init] = fetchMock.mock.calls[0];

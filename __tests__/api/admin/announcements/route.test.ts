@@ -70,8 +70,7 @@ describe('GET /api/admin/announcements', () => {
   it('active=true 参数时只查活跃公告', async () => {
     mockRequireAdminUser.mockResolvedValue(ADMIN_USER);
 
-    const res = await GET(makeGetRequest('?active=true'));
-    expect(body => body).toBeTruthy();
+    await GET(makeGetRequest('?active=true'));
     expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ active: true }),
     }));

@@ -18,7 +18,7 @@
 
 ![临时授权](./screenshot/temp-grants.jpg)
 
-> 把普通用户临时提升为管理员并设定时长，到期由系统自动回收（拉列表时懒回收 + Cron 定时兜底）。勾选「仅工作时间」后，约束在**鉴权边界**评估——时段外该临时角色自动挂起而非删除，时段内恢复。权限模型由此从纯 RBAC 扩展为「角色 + 上下文属性」的 RBAC/ABAC。
+> 把普通用户临时提升为管理员并设定时长。到期后在**鉴权读取**时立即失效（不等定时任务）；列表懒回收和 Vercel Cron 负责把角色行和授权状态清掉。勾选「仅工作时间」后，约束同样在鉴权边界评估——时段外该临时角色自动挂起而非删除，时段内恢复。权限模型由此从纯 RBAC 扩展为「角色 + 上下文属性」的 RBAC/ABAC。
 
 ### 权限管理 · 细粒度权限码与角色映射
 
@@ -229,6 +229,7 @@ npm install
 # 2. .env.local
 DATABASE_URL="postgresql://user:pass@localhost:5432/admin_demo"
 AUTH_SECRET="任意 32+ 字符随机串"
+CRON_SECRET="另一段 32+ 字符随机串"   # 生产 / Vercel Cron 必填，见下方「临时授权何时失效」
 
 # 3. 数据库
 npm run db:push && npm run db:generate && npm run db:seed
@@ -301,7 +302,7 @@ npm test -- --run __tests__/lib/page-meta.test.ts
 ### 能力
 
 - **审批中心 `/approvals`**：发起角色变更（展示 `当前角色 → 目标角色` 的 diff 与风险提示），超级管理员在「待我审批」中通过 / 驳回；通过后才在事务中真正修改用户角色并留痕。
-- **临时授权 `/temp-grants`**：把「普通用户」临时提升为管理员并设定时长，到期由系统自动回收（拉取列表时懒回收 + Vercel Cron 定时兜底），也可由超级管理员立即回收。
+- **临时授权 `/temp-grants`**：把「普通用户」临时提升为管理员并设定时长。到期后鉴权立即不再承认该角色；拉取列表时懒回收，并用 Vercel Cron 兜底清数据。超级管理员也可以立即回收。
 - **审计回溯**：`change.submit / change.approve / change.reject / temp.grant / temp.revoke / temp.expire` 全部进入「审计日志」，可按操作人 / 动作 / 时间检索。
 
 ### 分权设计
@@ -319,14 +320,27 @@ npm test -- --run __tests__/lib/page-meta.test.ts
 - 所有写操作走 API Route Handler + `requirePermission`，前端三层守卫只是体验层。
 - 新增表 `change_requests` / `temp_grants`，沿用日志类表「反范式存 actorId + username、不建外键」的风格；审计复用既有 `audit_logs` 与 `lib/audit-log.ts`。
 
+### 临时授权何时失效
+
+临时 ADMIN 写在 `UserRole` 上，另有一条 `temp_grants` 记录保存 `expiresAt`。权限结束不能只指望定时任务：
+
+1. **鉴权读取**（`getCurrentAdminUser`，因此 `requirePermission` 和 `GET /api/profile` 都算在内；登录发 session 时同样过滤）：状态仍是 `ACTIVE` 但 `expiresAt` 已过，或 ABAC 条件当前不满足，对应角色立即不计入有效角色。Cron 没跑也不再拥有管理员权限。
+2. **懒回收**：打开临时授权列表时调用 `expireDueGrants`，删掉提升的角色并把记录写成 `EXPIRED`。
+3. **Vercel Cron**：根目录 `vercel.json` 每小时 `GET /api/cron/expire-grants`。该路径在 middleware 里免登录（否则调度器会被 401），但 **`CRON_SECRET` 必填**。请求需带 `Authorization: Bearer <CRON_SECRET>`；在 Vercel 配好同名环境变量后，平台会自动带上。也可以用 `?secret=` 手动触发。未配置密钥或密钥不对一律 401，不会执行回收。
+
+Hobby 计划的 Cron 可能只允许每天一次。若部署因 schedule 被拒，把 `vercel.json` 里的 `0 * * * *` 改成 `0 3 * * *` 即可；访问控制不依赖这条任务的频率。
+
 ### 涉及文件
 
 ```
 prisma/schema.prisma                         # +ChangeRequest +TempGrant
 constants/permission.ts                      # +change:* / temp:* 权限码与角色映射
 lib/governance.ts                            # 角色标签 / 风险评估 / diff（纯函数）
+lib/admin-user.ts                            # 读取时忽略过期 / 条件不满足的临时角色
 lib/temp-grant.ts                            # 到期自动回收
 lib/audit-log.ts                             # 扩展审计动作类型
+middleware.ts                                # /api/cron/ 免登录，由 CRON_SECRET 鉴权
+vercel.json                                  # Cron：每小时回收到期授权
 app/api/change-requests/**                   # 列表 / 发起 / 审批决策
 app/api/temp-grants/**                       # 列表 / 授予 / 回收
 app/api/cron/expire-grants/route.ts          # 定时回收（Vercel Cron）
@@ -348,7 +362,7 @@ npm run dev
 
 ### v1.1 增量：ABAC 约束 + 治理指标
 
-- **ABAC 时间窗约束**：授予临时权限时可勾选「仅工作时间」（09:00–21:00）。约束在鉴权边界 `lib/admin-user.ts` 评估——时段外该临时角色自动挂起（不删除记录，时段内恢复），到期仍由自动回收清除。这让权限从纯 RBAC 扩展为「角色 + 上下文属性」的 RBAC/ABAC。
+- **ABAC 时间窗约束**：授予临时权限时可勾选「仅工作时间」（09:00–21:00）。约束在鉴权边界 `lib/admin-user.ts` 评估——时段外该临时角色自动挂起（不删除记录，时段内恢复）。过期同样在这一层生效：`expiresAt` 一过，即使 Cron 没跑、`UserRole` 还在，该临时角色也不再计入权限。这让权限从纯 RBAC 扩展为「角色 + 上下文属性」的 RBAC/ABAC。
 - **治理指标概览**：审批中心顶部展示待审批、已通过/已驳回、生效中的临时授权、已自动回收、按时回收率，直接对应治理成效（数据来自 `GET /api/governance/stats`）。
 
 > 说明：ABAC 时间窗使用服务运行环境的本地时间（Vercel 上为 UTC）；评估失败时降级为基础角色解析，不影响鉴权可用性。

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const {
   mockFindUnique,
   mockFindFirst,
+  mockGrantFindMany,
   mockBcryptCompare,
   mockIsLockedOut,
   mockRecordFailed,
@@ -12,6 +13,7 @@ const {
 } = vi.hoisted(() => ({
   mockFindUnique: vi.fn(),
   mockFindFirst: vi.fn(),
+  mockGrantFindMany: vi.fn(),
   mockBcryptCompare: vi.fn(),
   mockIsLockedOut: vi.fn(),
   mockRecordFailed: vi.fn(),
@@ -24,6 +26,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     systemSetting: { findUnique: mockFindUnique },
     user: { findFirst: mockFindFirst },
+    tempGrant: { findMany: mockGrantFindMany },
   },
 }));
 vi.mock('bcryptjs', () => ({ default: { compare: mockBcryptCompare } }));
@@ -63,6 +66,7 @@ const BASE_USER = {
 beforeEach(() => {
   vi.clearAllMocks();
   mockFindUnique.mockResolvedValue(null);   // 系统设置默认空
+  mockGrantFindMany.mockResolvedValue([]);
   mockIsLockedOut.mockResolvedValue(false);
   mockBcryptCompare.mockResolvedValue(true);
   mockCreateToken.mockResolvedValue('session-token');
@@ -127,6 +131,29 @@ describe('POST /api/auth/login', () => {
     });
     const res = await POST(makeRequest({ username: 'alice', password: '123456' }));
     expect(res.status).toBe(200);
+  });
+
+  it('已过期的临时管理员登录后按普通用户授权', async () => {
+    mockFindFirst.mockResolvedValue({
+      ...BASE_USER,
+      userRoles: [{ role: { name: 'USER' } }, { role: { name: 'ADMIN' } }],
+    });
+    mockGrantFindMany.mockResolvedValue([
+      {
+        grantedRole: 'ADMIN',
+        condition: null,
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    ]);
+    const res = await POST(makeRequest({ username: 'alice', password: '123456' }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.role).toBe('USER');
+    expect(body.data.permissions).toEqual(['user:view']);
+    expect(mockCreateToken).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'USER' }),
+      expect.any(Number),
+    );
   });
 
   it('登录成功返回 200，包含用户信息和 permissions', async () => {

@@ -14,8 +14,12 @@ const BASE_SESSION = {
   authVersion: 1,
 };
 
+function setNodeEnv(value: 'test' | 'production' | 'development') {
+  (process.env as { NODE_ENV?: string }).NODE_ENV = value;
+}
+
 beforeEach(() => {
-  process.env.NODE_ENV = 'test';
+  setNodeEnv('test');
   delete process.env.AUTH_SECRET;
   delete process.env.NEXTAUTH_SECRET;
 });
@@ -40,9 +44,9 @@ describe('getSessionSecret（通过 createAdminSessionToken 间接触发）', ()
   });
 
   it('生产环境缺少密钥时抛出错误', async () => {
-    process.env.NODE_ENV = 'production';
+    setNodeEnv('production');
     await expect(createAdminSessionToken(BASE_SESSION)).rejects.toThrow('生产环境必须配置 AUTH_SECRET');
-    process.env.NODE_ENV = 'test';
+    setNodeEnv('test');
   });
 });
 
@@ -141,16 +145,16 @@ describe('getAdminSessionCookieOptions', () => {
   });
 
   it('非生产环境 secure=false', () => {
-    process.env.NODE_ENV = 'test';
+    setNodeEnv('test');
     const opts = getAdminSessionCookieOptions();
     expect(opts.secure).toBe(false);
   });
 
   it('生产环境 secure=true', () => {
-    process.env.NODE_ENV = 'production';
+    setNodeEnv('production');
     const opts = getAdminSessionCookieOptions();
     expect(opts.secure).toBe(true);
-    process.env.NODE_ENV = 'test';
+    setNodeEnv('test');
   });
 
   it('自定义 maxAge 生效', () => {

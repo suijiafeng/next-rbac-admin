@@ -3,6 +3,71 @@ import { prisma } from '@/lib/prisma';
 import { resolveRoleFromNames } from '@/lib/user-role';
 import { isConditionSatisfiedNow } from '@/lib/governance';
 
+/** 一条仍标记为 ACTIVE 的临时授权（读取时再判断是否真正生效）。 */
+export interface ActiveTempGrant {
+  grantedRole: string;
+  condition?: string | null;
+  expiresAt: Date;
+  /** 缺省视为查询已限定 ACTIVE。显式非 ACTIVE 的记录不参与抑制。 */
+  status?: string;
+}
+
+/**
+ * 按读取时刻过滤角色名。
+ *
+ * 临时授权会把角色写进 UserRole，回收任务没跑时那一行还在。
+ * 这里以 temp_grants 为准：某个角色只要存在 ACTIVE 授权，就只有在
+ * 「未过期且 ABAC 条件当前满足」时才保留。没有对应 ACTIVE 授权的角色
+ * 视为常驻角色，原样保留。同一角色有多条授权时，有一条仍有效即保留。
+ *
+ * 与 cron 的到期条件一致：expiresAt < now 视为已过期（等于 now 仍有效）。
+ */
+export function effectiveRoleNames(
+  roleNames: string[],
+  grants: ActiveTempGrant[],
+  now: Date = new Date(),
+): string[] {
+  const elevated = new Set<string>();
+  const allowed = new Set<string>();
+
+  for (const grant of grants) {
+    if (grant.status != null && grant.status !== 'ACTIVE') continue;
+    const role = grant.grantedRole.toUpperCase();
+    elevated.add(role);
+    if (grant.expiresAt.getTime() < now.getTime()) continue;
+    if (!isConditionSatisfiedNow(grant.condition, now)) continue;
+    allowed.add(role);
+  }
+
+  if (elevated.size === 0) return roleNames;
+
+  return roleNames.filter((name) => {
+    const key = name.toUpperCase();
+    return !elevated.has(key) || allowed.has(key);
+  });
+}
+
+/**
+ * 读取该用户的 ACTIVE 临时授权，并返回此刻仍然有效的角色名。
+ * 查询失败时保留原角色，避免临时表异常把所有人锁在门外；
+ * 查询成功时过期授权立即失效，不依赖 cron 先删掉 UserRole。
+ */
+export async function applyActiveTempGrants(
+  userId: number,
+  roleNames: string[],
+): Promise<string[]> {
+  try {
+    const grants = await prisma.tempGrant.findMany({
+      where: { userId, status: 'ACTIVE' },
+      select: { grantedRole: true, condition: true, expiresAt: true },
+    });
+    return effectiveRoleNames(roleNames, grants);
+  } catch (error) {
+    console.error('临时授权有效性评估失败:', error);
+    return roleNames;
+  }
+}
+
 export async function getCurrentAdminUser() {
   const session = await getAdminSession();
 
@@ -38,32 +103,10 @@ export async function getCurrentAdminUser() {
     return null;
   }
 
-  let roleNames = user.userRoles.map((ur: { role: { name: string } }) => ur.role.name);
-
-  // ABAC：临时授权可附带约束（如「仅工作时间」）。约束当前不满足时，
-  // 该临时提升的角色此刻"挂起"不生效（到期前仍保留记录）。
-  // 临时授权仅用于 USER→ADMIN，不会与常驻 ADMIN 冲突，故下面的挂起是安全的。
-  try {
-    const conditionalGrants = await prisma.tempGrant.findMany({
-      where: { userId: user.id, status: 'ACTIVE', condition: { not: null } },
-      select: { grantedRole: true, condition: true },
-    });
-    if (conditionalGrants.length > 0) {
-      const now = new Date();
-      const suppressed = new Set<string>();
-      for (const grant of conditionalGrants) {
-        if (!isConditionSatisfiedNow(grant.condition, now)) {
-          suppressed.add(grant.grantedRole);
-        }
-      }
-      if (suppressed.size > 0) {
-        roleNames = roleNames.filter((name: string) => !suppressed.has(name));
-      }
-    }
-  } catch (error) {
-    // ABAC 评估失败时降级为基础角色解析，保证鉴权可用性不受影响
-    console.error('ABAC condition eval failed:', error);
-  }
+  const storedRoleNames = user.userRoles.map((ur: { role: { name: string } }) => ur.role.name);
+  // 临时授权（含「仅工作时间」）在鉴权边界生效：过期或条件不满足则不计该角色。
+  // 产品约定临时授权只把 USER 提升为 ADMIN，不会和常驻 ADMIN 叠在同一人身上。
+  const roleNames = await applyActiveTempGrants(user.id, storedRoleNames);
 
   const role = resolveRoleFromNames(roleNames);
   const tokenAuthVersion = session.authVersion ?? 0;

@@ -33,7 +33,7 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('getPermissionsByRole（permission.ts 内部实现）', () => {
   it('未知角色返回空数组（?? [] 回退分支）', () => {
-    // @ts-expect-error 故意传入未知角色
+    // 映射表里没有的角色走 ?? []。断言本身不需要类型错误。
     expect(getPermissionsByRole('UNKNOWN' as Role)).toEqual([]);
   });
 });

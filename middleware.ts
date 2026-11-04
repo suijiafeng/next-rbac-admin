@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from '@/lib/session';
 
-/** 不需要任何认证的 API 路径 */
+/** 不需要登录态的 API 路径（cron 自行校验 CRON_SECRET） */
 const publicApiPaths = [
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/logout',
+  '/api/cron/',
 ];
 
 /** 认证页面路径（已登录用户应被重定向离开） */
