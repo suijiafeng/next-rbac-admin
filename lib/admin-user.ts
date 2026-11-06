@@ -49,7 +49,7 @@ export function effectiveRoleNames(
 
 /**
  * 读取该用户的 ACTIVE 临时授权，并返回此刻仍然有效的角色名。
- * 查询失败时保留原角色，避免临时表异常把所有人锁在门外；
+ * 查询失败时拒绝本次鉴权，不把无法核实的临时角色当作常驻角色；
  * 查询成功时过期授权立即失效，不依赖 cron 先删掉 UserRole。
  */
 export async function applyActiveTempGrants(
@@ -64,7 +64,7 @@ export async function applyActiveTempGrants(
     return effectiveRoleNames(roleNames, grants);
   } catch (error) {
     console.error('临时授权有效性评估失败:', error);
-    return roleNames;
+    throw new Error('临时授权校验失败，请稍后重试');
   }
 }
 

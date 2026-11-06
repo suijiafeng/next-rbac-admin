@@ -268,13 +268,12 @@ describe('getCurrentAdminUser', () => {
     expect(user?.role).toBe('ADMIN');
   });
 
-  it('临时授权查询失败时降级为库里的角色', async () => {
+  it('临时授权查询失败时拒绝鉴权', async () => {
     mockGetAdminSession.mockResolvedValue({ userId: 1, authVersion: 1 });
     mockFindUnique.mockResolvedValue({ ...BASE_USER });
     mockFindManyGrants.mockRejectedValue(new Error('db down'));
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const user = await getCurrentAdminUser();
-    expect(user?.role).toBe('ADMIN');
+    await expect(getCurrentAdminUser()).rejects.toThrow('临时授权校验失败');
     errorSpy.mockRestore();
   });
 });

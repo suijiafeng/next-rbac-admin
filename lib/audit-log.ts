@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 export type AuditAction =
@@ -29,9 +30,9 @@ export interface AuditLogInput {
   detail?: unknown;
 }
 
-export async function writeAuditLog(input: AuditLogInput) {
+export async function writeAuditLog(input: AuditLogInput, tx?: Prisma.TransactionClient) {
   try {
-    await prisma.auditLog.create({
+    await (tx ?? prisma).auditLog.create({
       data: {
         actorId: input.actorId,
         actorUsername: input.actorUsername,
@@ -43,6 +44,7 @@ export async function writeAuditLog(input: AuditLogInput) {
       },
     });
   } catch (error) {
+    if (tx) throw error;
     console.error('writeAuditLog failed:', error);
   }
 }
