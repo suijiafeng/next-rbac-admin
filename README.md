@@ -194,7 +194,7 @@ npm run dev
 | `admin` | 管理员 | 发起角色变更、授予临时权限；没有通过 / 驳回和强制回收 |
 | `user` | 普通用户 | 治理概览和意见反馈 |
 
-播种结果：22 个用户（3 个禁用：`manager3`、`developer5`、`sales3`），16 条权限，3 条意见反馈，1 条待审批（`developer1`：普通用户 → 管理员）和 1 条已通过的变更记录，1 条生效中的临时授权（`developer3`，带工作时间窗，约 4 小时）和 1 条已过期记录（`developer4`）。脚本结束时打印的「21 个用户」与实际插入的 22 行不一致。
+播种结果：22 个用户（3 个禁用：`manager3`、`developer5`、`sales3`），20 条权限（含培训考试 4 条），3 条意见反馈，1 条待审批（`developer1`：普通用户 → 管理员）和 1 条已通过的变更记录，1 条生效中的临时授权（`developer3`，带工作时间窗，约 4 小时）和 1 条已过期记录（`developer4`）。脚本结束时打印的「21 个用户」与实际插入的 22 行不一致。
 
 用 `admin` 在审批中心提交一条变更，再用 `super_admin` 通过，然后到审计日志里能看到对应事件。
 
@@ -266,6 +266,86 @@ Dockerfile
 - 种子里那条「已通过」的变更只插入了 `change_requests` 行，没有把 `developer2` 改成管理员。生效中的临时授权则会同时补上 `UserRole`。
 - 公告和监控已经从侧栏拿掉，对应组件以及 `/api/admin/announcements` 等接口还在仓库里。
 - 仓库里没有 CI workflow。
+
+## 培训考试
+
+这一节是作者 **suijiafeng** 的个人演示，用来讲清作答结构、跨页面状态、图表联动和审批权限。它不是任何公司或客户的项目。试卷、分数、部门排名和积分都标着「演示数据」，种子在 `lib/exam/demo-data.ts`，数字是手写的，不能当成真实指标。
+
+试卷和作答记录落在 PostgreSQL：`exam_papers`、`exam_attempts`。`scripts/seed.ts` 只在缺行时插入。已经通过或驳回的状态不会被下一次播种盖掉，所以进程重启后审批结果还在。成绩看板的三张图从 `exam_attempts` 聚合，不再读内存数组。学员交卷也会写一行，`dataSource` 仍是「演示数据」。
+
+菜单上多了三页：培训考试、考试积分、成绩看板。作答和成绩不进侧栏，从试卷列表点进去。页面仍然是原来的写法：`app/(admin)/*/page.tsx` 返回 `null`，内容挂在 `lib/page-registry.tsx`，标签 keep-alive 只认路径第一段，所以作答、成绩、积分、看板各自占一个顶层路径。
+
+### 答案数据结构
+
+四种题型共用一个载荷：
+
+```ts
+type AnswerPayload =
+  | { type: 'single'; optionId: string | null }
+  | { type: 'multiple'; optionIds: string[] }
+  | { type: 'boolean'; value: boolean | null }
+  | { type: 'blank'; text: string };
+
+interface AnswerRecord {
+  questionId: string;
+  payload: AnswerPayload;
+  updatedAt: number;
+}
+```
+
+外壳永远是 `AnswerRecord`。题型差异只留在 `payload.type` 里。这样校验、判分、本地进度和交卷请求都不用为每种题再造一种 Map。
+
+写入只有 `updateAnswer(answers, question, payload, now)`。它按题目的 `type` 找到 `questionTypeHandlers` 里的约定：丢掉非法选项、多选去重排序、填空去掉首尾空格。子组件只负责把用户的选择收成 `AnswerPayload`，再交给这一个函数。
+
+新增题型时做两件事，不用再写一个更新函数：
+
+1. 在 `lib/exam/question-types.ts` 登记空答案、归一化、交卷校验和是否答对。
+2. 在 `components/exam/question-registry.tsx` 的 `QUESTION_COMPONENTS` 挂上子组件。
+
+判分在服务端 `gradePaper`。单选、判断、填空全对才得分，多选必须选项集合完全一致，填空忽略大小写。标准答案不下发给学员列表。积分增量等于本次得分，这是演示规则。
+
+### 为什么用 Zustand selector
+
+作答、成绩、积分是三个标签页。作答组件调用 `updateAnswer` 把记录放进 `useExamSessionStore`，进度同时写入 `localStorage`。成绩页只订阅 `selectGrade`，积分页只订阅 `selectPointsView`。
+
+Selector 把「整棵会话状态」收成这一页真正要画的数据。成绩页拿不到作答明细，积分页也拿不到每道题的选项，两边不会因为另一边的字段刷新而绑在一起。派生对象按 `ledger` / `grade` 的引用做了缓存，避免 `useSyncExternalStore` 每次都看到新对象。
+
+交卷请求打到 `POST /api/exams/attempts`。服务端再校验一遍身份、试卷是否已发布、是否答完，然后判分。前端拿到结果后 `commitGrade`，成绩页和积分页各自从 store 里读。
+
+### 图表怎么一起变
+
+看板的筛选（近 7/30/90 天、部门、试卷）放在 `useExamDashboardStore` 的一个 `filter` 上。三张 ECharts 不各自请求：
+
+- 成绩趋势订阅 `selectTrend`
+- 部门排名订阅 `selectRanking`
+- 积分分布订阅 `selectDistribution`
+
+三个 selector 都从同一份演示记录和同一个 `filter` 派生。`setFilter` 换掉筛选对象后，三张图在同一次 store 更新里重算。接口 `GET /api/exams/stats` 只在进入页面时拉一次样本，并要求 `exam:stats`；服务端用同一套纯函数按查询参数再算一遍，方便核对。样本的统计时钟固定在 `2026-11-18`，避免把演示数据说成「今天的真实成绩」。
+
+图表组件用 `next/dynamic` 且 `ssr: false`。折线、柱状、饼图各自 `import` 自己用到的 `echarts/core` 与图表类型，打开看板才加载。
+
+### 权限怎么套在现有 RBAC 上
+
+没有新的账号体系。现有角色直接对应考试身份：
+
+| 角色 | 考试身份 | 权限码 | 能做的事 |
+| --- | --- | --- | --- |
+| `USER` | 学员 | `exam:take` | 作答已发布的卷 |
+| `ADMIN` | 出题人 | `exam:author`、`exam:stats` | 提交 / 撤回自己的卷，看看板 |
+| `SUPER_ADMIN` | 审核人 | `exam:review` 以及全部考试权限码 | 通过 / 驳回待审批的卷，看看板 |
+
+按钮不看「这个人权限码是不是很多」，而看 `visibleActions(身份, 试卷状态, 是不是本人的卷)`：
+
+- 草稿、已驳回：出题人看到「编辑题目」「提交审批」。编辑会明确拒绝改题干，演示数据不提供在线改题。
+- 待审批：出题人只能撤回；审核人看到「通过」「驳回」。
+- 已发布：学员看到「开始作答」。出题人没有审批按钮，审核人也不能改题。
+
+接口再查一次。`requirePermission` 挡住没有对应权限码的人；`canPerform` 挡住身份和状态对不上的人。例如出题人即使猜到审批 URL，也会拿到 403。通过、驳回、提交、撤回写入原来的审计日志。
+
+```bash
+npm test
+npm run test:e2e   # 需要先 build，并且数据库里有种子账号
+```
 
 ## License
 

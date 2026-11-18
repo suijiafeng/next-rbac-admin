@@ -10,6 +10,9 @@ import {
   AuditOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
+  FormOutlined,
+  TrophyOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -90,6 +93,27 @@ const menuConfig: MenuItemConfig[] = [
     label: '意见反馈',
     group: '其他',
     roles: ['USER', 'ADMIN'],
+  },
+  {
+    key: '/exams',
+    icon: <FormOutlined />,
+    label: '培训考试',
+    group: '培训考试',
+    roles: ['USER', 'ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/exam-points',
+    icon: <TrophyOutlined />,
+    label: '考试积分',
+    group: '培训考试',
+    roles: ['USER', 'ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/exam-stats',
+    icon: <BarChartOutlined />,
+    label: '成绩看板',
+    group: '培训考试',
+    roles: ['ADMIN', 'SUPER_ADMIN'],
   },
 ];
 

@@ -39,8 +39,8 @@ describe('getPermissionsByRole（permission.ts 内部实现）', () => {
 });
 
 describe('getPermissionsByRole', () => {
-  it('USER 只有 user:view', () => {
-    expect(getPermissionsByRole(Role.USER)).toEqual([PERMISSIONS.USER_VIEW]);
+  it('USER 只有 user:view 和 exam:take', () => {
+    expect(getPermissionsByRole(Role.USER)).toEqual([PERMISSIONS.USER_VIEW, PERMISSIONS.EXAM_TAKE]);
   });
 
   it('ADMIN 包含 user:view / user:create / user:edit / role:view', () => {

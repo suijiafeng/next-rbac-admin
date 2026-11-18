@@ -18,13 +18,17 @@ export type AuditAction =
   | 'change.reject'
   | 'temp.grant'
   | 'temp.revoke'
-  | 'temp.expire';
+  | 'temp.expire'
+  | 'exam.submit'
+  | 'exam.withdraw'
+  | 'exam.approve'
+  | 'exam.reject';
 
 export interface AuditLogInput {
   actorId: number | null;
   actorUsername: string;
   action: AuditAction;
-  targetType: 'user' | 'settings';
+  targetType: 'user' | 'settings' | 'exam';
   targetId?: string | number | null;
   targetLabel?: string | null;
   detail?: unknown;

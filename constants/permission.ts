@@ -12,11 +12,18 @@ export const rolePageMap = {
     '/feedback',
     '/approvals',
     '/temp-grants',
+    '/exams',
+    '/exam-stats',
+    '/exam-points',
   ],
   [Role.USER]: [
     '/dashboard',
     '/profile',
     '/feedback',
+    '/exams',
+    '/exam-take',
+    '/exam-result',
+    '/exam-points',
   ],
   // 注：超级管理员为顶层，无需提交反馈，故 rolePageMap 中其使用 '*' 通配
   // 但 page-registry 的 /feedback 守卫限定为 [ADMIN, USER]，超管访问该页将看到 403
@@ -44,6 +51,12 @@ export const PERMISSIONS = {
   TEMP_VIEW: 'temp:view',
   TEMP_GRANT: 'temp:grant',       // 授予临时权限
   TEMP_REVOKE: 'temp:revoke',     // 立即回收 —— 特权闸门
+
+  // —— 培训考试（个人演示，suijiafeng）——
+  EXAM_TAKE: 'exam:take',         // 学员作答
+  EXAM_AUTHOR: 'exam:author',     // 出题人维护试卷、提交发布审批
+  EXAM_REVIEW: 'exam:review',     // 审核人通过 / 驳回发布
+  EXAM_STATS: 'exam:stats',       // 成绩看板
 } as const;
 
 export type PermissionValue =
@@ -53,6 +66,7 @@ export type PermissionValue =
 export const ROLE_PERMISSION_MAP: Record<Role, PermissionValue[]> = {
   [Role.USER]: [
     PERMISSIONS.USER_VIEW,
+    PERMISSIONS.EXAM_TAKE,
   ],
   [Role.ADMIN]: [
     PERMISSIONS.USER_VIEW,
@@ -64,6 +78,9 @@ export const ROLE_PERMISSION_MAP: Record<Role, PermissionValue[]> = {
     PERMISSIONS.CHANGE_SUBMIT,
     PERMISSIONS.TEMP_VIEW,
     PERMISSIONS.TEMP_GRANT,
+    // 培训考试：出题人，不能审批自己的试卷
+    PERMISSIONS.EXAM_AUTHOR,
+    PERMISSIONS.EXAM_STATS,
   ],
   [Role.SUPER_ADMIN]: [
     PERMISSIONS.USER_VIEW,
@@ -83,5 +100,11 @@ export const ROLE_PERMISSION_MAP: Record<Role, PermissionValue[]> = {
     PERMISSIONS.TEMP_VIEW,
     PERMISSIONS.TEMP_GRANT,
     PERMISSIONS.TEMP_REVOKE,
+    // 培训考试：审核人。权限码给齐是为了通过「超管拥有全部权限」；
+    // 按钮仍按身份矩阵走，超管在考试模块里只做审核，不做出题人动作。
+    PERMISSIONS.EXAM_TAKE,
+    PERMISSIONS.EXAM_AUTHOR,
+    PERMISSIONS.EXAM_REVIEW,
+    PERMISSIONS.EXAM_STATS,
   ],
 };

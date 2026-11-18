@@ -149,7 +149,7 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.role).toBe('USER');
-    expect(body.data.permissions).toEqual(['user:view']);
+    expect(body.data.permissions).toEqual(['user:view', 'exam:take']);
     expect(mockCreateToken).toHaveBeenCalledWith(
       expect.objectContaining({ role: 'USER' }),
       expect.any(Number),

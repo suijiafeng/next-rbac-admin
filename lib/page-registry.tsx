@@ -10,6 +10,11 @@ import FeedbackContent from '@/components/feedback-content';
 import NotificationsContent from '@/components/notifications-content';
 import ApprovalsContent from '@/components/approvals-content';
 import TempGrantsContent from '@/components/temp-grants-content';
+import ExamPapersContent from '@/components/exam/papers-content';
+import ExamTakeContent from '@/components/exam/take-content';
+import ExamResultContent from '@/components/exam/result-content';
+import ExamPointsContent from '@/components/exam/points-content';
+import ExamStatsContent from '@/components/exam/stats-content';
 import PermissionGuard from '@/components/permission-guard';
 import NoPermission from '@/components/403/page';
 import { Role, PERMISSIONS, type PermissionValue } from '@/constants/permission';
@@ -62,6 +67,26 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   '/feedback': {
     Component: FeedbackContent,
     guard: { allowedRoles: [Role.ADMIN, Role.USER], fallback: <NoPermission /> },
+  },
+  '/exams': {
+    Component: ExamPapersContent,
+    guard: { allowedRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.USER], fallback: <NoPermission /> },
+  },
+  '/exam-take': {
+    Component: ExamTakeContent,
+    guard: { permissions: [PERMISSIONS.EXAM_TAKE], fallback: <NoPermission /> },
+  },
+  '/exam-result': {
+    Component: ExamResultContent,
+    guard: { permissions: [PERMISSIONS.EXAM_TAKE], fallback: <NoPermission /> },
+  },
+  '/exam-points': {
+    Component: ExamPointsContent,
+    guard: { allowedRoles: [Role.SUPER_ADMIN, Role.ADMIN, Role.USER], fallback: <NoPermission /> },
+  },
+  '/exam-stats': {
+    Component: ExamStatsContent,
+    guard: { permissions: [PERMISSIONS.EXAM_STATS], fallback: <NoPermission /> },
   },
 };
 
