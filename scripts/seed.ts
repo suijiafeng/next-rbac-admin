@@ -544,6 +544,7 @@ async function main() {
   const goodsPermissions = [
     { code: PERMISSIONS.GOODS_SUBMIT, name: '货品录入', description: '录入货品并提交审核、配置上架' },
     { code: PERMISSIONS.GOODS_REVIEW, name: '货品审核', description: '通过或驳回货品' },
+    { code: PERMISSIONS.OPS_VIEW, name: '运营看板', description: '查看演示运营指标' },
   ];
   for (const item of goodsPermissions) {
     await prisma.permission.upsert({ where: { code: item.code }, update: {}, create: item });
@@ -551,7 +552,7 @@ async function main() {
   const goodsRows = await prisma.permission.findMany({
     where: { code: { in: goodsPermissions.map((item) => item.code) } },
   });
-  const adminGoodsCodes: string[] = [PERMISSIONS.GOODS_SUBMIT];
+  const adminGoodsCodes: string[] = [PERMISSIONS.GOODS_SUBMIT, PERMISSIONS.OPS_VIEW];
   for (const perm of goodsRows) {
     await prisma.rolePermission.upsert({
       where: { roleId_permissionId: { roleId: superAdminRole!.id, permissionId: perm.id } },
@@ -566,7 +567,7 @@ async function main() {
       });
     }
   }
-  console.log('✅ 货品权限绑定完成');
+  console.log('✅ 货品与运营看板权限绑定完成');
 
   console.log('🎉 RBAC 初始化完成！');
   console.log('');

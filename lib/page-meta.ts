@@ -31,6 +31,7 @@ export const PAGE_META: Record<string, PageMeta> = {
   'goods-entry': { label: '货品录入', closable: true },
   'goods-review': { label: '货品审核', closable: true },
   'goods-listing': { label: '上架配置', closable: true },
+  ops: { label: '运营看板', closable: true },
 };
 
 /** 根据完整 pathname 解析出页面元信息 */

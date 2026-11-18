@@ -15,6 +15,7 @@ import {
   BarChartOutlined,
   ShoppingOutlined,
   ShopOutlined,
+  FundOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -136,6 +137,13 @@ const menuConfig: MenuItemConfig[] = [
     icon: <ShopOutlined />,
     label: '上架配置',
     group: '货品',
+    roles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/ops',
+    icon: <FundOutlined />,
+    label: '运营看板',
+    group: '运营',
     roles: ['ADMIN', 'SUPER_ADMIN'],
   },
 ];

@@ -74,6 +74,7 @@ export const config = {
     '/goods-entry/:path*',
     '/goods-review/:path*',
     '/goods-listing/:path*',
+    '/ops/:path*',
     '/api/:path*',
     '/',
   ],
