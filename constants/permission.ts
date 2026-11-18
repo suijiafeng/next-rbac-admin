@@ -15,6 +15,8 @@ export const rolePageMap = {
     '/exams',
     '/exam-stats',
     '/exam-points',
+    '/goods-entry',
+    '/goods-listing',
   ],
   [Role.USER]: [
     '/dashboard',
@@ -57,6 +59,10 @@ export const PERMISSIONS = {
   EXAM_AUTHOR: 'exam:author',     // 出题人维护试卷、提交发布审批
   EXAM_REVIEW: 'exam:review',     // 审核人通过 / 驳回发布
   EXAM_STATS: 'exam:stats',       // 成绩看板
+
+  // —— 货品采集与运营看板（个人演示，suijiafeng）——
+  GOODS_SUBMIT: 'goods:submit',   // 录入、提交审核、上架配置
+  GOODS_REVIEW: 'goods:review',   // 审核通过 / 驳回
 } as const;
 
 export type PermissionValue =
@@ -81,6 +87,7 @@ export const ROLE_PERMISSION_MAP: Record<Role, PermissionValue[]> = {
     // 培训考试：出题人，不能审批自己的试卷
     PERMISSIONS.EXAM_AUTHOR,
     PERMISSIONS.EXAM_STATS,
+    PERMISSIONS.GOODS_SUBMIT,
   ],
   [Role.SUPER_ADMIN]: [
     PERMISSIONS.USER_VIEW,
@@ -106,5 +113,7 @@ export const ROLE_PERMISSION_MAP: Record<Role, PermissionValue[]> = {
     PERMISSIONS.EXAM_AUTHOR,
     PERMISSIONS.EXAM_REVIEW,
     PERMISSIONS.EXAM_STATS,
+    PERMISSIONS.GOODS_SUBMIT,
+    PERMISSIONS.GOODS_REVIEW,
   ],
 };

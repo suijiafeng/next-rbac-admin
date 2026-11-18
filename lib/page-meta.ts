@@ -28,6 +28,9 @@ export const PAGE_META: Record<string, PageMeta> = {
   'exam-result': { label: '成绩', closable: true },
   'exam-points': { label: '考试积分', closable: true },
   'exam-stats': { label: '成绩看板', closable: true },
+  'goods-entry': { label: '货品录入', closable: true },
+  'goods-review': { label: '货品审核', closable: true },
+  'goods-listing': { label: '上架配置', closable: true },
 };
 
 /** 根据完整 pathname 解析出页面元信息 */

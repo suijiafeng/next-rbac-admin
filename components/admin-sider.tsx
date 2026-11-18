@@ -13,6 +13,8 @@ import {
   FormOutlined,
   TrophyOutlined,
   BarChartOutlined,
+  ShoppingOutlined,
+  ShopOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -113,6 +115,27 @@ const menuConfig: MenuItemConfig[] = [
     icon: <BarChartOutlined />,
     label: '成绩看板',
     group: '培训考试',
+    roles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/goods-entry',
+    icon: <ShoppingOutlined />,
+    label: '货品录入',
+    group: '货品',
+    roles: ['ADMIN', 'SUPER_ADMIN'],
+  },
+  {
+    key: '/goods-review',
+    icon: <AuditOutlined />,
+    label: '货品审核',
+    group: '货品',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
+    key: '/goods-listing',
+    icon: <ShopOutlined />,
+    label: '上架配置',
+    group: '货品',
     roles: ['ADMIN', 'SUPER_ADMIN'],
   },
 ];

@@ -194,7 +194,7 @@ npm run dev
 | `admin` | 管理员 | 发起角色变更、授予临时权限；没有通过 / 驳回和强制回收 |
 | `user` | 普通用户 | 治理概览和意见反馈 |
 
-播种结果：22 个用户（3 个禁用：`manager3`、`developer5`、`sales3`），20 条权限（含培训考试 4 条），3 条意见反馈，1 条待审批（`developer1`：普通用户 → 管理员）和 1 条已通过的变更记录，1 条生效中的临时授权（`developer3`，带工作时间窗，约 4 小时）和 1 条已过期记录（`developer4`）。脚本结束时打印的「21 个用户」与实际插入的 22 行不一致。
+播种结果：22 个用户（3 个禁用：`manager3`、`developer5`、`sales3`），22 条权限（含培训考试 4 条、货品 2 条），3 条意见反馈，1 条待审批（`developer1`：普通用户 → 管理员）和 1 条已通过的变更记录，1 条生效中的临时授权（`developer3`，带工作时间窗，约 4 小时）和 1 条已过期记录（`developer4`）。脚本结束时打印的「21 个用户」与实际插入的 22 行不一致。
 
 用 `admin` 在审批中心提交一条变更，再用 `super_admin` 通过，然后到审计日志里能看到对应事件。
 
@@ -346,6 +346,27 @@ Selector 把「整棵会话状态」收成这一页真正要画的数据。成�
 npm test
 npm run test:e2e   # 需要先 build，并且数据库里有种子账号
 ```
+
+## 货品采集
+
+这也是 **suijiafeng** 的个人演示，对应「货品采集与管理」里的前端做法，不是公司或客户项目。一条货品走录入、审核、上架三个环节，页面是同一个 `GoodsWorkbench`，列和字段来自 `lib/goods/schema.ts`。`SchemaTable` / `SchemaForm` 只认 schema，不把某一环节的列写死在组件里。
+
+校验是纯函数 `validateBySchema`。服务端保存和上架再跑一遍，避免只靠浏览器。
+
+请求用 axios 拦截器，而不是再包一层 `lib/request.ts` 的 fetch。三件事都在拦截器里：
+
+- HTTP 401：跳到 `/login`。
+- 响应体 `code !== 0`：统一弹出业务错误，调用方不用每页写一遍。
+- 重复请求：用 `method + url + params + data` 做 key。相同 key 的上一次用 `AbortController` 取消。释放 key 时只删掉自己的 controller，避免后一次请求被前一次的失败回调清掉。
+
+中英文是同一套页面。文案在 `lib/i18n/locales.ts`，按钮切换 `i18n.changeLanguage`，并记在 `localStorage`。
+
+审核不写进 `change_requests`。那张表的列是角色变更专用的（目标用户、原角色、新角色）。货品复用的是同一套分权：录入人提交，审核人才能通过或驳回，而且不能批自己录入的货品。决定写入 `goods_items.reviewStatus`，并走原来的审计日志。
+
+| 角色 | 权限 | 环节 |
+| --- | --- | --- |
+| `ADMIN` | `goods:submit` | 录入、提交、上架 |
+| `SUPER_ADMIN` | `goods:review` 以及 `goods:submit` | 审核；权限码里也有录入，但自己的货品不能自批 |
 
 ## License
 

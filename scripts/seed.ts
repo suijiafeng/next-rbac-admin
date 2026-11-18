@@ -541,6 +541,33 @@ async function main() {
   await seedExamRows(prisma);
   console.log('✅ 培训考试演示试卷与作答记录已写入数据库（已有审批状态不会被覆盖）');
 
+  const goodsPermissions = [
+    { code: PERMISSIONS.GOODS_SUBMIT, name: '货品录入', description: '录入货品并提交审核、配置上架' },
+    { code: PERMISSIONS.GOODS_REVIEW, name: '货品审核', description: '通过或驳回货品' },
+  ];
+  for (const item of goodsPermissions) {
+    await prisma.permission.upsert({ where: { code: item.code }, update: {}, create: item });
+  }
+  const goodsRows = await prisma.permission.findMany({
+    where: { code: { in: goodsPermissions.map((item) => item.code) } },
+  });
+  const adminGoodsCodes: string[] = [PERMISSIONS.GOODS_SUBMIT];
+  for (const perm of goodsRows) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: superAdminRole!.id, permissionId: perm.id } },
+      update: {},
+      create: { roleId: superAdminRole!.id, permissionId: perm.id },
+    });
+    if (adminGoodsCodes.includes(perm.code)) {
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId: adminRole!.id, permissionId: perm.id } },
+        update: {},
+        create: { roleId: adminRole!.id, permissionId: perm.id },
+      });
+    }
+  }
+  console.log('✅ 货品权限绑定完成');
+
   console.log('🎉 RBAC 初始化完成！');
   console.log('');
   console.log('📋 默认用户账户:');

@@ -22,13 +22,17 @@ export type AuditAction =
   | 'exam.submit'
   | 'exam.withdraw'
   | 'exam.approve'
-  | 'exam.reject';
+  | 'exam.reject'
+  | 'goods.submit'
+  | 'goods.approve'
+  | 'goods.reject'
+  | 'goods.shelf';
 
 export interface AuditLogInput {
   actorId: number | null;
   actorUsername: string;
   action: AuditAction;
-  targetType: 'user' | 'settings' | 'exam';
+  targetType: 'user' | 'settings' | 'exam' | 'goods';
   targetId?: string | number | null;
   targetLabel?: string | null;
   detail?: unknown;

@@ -15,6 +15,7 @@ import ExamTakeContent from '@/components/exam/take-content';
 import ExamResultContent from '@/components/exam/result-content';
 import ExamPointsContent from '@/components/exam/points-content';
 import ExamStatsContent from '@/components/exam/stats-content';
+import GoodsWorkbench from '@/components/goods/goods-workbench';
 import PermissionGuard from '@/components/permission-guard';
 import NoPermission from '@/components/403/page';
 import { Role, PERMISSIONS, type PermissionValue } from '@/constants/permission';
@@ -87,6 +88,18 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   '/exam-stats': {
     Component: ExamStatsContent,
     guard: { permissions: [PERMISSIONS.EXAM_STATS], fallback: <NoPermission /> },
+  },
+  '/goods-entry': {
+    Component: () => <GoodsWorkbench stage="entry" />,
+    guard: { permissions: [PERMISSIONS.GOODS_SUBMIT], fallback: <NoPermission /> },
+  },
+  '/goods-review': {
+    Component: () => <GoodsWorkbench stage="review" />,
+    guard: { permissions: [PERMISSIONS.GOODS_REVIEW], fallback: <NoPermission /> },
+  },
+  '/goods-listing': {
+    Component: () => <GoodsWorkbench stage="listing" />,
+    guard: { permissions: [PERMISSIONS.GOODS_SUBMIT], fallback: <NoPermission /> },
   },
 };
 
