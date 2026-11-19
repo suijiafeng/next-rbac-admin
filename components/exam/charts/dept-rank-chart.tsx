@@ -25,7 +25,7 @@ export default function DeptRankChart() {
     const ink = readChartInk();
     const chart = echarts.init(ref.current);
     chart.setOption({
-      color: [ink.ink],
+      color: [ink.rank],
       tooltip: { trigger: 'axis', backgroundColor: ink.surface, borderColor: ink.grid, textStyle: { color: ink.text, fontSize: 12 } },
       grid: { left: 72, right: 16, top: 24, bottom: 32 },
       xAxis: { type: 'value', min: 0, max: 100, axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: ink.grid, type: 'dashed' } }, axisLabel: { color: ink.muted, fontSize: 11 } },
