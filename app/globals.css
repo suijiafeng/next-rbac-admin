@@ -631,3 +631,18 @@ a {
 .ant-layout-content .ant-tag {
   border-radius: var(--radius-sm);
 }
+
+/* Recharts 默认提示框是白底黑字。暗色主题下改成悬浮层配色，避免一块白盒子。 */
+html[data-theme='dark'] .recharts-default-tooltip {
+  background-color: var(--bg-elevated) !important;
+  border-color: var(--border-base) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='dark'] .recharts-tooltip-label,
+html[data-theme='dark'] .recharts-tooltip-item,
+html[data-theme='dark'] .recharts-tooltip-item-name,
+html[data-theme='dark'] .recharts-tooltip-item-separator,
+html[data-theme='dark'] .recharts-tooltip-item-value {
+  color: var(--text-primary) !important;
+}

@@ -59,7 +59,7 @@ export default function AdminLayout(props: AdminLayoutProps) {
   };
 
   return (
-    <TabsProvider>
+    <TabsProvider userId={currentUser.id} role={currentUser.role}>
     <Layout
       hasSider
       style={{ height: '100vh', overflow: 'hidden', background: 'var(--bg-layout)' }}

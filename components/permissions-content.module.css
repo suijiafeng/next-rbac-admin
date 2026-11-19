@@ -76,6 +76,17 @@
   margin-top: 6px;
 }
 
+.membershipNote {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .iconButton {
   color: var(--text-tertiary);
 }

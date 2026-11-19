@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import type { MenuProps } from 'antd';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { LEGACY_TABS_STORAGE_KEY } from '@/lib/tab-access';
 
 const { Text } = Typography;
 const { Header } = Layout;
@@ -186,6 +187,11 @@ export default function AdminHeader(props: AdminHeaderProps) {
             items: userMenu,
             onClick: async ({ key }) => {
               if (key === 'logout') {
+                try {
+                  localStorage.removeItem(LEGACY_TABS_STORAGE_KEY);
+                } catch {
+                  /* 隐私模式下 localStorage 可能不可用，退出仍然继续 */
+                }
                 await fetch('/api/auth/logout', { method: 'POST' });
                 window.location.href = '/login';
               }

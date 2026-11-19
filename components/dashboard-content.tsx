@@ -40,6 +40,18 @@ import { request } from '@/lib/request';
 
 const { Text } = Typography;
 
+const chartTooltipProps = {
+  contentStyle: {
+    backgroundColor: 'var(--bg-elevated)',
+    border: '1px solid var(--border-base)',
+    borderRadius: 8,
+    color: 'var(--text-primary)',
+    boxShadow: 'var(--shadow-elevated)',
+  },
+  labelStyle: { color: 'var(--text-primary)' },
+  itemStyle: { color: 'var(--text-primary)' },
+};
+
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'user.create': { label: '新增用户', color: 'cyan' },
   'user.delete': { label: '删除用户', color: 'red' },
@@ -172,6 +184,7 @@ export default function DashboardContent() {
                     axisLine={false}
                   />
                   <ReTooltip
+                    {...chartTooltipProps}
                     formatter={(v: ValueType | undefined) => [`${v ?? 0} 人`, '新增用户']}
                     cursor={{ stroke: 'rgba(22,119,255,0.2)', strokeWidth: 1 }}
                   />
@@ -207,7 +220,10 @@ export default function DashboardContent() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.12)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} interval={4} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <ReTooltip formatter={(v: ValueType | undefined) => [v ?? 0, '新增用户']} />
+                  <ReTooltip
+                    {...chartTooltipProps}
+                    formatter={(v: ValueType | undefined) => [v ?? 0, '新增用户']}
+                  />
                   <Bar dataKey="count" fill="#1677ff" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -239,7 +255,10 @@ export default function DashboardContent() {
                       <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <ReTooltip formatter={(v: ValueType | undefined, name: NameType | undefined) => [v ?? 0, name ?? '']} />
+                  <ReTooltip
+                    {...chartTooltipProps}
+                    formatter={(v: ValueType | undefined, name: NameType | undefined) => [v ?? 0, name ?? '']}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (

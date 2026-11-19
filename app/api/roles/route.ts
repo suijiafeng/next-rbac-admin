@@ -1,7 +1,9 @@
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/lib/permission';
 import { PERMISSIONS } from '@/constants/permission';
 import { apiError, apiSuccess, handleApiError } from '@/lib/api-response';
+import { summarizeRoleMemberships } from '@/lib/role-membership';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,21 +11,31 @@ export async function GET() {
   try {
     await requirePermission(PERMISSIONS.ROLE_VIEW);
 
-    const roles = await prisma.role.findMany({
-      orderBy: { id: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        createdAt: true,
-        rolePermissions: {
-          select: {
-            permission: { select: { id: true, code: true, name: true } },
+    const [roles, totalUsers, assignments] = await Promise.all([
+      prisma.role.findMany({
+        orderBy: { id: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
+          rolePermissions: {
+            select: {
+              permission: { select: { id: true, code: true, name: true } },
+            },
           },
+          _count: { select: { userRoles: true } },
         },
-        _count: { select: { userRoles: true } },
-      },
-    });
+      }),
+      prisma.user.count(),
+      prisma.userRole.findMany({
+        select: {
+          userId: true,
+          user: { select: { username: true, nickname: true } },
+          role: { select: { name: true } },
+        },
+      }),
+    ]);
 
     const data = roles.map((r) => ({
       id: r.id,
@@ -34,7 +46,22 @@ export async function GET() {
       permissions: r.rolePermissions.map((rp) => rp.permission),
     }));
 
-    return apiSuccess(data);
+    const summary = summarizeRoleMemberships(
+      totalUsers,
+      assignments.map((row) => ({
+        userId: row.userId,
+        username: row.user.username,
+        nickname: row.user.nickname,
+        roleName: row.role.name,
+      })),
+    );
+
+    return NextResponse.json({
+      code: 0,
+      data,
+      message: 'success',
+      summary,
+    });
   } catch (error) {
     return handleApiError(error, '获取角色列表失败', 'GET /api/roles error');
   }
