@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import { resolvePlaywrightTarget } from './lib/e2e-target';
+
+const { baseURL, port } = resolvePlaywrightTarget();
 
 export default defineConfig({
   testDir: './e2e',
@@ -7,7 +10,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:3000',
+    baseURL,
     trace: 'off',
   },
   projects: [
@@ -17,8 +20,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run start -- --port 3000',
-    url: 'http://127.0.0.1:3000/login',
+    command: `npm run start -- --port ${port}`,
+    url: `${baseURL}/login`,
     reuseExistingServer: true,
     timeout: 120_000,
   },

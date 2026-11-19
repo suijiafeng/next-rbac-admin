@@ -27,6 +27,8 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 import { request } from '@/lib/request';
+import type { ApiResponse } from '@/types/request';
+import { formatMembershipNote, type RoleCountSummary } from '@/lib/role-membership';
 import styles from '@/components/permissions-content.module.css';
 
 const { Text } = Typography;
@@ -126,9 +128,11 @@ const RoleCard = ({
               </Space>
               <Space size={4}>
                 <TeamOutlined className="text-xs" style={{ color: 'var(--text-tertiary)' }} />
-                <Text type="secondary" className={styles.mutedText}>
-                  {role.userCount} 位用户
-                </Text>
+                <Tooltip title="按角色成员关系统计。同一用户可以同时拥有多个角色，所以各角色人数相加可以大于用户总数。">
+                  <Text type="secondary" className={styles.mutedText}>
+                    {role.userCount} 名成员
+                  </Text>
+                </Tooltip>
               </Space>
             </Space>
           </div>
@@ -148,7 +152,7 @@ const RoleCard = ({
             <Tooltip title="删除角色">
               <Popconfirm
                 title="确认删除该角色？"
-                description={role.userCount > 0 ? `该角色下有 ${role.userCount} 位用户，无法删除` : '删除后不可恢复'}
+                description={role.userCount > 0 ? `该角色下有 ${role.userCount} 名成员，无法删除` : '删除后不可恢复'}
                 onConfirm={onDelete}
                 okText="删除"
                 okButtonProps={{ danger: true, disabled: role.userCount > 0, loading: deleting }}
@@ -166,6 +170,7 @@ const RoleCard = ({
 
 const PermissionsContent = () => {
   const [roleList, setRoleList] = useState<RoleItem[]>([]);
+  const [membershipSummary, setMembershipSummary] = useState<RoleCountSummary | null>(null);
   const [permissionList, setPermissionList] = useState<PermissionItem[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [checkedPermissionIds, setCheckedPermissionIds] = useState<Set<number>>(new Set());
@@ -199,6 +204,9 @@ const PermissionsContent = () => {
       ]);
 
       setRoleList(rolesResponse.data ?? []);
+      setMembershipSummary(
+        (rolesResponse as ApiResponse<RoleItem[]> & { summary?: RoleCountSummary }).summary ?? null,
+      );
       setPermissionList(permissionsResponse.data ?? []);
     } catch {
       message.error('加载数据失败');
@@ -407,6 +415,9 @@ const PermissionsContent = () => {
             extra={<Text type="secondary" className={styles.mutedText}>{roleList.length} 个角色</Text>}
             loading={loadingData}
           >
+            {membershipSummary && (
+              <div className={styles.membershipNote}>{formatMembershipNote(membershipSummary)}</div>
+            )}
             {roleList.map((role) => (
               <RoleCard
                 key={role.id}

@@ -14,12 +14,8 @@ import {
   Typography,
 } from 'antd';
 import {
-  ArrowUpOutlined,
   InfoCircleOutlined,
   ReloadOutlined,
-  SafetyCertificateOutlined,
-  UserOutlined,
-  WarningOutlined,
 } from '@ant-design/icons';
 import {
   Area,
@@ -37,8 +33,21 @@ import {
 } from 'recharts';
 import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import { request } from '@/lib/request';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 const { Text } = Typography;
+
+const chartTooltipProps = {
+  contentStyle: {
+    backgroundColor: 'var(--bg-elevated)',
+    border: '1px solid var(--border-base)',
+    borderRadius: 8,
+    color: 'var(--text-primary)',
+    boxShadow: 'var(--shadow-elevated)',
+  },
+  labelStyle: { color: 'var(--text-primary)' },
+  itemStyle: { color: 'var(--text-primary)' },
+};
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'user.create': { label: '新增用户', color: 'cyan' },
@@ -63,7 +72,8 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'exam.reject': { label: '试卷驳回', color: 'red' },
 };
 
-const PIE_COLORS = ['#1677ff', '#52c41a', '#fadb14', '#ff7a45', '#9254de', '#13c2c2', '#f5222d', '#faad14'];
+const PIE_LIGHT = ['#18181b', '#3f3f46', '#71717a', '#a1a1aa', '#d4d4d8'];
+const PIE_DARK = ['#fafafa', '#d4d4d8', '#a1a1aa', '#71717a', '#52525b'];
 
 interface StatsData {
   userCount: number;
@@ -76,6 +86,8 @@ interface StatsData {
 }
 
 export default function DashboardContent() {
+  const { resolved } = useTheme();
+  const pieColors = resolved === 'dark' ? PIE_DARK : PIE_LIGHT;
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -153,33 +165,34 @@ export default function DashboardContent() {
                 >
                   <defs>
                     <linearGradient id="regGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#1677ff" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#1677ff" stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--chart-stroke)" stopOpacity={0.12} />
+                      <stop offset="100%" stopColor="var(--chart-stroke)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: 'var(--chart-muted)' }}
                     tickLine={false}
                     axisLine={false}
                     interval={4}
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: 'var(--chart-muted)' }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <ReTooltip
+                    {...chartTooltipProps}
                     formatter={(v: ValueType | undefined) => [`${v ?? 0} 人`, '新增用户']}
-                    cursor={{ stroke: 'rgba(22,119,255,0.2)', strokeWidth: 1 }}
+                    cursor={{ stroke: 'var(--chart-grid)', strokeWidth: 1 }}
                   />
                   <Area
-                    type="monotone"
+                    type="linear"
                     dataKey="count"
-                    stroke="#1677ff"
-                    strokeWidth={2}
+                    stroke="var(--chart-stroke)"
+                    strokeWidth={1.5}
                     fill="url(#regGrad)"
                     dot={false}
                     activeDot={{ r: 4 }}
@@ -204,11 +217,14 @@ export default function DashboardContent() {
                   barSize={10}
                   margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.12)" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} interval={4} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <ReTooltip formatter={(v: ValueType | undefined) => [v ?? 0, '新增用户']} />
-                  <Bar dataKey="count" fill="#1677ff" radius={[3, 3, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--chart-muted)' }} tickLine={false} axisLine={false} interval={4} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--chart-muted)' }} tickLine={false} axisLine={false} />
+                  <ReTooltip
+                    {...chartTooltipProps}
+                    formatter={(v: ValueType | undefined) => [v ?? 0, '新增用户']}
+                  />
+                  <Bar dataKey="count" fill="var(--chart-stroke)" radius={[2, 2, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : null}
@@ -236,10 +252,13 @@ export default function DashboardContent() {
                     dataKey="value"
                   >
                     {s.auditActionCounts.map((_, idx) => (
-                      <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                      <Cell key={idx} fill={pieColors[idx % pieColors.length]} />
                     ))}
                   </Pie>
-                  <ReTooltip formatter={(v: ValueType | undefined, name: NameType | undefined) => [v ?? 0, name ?? '']} />
+                  <ReTooltip
+                    {...chartTooltipProps}
+                    formatter={(v: ValueType | undefined, name: NameType | undefined) => [v ?? 0, name ?? '']}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -255,13 +274,13 @@ export default function DashboardContent() {
                         width: 8,
                         height: 8,
                         borderRadius: '50%',
-                        background: PIE_COLORS[idx % PIE_COLORS.length],
+                        background: pieColors[idx % pieColors.length],
                         flexShrink: 0,
                       }}
                     />
                     <Text style={{ fontSize: 12 }}>{ACTION_LABELS[r.action]?.label ?? r.action}</Text>
                   </div>
-                  <Badge count={r.count} style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }} />
+                  <Badge count={r.count} style={{ backgroundColor: pieColors[idx % pieColors.length] }} />
                 </div>
               ))}
             </div>
@@ -270,68 +289,37 @@ export default function DashboardContent() {
 
         <Col xs={24} xl={12}>
           <Card variant="borderless" title={<Text strong>系统状态</Text>} style={{ height: '100%' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="stat-strip">
               {[
                 {
                   label: '总用户数',
                   value: s?.userCount ?? 0,
-                  icon: <UserOutlined />,
-                  color: '#1677ff',
-                  sub: `其中活跃 ${s?.activeUserCount ?? 0} 人`,
+                  sub: `活跃 ${s?.activeUserCount ?? 0} 人`,
+                  warn: false,
                 },
                 {
-                  label: '近30天新增',
+                  label: '近 30 天新增',
                   value: s?.newUsersTrend.reduce((a, b) => a + b.count, 0) ?? 0,
-                  icon: <ArrowUpOutlined />,
-                  color: '#52c41a',
-                  sub: '过去30天注册用户',
+                  sub: '注册用户',
+                  warn: false,
                 },
                 {
                   label: '角色 / 权限',
                   value: `${s?.roleCount ?? 0} / ${s?.permissionCount ?? 0}`,
-                  icon: <SafetyCertificateOutlined />,
-                  color: '#722ed1',
                   sub: '角色数 / 权限条目',
+                  warn: false,
                 },
                 {
-                  label: '登录失败 (30d)',
+                  label: '登录失败',
                   value: s?.loginFailCount ?? 0,
-                  icon: <WarningOutlined />,
-                  color: (s?.loginFailCount ?? 0) > 50 ? '#ff4d4f' : '#faad14',
-                  sub: '登录尝试失败次数',
+                  sub: '近 30 天',
+                  warn: (s?.loginFailCount ?? 0) > 0,
                 },
               ].map((item) => (
-                <div
-                  key={item.label}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 12px',
-                    borderRadius: 8,
-                    background: 'var(--bg-subtle)',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 8,
-                      background: item.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: 16,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {item.icon}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.3 }}>{item.value}</div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{item.label} · {item.sub}</Text>
-                  </div>
+                <div key={item.label} className="stat-cell">
+                  <div className="stat-label">{item.label}</div>
+                  <div className="stat-value" style={item.warn ? { color: 'var(--color-danger)' } : undefined}>{item.value}</div>
+                  <div className="stat-sub">{item.sub}</div>
                 </div>
               ))}
             </div>

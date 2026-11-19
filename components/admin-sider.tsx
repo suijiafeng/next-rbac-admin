@@ -20,6 +20,7 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 const { Sider } = Layout;
 
@@ -152,6 +153,7 @@ export default function AdminSider(props: AdminSiderProps) {
   const { collapsed, role } = props;
   const pathname = usePathname();
   const router = useRouter();
+  const { resolved } = useTheme();
 
   const visibleMenus = useMemo(
     () => menuConfig.filter((item) => item.roles.includes(role)),
@@ -192,10 +194,9 @@ export default function AdminSider(props: AdminSiderProps) {
       label: (
         <span
           style={{
-            fontSize: 11,
-            color: 'rgba(255,255,255,0.4)',
-            letterSpacing: '0.5px',
-            textTransform: 'uppercase' as const,
+            fontSize: 12,
+            color: 'var(--sider-text-muted)',
+            letterSpacing: 'normal',
           }}
         >
           {group}
@@ -226,7 +227,9 @@ export default function AdminSider(props: AdminSiderProps) {
         zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '2px 0 8px rgba(0,0,0,0.08)',
+        background: 'var(--sider-bg)',
+        borderRight: '1px solid var(--sider-divider)',
+        boxShadow: 'none',
       }}
     >
       {/* Logo 区（展开态：Logo 在左，折叠按钮在右；折叠态：Logo 居中） */}
@@ -247,12 +250,12 @@ export default function AdminSider(props: AdminSiderProps) {
               width: 28,
               height: 28,
               borderRadius: 6,
-              background: 'linear-gradient(135deg, #1677ff 0%, #69b1ff 100%)',
+              background: 'var(--color-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 700,
+              color: 'var(--accent-contrast)',
+              fontWeight: 600,
               fontSize: 14,
               flexShrink: 0,
             }}
@@ -262,11 +265,11 @@ export default function AdminSider(props: AdminSiderProps) {
           {!collapsed && (
             <span
               style={{
-                color: '#fff',
+                color: 'var(--sider-text)',
                 fontWeight: 600,
-                fontSize: 15,
+                fontSize: 14,
                 marginLeft: 10,
-                letterSpacing: 0.3,
+                letterSpacing: 'normal',
                 whiteSpace: 'nowrap',
               }}
             >
@@ -280,7 +283,7 @@ export default function AdminSider(props: AdminSiderProps) {
       {/* 菜单区（可滚动） */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingTop: 8 }}>
         <Menu
-          theme="dark"
+          theme={resolved === 'dark' ? 'dark' : 'light'}
           mode="inline"
           selectedKeys={selectedKeys}
           items={menuItems}

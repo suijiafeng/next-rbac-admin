@@ -126,7 +126,7 @@ export default function PageTabs() {
                   background: isActive ? 'var(--bg-active)' : 'transparent',
                   color: isActive ? 'var(--color-primary)' : 'var(--text-secondary)',
                   fontWeight: isActive ? 500 : 400,
-                  transition: 'all 0.15s',
+                  transition: 'background-color 150ms ease-out, color 150ms ease-out',
                   flexShrink: 0,
                 }}
                 onMouseEnter={(e) => {
@@ -173,7 +173,7 @@ export default function PageTabs() {
                       color: 'var(--text-tertiary)',
                       fontSize: 10,
                       marginLeft: 2,
-                      transition: 'all 0.15s',
+                      transition: 'background-color 150ms ease-out, color 150ms ease-out',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = 'rgba(255,77,79,0.12)';

@@ -8,6 +8,8 @@ import { LegendComponent, TooltipComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { summarizeDistribution } from '@/lib/exam/dashboard';
 import { selectDistribution, useExamDashboardStore } from '@/lib/exam/dashboard-store';
+import { useTheme } from '@/components/providers/ThemeProvider';
+import { readChartInk } from '@/lib/chart-ink';
 
 echarts.use([PieChart, LegendComponent, TooltipComponent, CanvasRenderer]);
 
@@ -15,15 +17,17 @@ const { Text } = Typography;
 
 export default function PointsDistChart() {
   const distribution = useExamDashboardStore(selectDistribution);
+  const { resolved } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!ref.current) return;
+    const ink = readChartInk();
     const chart = echarts.init(ref.current);
     chart.setOption({
-      color: ['#ff7875', '#ffc53d', '#95de64'],
-      tooltip: { trigger: 'item' },
-      legend: { bottom: 0 },
+      color: ink.ramp,
+      tooltip: { trigger: 'item', backgroundColor: ink.surface, borderColor: ink.grid, textStyle: { color: ink.text, fontSize: 12 } },
+      legend: { bottom: 0, textStyle: { color: ink.muted, fontSize: 12 } },
       series: [
         {
           type: 'pie',
@@ -39,7 +43,7 @@ export default function PointsDistChart() {
       window.removeEventListener('resize', onResize);
       chart.dispose();
     };
-  }, [distribution]);
+  }, [distribution, resolved]);
 
   return (
     <div>

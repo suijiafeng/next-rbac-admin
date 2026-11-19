@@ -6,7 +6,7 @@
 
 .overviewCard {
   border: 1px solid var(--border-subtle);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 92%, #1677ff 8%) 0%, var(--bg-elevated) 100%);
+  background: var(--bg-container);
 }
 
 .statGrid {
@@ -73,7 +73,7 @@
 }
 
 .eventItem:hover {
-  background: color-mix(in srgb, var(--bg-elevated) 84%, #1677ff 16%);
+  background: var(--bg-hover);
 }
 
 .eventItemHigh {

@@ -1,16 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockRequirePermission, mockFindMany, mockFindUnique, mockCreate } = vi.hoisted(() => ({
+const { mockRequirePermission, mockFindMany, mockFindUnique, mockCreate, mockUserCount, mockUserRoleFindMany } = vi.hoisted(() => ({
   mockRequirePermission: vi.fn(),
   mockFindMany: vi.fn(),
   mockFindUnique: vi.fn(),
   mockCreate: vi.fn(),
+  mockUserCount: vi.fn(),
+  mockUserRoleFindMany: vi.fn(),
 }));
 
 vi.mock('@/lib/permission', () => ({ requirePermission: mockRequirePermission }));
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     role: { findMany: mockFindMany, findUnique: mockFindUnique, create: mockCreate },
+    user: { count: mockUserCount },
+    userRole: { findMany: mockUserRoleFindMany },
   },
 }));
 
@@ -43,6 +47,12 @@ describe('GET /api/roles', () => {
   it('返回角色列表（含 permissions 和 userCount）', async () => {
     mockRequirePermission.mockResolvedValue(undefined);
     mockFindMany.mockResolvedValue(MOCK_ROLES);
+    mockUserCount.mockResolvedValue(2);
+    mockUserRoleFindMany.mockResolvedValue([
+      { userId: 1, user: { username: 'ada', nickname: '艾达' }, role: { name: 'ADMIN' } },
+      { userId: 1, user: { username: 'ada', nickname: '艾达' }, role: { name: 'USER' } },
+      { userId: 2, user: { username: 'bob', nickname: null }, role: { name: 'USER' } },
+    ]);
 
     const res = await GET();
     const body = await res.json();
@@ -50,6 +60,14 @@ describe('GET /api/roles', () => {
     expect(body.data[0].name).toBe('ADMIN');
     expect(body.data[0].userCount).toBe(3);
     expect(body.data[0].permissions[0].code).toBe('user:view');
+    expect(body.summary).toEqual({
+      totalUsers: 2,
+      usersWithRoles: 2,
+      membershipCount: 3,
+      multiRoleUsers: [
+        { userId: 1, username: 'ada', nickname: '艾达', roles: ['ADMIN', 'USER'] },
+      ],
+    });
   });
 
   it('无权限时返回 403', async () => {

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import fs from 'fs';
+import { resolvePlaywrightTarget } from '../lib/e2e-target';
 
 const ARTIFACTS = '/opt/cursor/artifacts';
 
@@ -103,10 +104,11 @@ test('运营看板首屏含指标，图表按视图加载，筛选后多图一�
   await expect(page.getByTestId('ops-chart-cost')).toContainText('7d 成本 7000');
 
   const cookies = await context.cookies();
-  const bare = await browser.newContext({ javaScriptEnabled: false });
+  const { baseURL } = resolvePlaywrightTarget();
+  const bare = await browser.newContext({ javaScriptEnabled: false, baseURL });
   await bare.addCookies(cookies);
   const plain = await bare.newPage();
-  await plain.goto('http://127.0.0.1:3000/ops?range=30d&view=finance');
+  await plain.goto('/ops?range=30d&view=finance');
   await expect(plain.getByTestId('metric-finance')).toContainText('48000');
   await expect(plain.getByTestId('metric-business')).toContainText('320');
   await expect(plain.getByTestId('metric-staff')).toContainText('6');

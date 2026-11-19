@@ -6,11 +6,16 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { pathnameToTabKey, resolvePageMeta } from '@/lib/page-meta';
+import {
+  LEGACY_TABS_STORAGE_KEY,
+  canRoleOpenTab,
+  filterTabsForRole,
+  tabsStorageKey,
+} from '@/lib/tab-access';
 
 export interface TabItem {
   /** 唯一 key，等于 pathname 第一段（/dashboard、/users …） */
@@ -38,7 +43,6 @@ interface TabsContextValue {
 }
 
 const TabsContext = createContext<TabsContextValue | null>(null);
-const STORAGE_KEY = 'next-admin-tabs';
 
 const HOME_TAB: TabItem = {
   key: '/dashboard',
@@ -47,45 +51,63 @@ const HOME_TAB: TabItem = {
   closable: false,
 };
 
-function loadStoredTabs(): TabItem[] {
+function isStoredTab(value: unknown): value is TabItem {
+  if (!value || typeof value !== 'object') return false;
+  const tab = value as TabItem;
+  return typeof tab.key === 'string' && typeof tab.path === 'string' && typeof tab.label === 'string';
+}
+
+function loadStoredTabs(userId: number, role: string): TabItem[] {
   if (typeof window === 'undefined') return [HOME_TAB];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    // 旧键不区分用户。读到就丢掉，避免上一位用户的标签被下一位接着用。
+    localStorage.removeItem(LEGACY_TABS_STORAGE_KEY);
+    const raw = localStorage.getItem(tabsStorageKey(userId));
     if (!raw) return [HOME_TAB];
-    const parsed = JSON.parse(raw) as TabItem[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return [HOME_TAB];
-    // 强制保证首页在第一个
-    const hasHome = parsed.some((t) => t.key === HOME_TAB.key);
-    return hasHome ? parsed : [HOME_TAB, ...parsed];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [HOME_TAB];
+    const stored = filterTabsForRole(parsed.filter(isStoredTab), role);
+    if (stored.length === 0) return [HOME_TAB];
+    const hasHome = stored.some((tab) => tab.key === HOME_TAB.key);
+    const next = hasHome ? stored : [HOME_TAB, ...stored];
+    return next.map((tab) => (tab.key === HOME_TAB.key ? { ...HOME_TAB, path: tab.path || HOME_TAB.path } : tab));
   } catch {
     return [HOME_TAB];
   }
 }
 
-export function TabsProvider({ children }: { children: React.ReactNode }) {
+export function TabsProvider({
+  children,
+  userId,
+  role,
+}: {
+  children: React.ReactNode;
+  userId: number;
+  role: string;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
   const [tabs, setTabs] = useState<TabItem[]>([HOME_TAB]);
   const [activeKey, setActiveKey] = useState<string>(HOME_TAB.key);
   const [versions, setVersions] = useState<Record<string, number>>({});
-  const inited = useRef(false);
+  const [hydratedUserId, setHydratedUserId] = useState<number | null>(null);
 
-  // 初始化：从 localStorage 恢复
+  // 按当前用户恢复，并丢掉该角色打不开的标签
   useEffect(() => {
-    setTabs(loadStoredTabs());
-    inited.current = true;
-  }, []);
+    setTabs(loadStoredTabs(userId, role));
+    setHydratedUserId(userId);
+  }, [role, userId]);
 
-  // 持久化
+  // 只在恢复完成之后写入该用户自己的键，避免把上一位用户的标签写进来
   useEffect(() => {
-    if (!inited.current) return;
+    if (hydratedUserId !== userId) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tabs));
+      localStorage.setItem(tabsStorageKey(userId), JSON.stringify(tabs));
     } catch {
       /* noop */
     }
-  }, [tabs]);
+  }, [hydratedUserId, tabs, userId]);
 
   // 监听路径变化 —— 自动注册 tab + 设为活动
   useEffect(() => {
@@ -94,14 +116,18 @@ export function TabsProvider({ children }: { children: React.ReactNode }) {
     const meta = resolvePageMeta(pathname);
 
     setTabs((prev) => {
-      const exists = prev.find((t) => t.key === key);
+      // 当前地址对应的标签保留（直接打开无权限页面时仍要画出 403），其余无权限标签丢掉
+      const visible = prev.filter(
+        (tab) => tab.key === key || canRoleOpenTab(role, tab.key),
+      );
+      const base = visible.some((tab) => tab.key === HOME_TAB.key) ? visible : [HOME_TAB, ...visible];
+      const exists = base.find((tab) => tab.key === key);
       if (exists) {
-        // 已存在：仅更新 path（query 可能变化）
-        if (exists.path === pathname) return prev;
-        return prev.map((t) => (t.key === key ? { ...t, path: pathname } : t));
+        if (exists.path === pathname) return base;
+        return base.map((tab) => (tab.key === key ? { ...tab, path: pathname } : tab));
       }
       return [
-        ...prev,
+        ...base,
         {
           key,
           path: pathname,
@@ -111,7 +137,7 @@ export function TabsProvider({ children }: { children: React.ReactNode }) {
       ];
     });
     setActiveKey(key);
-  }, [pathname]);
+  }, [pathname, role]);
 
   const openTab = useCallback(
     (path: string) => {

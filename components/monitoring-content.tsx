@@ -355,7 +355,7 @@ const MonitoringContent = () => {
                 />
                 <Area
                   yAxisId="traffic"
-                  type="monotone"
+                  type="linear"
                   dataKey="traffic"
                   name="流量(PV)"
                   stroke="#1677ff"
@@ -367,7 +367,7 @@ const MonitoringContent = () => {
                 />
                 <Area
                   yAxisId="conversion"
-                  type="monotone"
+                  type="linear"
                   dataKey="conversion"
                   name="转化率(%)"
                   stroke="#52c41a"
