@@ -4,11 +4,34 @@
 
 ## 界面
 
-下面两张图来自本地 `npm run db:seed` 之后的页面，桌面宽度 1440。账号和数字都是种子数据。
+四张图都来自种子数据跑起来之后的页面。桌面三张是 1280×800，窄屏那张是 390 宽。图里的账号是 `super_admin`、`admin`、`developer1` 这些演示用户。
 
-![治理概览：注册趋势、操作分布，以及用户数](./docs/screenshots/dashboard-desktop.webp)
-
-![登录页。输入框是空的，占位符提示演示账号](./docs/screenshots/login-desktop.webp)
+<table>
+  <tr>
+    <td valign="top">
+      <img src="./docs/screenshots/approvals.webp" alt="审批中心里一条待审批的角色变更" width="400" />
+      <br />
+      审批中心：角色变更先看风险，通过之后才写入角色
+    </td>
+    <td valign="top">
+      <img src="./docs/screenshots/permissions.webp" alt="权限管理里的角色成员数和权限勾选" width="400" />
+      <br />
+      权限管理：按角色关系计数，同一人可以同时有多个角色
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <img src="./docs/screenshots/temp-grants.webp" alt="临时授权列表，含工作时间窗和已过期记录" width="400" />
+      <br />
+      临时授权：只在 09:00–21:00 生效，过期后鉴权不再承认
+    </td>
+    <td valign="top">
+      <img src="./docs/screenshots/mobile-nav.webp" alt="手机宽度下打开的侧栏抽屉" width="220" />
+      <br />
+      窄屏：侧栏收进抽屉，菜单仍按当前角色裁剪
+    </td>
+  </tr>
+</table>
 
 ## 功能
 
