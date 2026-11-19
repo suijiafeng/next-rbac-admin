@@ -20,7 +20,6 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
-import { useTheme } from '@/components/providers/ThemeProvider';
 
 const { Sider } = Layout;
 
@@ -153,8 +152,6 @@ export default function AdminSider(props: AdminSiderProps) {
   const { collapsed, role } = props;
   const pathname = usePathname();
   const router = useRouter();
-  const { resolved } = useTheme();
-
   const visibleMenus = useMemo(
     () => menuConfig.filter((item) => item.roles.includes(role)),
     [role],
@@ -283,7 +280,7 @@ export default function AdminSider(props: AdminSiderProps) {
       {/* 菜单区（可滚动） */}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingTop: 8 }}>
         <Menu
-          theme={resolved === 'dark' ? 'dark' : 'light'}
+          theme="dark"
           mode="inline"
           selectedKeys={selectedKeys}
           items={menuItems}

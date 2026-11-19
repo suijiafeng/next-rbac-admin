@@ -33,7 +33,6 @@ import {
 } from 'recharts';
 import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import { request } from '@/lib/request';
-import { useTheme } from '@/components/providers/ThemeProvider';
 
 const { Text } = Typography;
 
@@ -72,8 +71,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'exam.reject': { label: '试卷驳回', color: 'red' },
 };
 
-const PIE_LIGHT = ['#18181b', '#3f3f46', '#71717a', '#a1a1aa', '#d4d4d8'];
-const PIE_DARK = ['#fafafa', '#d4d4d8', '#a1a1aa', '#71717a', '#52525b'];
+const PIE_COLORS = ['#1677ff', '#52c41a', '#fadb14', '#ff7a45', '#9254de', '#13c2c2', '#f5222d', '#faad14'];
 
 interface StatsData {
   userCount: number;
@@ -86,8 +84,6 @@ interface StatsData {
 }
 
 export default function DashboardContent() {
-  const { resolved } = useTheme();
-  const pieColors = resolved === 'dark' ? PIE_DARK : PIE_LIGHT;
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -165,8 +161,8 @@ export default function DashboardContent() {
                 >
                   <defs>
                     <linearGradient id="regGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--chart-stroke)" stopOpacity={0.12} />
-                      <stop offset="100%" stopColor="var(--chart-stroke)" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#1677ff" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#1677ff" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
@@ -252,7 +248,7 @@ export default function DashboardContent() {
                     dataKey="value"
                   >
                     {s.auditActionCounts.map((_, idx) => (
-                      <Cell key={idx} fill={pieColors[idx % pieColors.length]} />
+                      <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                     ))}
                   </Pie>
                   <ReTooltip
@@ -274,13 +270,13 @@ export default function DashboardContent() {
                         width: 8,
                         height: 8,
                         borderRadius: '50%',
-                        background: pieColors[idx % pieColors.length],
+                        background: PIE_COLORS[idx % PIE_COLORS.length],
                         flexShrink: 0,
                       }}
                     />
                     <Text style={{ fontSize: 12 }}>{ACTION_LABELS[r.action]?.label ?? r.action}</Text>
                   </div>
-                  <Badge count={r.count} style={{ backgroundColor: pieColors[idx % pieColors.length] }} />
+                  <Badge count={r.count} style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }} />
                 </div>
               ))}
             </div>

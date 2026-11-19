@@ -73,7 +73,7 @@
 }
 
 .eventItem:hover {
-  background: var(--bg-hover);
+  background: color-mix(in srgb, var(--bg-elevated) 84%, #1677ff 16%);
 }
 
 .eventItemHigh {
