@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { AnswerMap, DemoAttemptRecord, ExamPaper, GradeResult, PaperStatus } from '@/lib/exam/types';
 import { DEMO_DATA_LABEL } from '@/lib/exam/types';
+import { seedExamRows } from '@/lib/exam/seed-db';
 
 type PaperRow = {
   id: string;
@@ -62,7 +63,8 @@ function toAttempt(row: AttemptRow): DemoAttemptRecord {
 }
 
 export async function listExamPapers(): Promise<ExamPaper[]> {
-  const rows = await prisma.examPaper.findMany({ orderBy: { id: 'asc' } });
+  const rows = await prisma.examPaper.findMany({ orderBy: { id: 'asc' } }); if (rows.length === 0) { await seedExamRows(prisma); const seeded = await prisma.examPaper.findMany({ orderBy: { id: 'asc' } }); return seeded.map((row) => toPaper(row)); }
+  
   return rows.map((row) => toPaper(row));
 }
 
