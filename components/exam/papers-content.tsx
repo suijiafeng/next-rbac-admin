@@ -37,17 +37,17 @@ export default function ExamPapersContent() {
   const startPaper = useExamSessionStore((state) => state.startPaper);
   const [list, setList] = useState<PublicPaper[]>([]);
   const [actor, setActor] = useState<ExamActor | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); const [loadError, setLoadError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    setLoading(true); setLoadError(null);
     try {
       const res = await request<{ actor: ExamActor; list: PublicPaper[] }>('/api/exams/papers');
       setActor(res.data.actor);
       setList(res.data.list);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '加载失败');
+      message.error(error instanceof Error ? error.message : '加载失败'); setLoadError(error instanceof Error ? error.message : '加载失败');
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ export default function ExamPapersContent() {
         <div>
           <Title level={4} style={{ marginBottom: 4 }}>培训考试</Title>
           <Text type="secondary">
-            {actor ? `当前身份：${ACTOR_LABEL[actor]}` : '加载身份中'}
+            {actor ? `当前身份：${ACTOR_LABEL[actor]}` : loadError ? '加载失败' : '加载身份中'}
             {' · '}
             {DEMO_DATA_LABEL}
             {' · 个人演示 suijiafeng'}
@@ -97,7 +97,7 @@ export default function ExamPapersContent() {
         />
         {loading ? (
           <div style={{ padding: 48, textAlign: 'center' }}><Spin /></div>
-        ) : (
+        ) : loadError ? (<Alert type="error" showIcon message={loadError} action={<Button size="small" onClick={load}>重新加载</Button>} />) : (
           <Row gutter={[16, 16]}>
             {list.map((paper) => {
               const status = STATUS_TAG[paper.status];
