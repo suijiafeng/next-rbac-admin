@@ -38,81 +38,58 @@ export async function POST(request: Request) {
   try {
     const { user: actor } = await requirePermission(PERMISSIONS.TEMP_GRANT);
 
-    const body = await request.json();
-    const { targetUserId, grantedRole, hours, reason, businessHoursOnly } = body as {
-      targetUserId?: number;
-      grantedRole?: string;
-      hours?: number;
-      reason?: string;
-      businessHoursOnly?: boolean;
-    };
-
-    if (!targetUserId || grantedRole !== 'ADMIN') {
-      return apiError('参数不合法：当前仅支持临时授予「管理员」', 400);
-    }
-    const h = Number(hours);
-    if (!Number.isFinite(h) || h <= 0 || h > 72) {
+    const body: unknown = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return apiError('参数不合法', 400);
+    const { targetUserId, grantedRole, hours, reason, businessHoursOnly } = body as Record<string, unknown>;
+    if (typeof targetUserId !== 'number' || !Number.isSafeInteger(targetUserId) || targetUserId <= 0
+      || grantedRole !== 'ADMIN') return apiError('参数不合法：当前仅支持临时授予「管理员」', 400);
+    if (typeof hours !== 'number' || !Number.isFinite(hours) || hours <= 0 || hours > 72) {
       return apiError('时长需在 1~72 小时之间', 400);
     }
+    if ((reason != null && typeof reason !== 'string')
+      || (businessHoursOnly !== undefined && typeof businessHoursOnly !== 'boolean')) return apiError('参数类型不合法', 400);
 
-    const target = await prisma.user.findUnique({
-      where: { id: Number(targetUserId) },
-      select: {
-        id: true,
-        username: true,
-        userRoles: { select: { role: { select: { name: true } } } },
-      },
-    });
-    if (!target) {
-      return apiError('目标用户不存在', 404);
-    }
-
-    const fromRole = resolveRoleFromNames(target.userRoles.map((ur) => ur.role.name));
-    if (fromRole !== 'USER') {
-      return apiError('临时授权仅用于把「普通用户」临时提升为管理员', 400);
-    }
-
-    const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
-    if (!adminRole) {
-      return apiError('ADMIN 角色不存在', 400);
-    }
-
-    const expiresAt = new Date(Date.now() + h * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
     const condition = businessHoursOnly ? JSON.stringify(BUSINESS_HOURS) : null;
+    // 验证也在事务内；串行化隔离使同一用户的并发授予不会产生重叠临时角色。
+    const grant = await prisma.$transaction(async (tx) => {
+      const target = await tx.user.findUnique({
+        where: { id: targetUserId },
+        select: { id: true, username: true, userRoles: { select: { role: { select: { name: true } } } } },
+      });
+      if (!target) throw new TempGrantError('目标用户不存在', 404);
+      const fromRole = resolveRoleFromNames(target.userRoles.map((ur) => ur.role.name));
+      if (fromRole !== 'USER') throw new TempGrantError('临时授权仅用于把「普通用户」临时提升为管理员', 400);
+      const adminRole = await tx.role.findUnique({ where: { name: 'ADMIN' } });
+      if (!adminRole) throw new TempGrantError('ADMIN 角色不存在', 400);
 
-    await prisma.userRole.upsert({
-      where: { userId_roleId: { userId: target.id, roleId: adminRole.id } },
-      update: {},
-      create: { userId: target.id, roleId: adminRole.id },
-    });
+      await tx.userRole.upsert({
+        where: { userId_roleId: { userId: target.id, roleId: adminRole.id } },
+        update: {}, create: { userId: target.id, roleId: adminRole.id },
+      });
+      const created = await tx.tempGrant.create({ data: {
+        userId: target.id, username: target.username, grantedRole: 'ADMIN', fromRole,
+        condition, reason: typeof reason === 'string' ? reason : null, status: 'ACTIVE',
+        grantedById: actor.id, grantedByUsername: actor.username, expiresAt,
+      } });
+      await writeAuditLog({
+        actorId: actor.id, actorUsername: actor.username, action: 'temp.grant', targetType: 'user',
+        targetId: target.id, targetLabel: target.username,
+        detail: { grantedRole: 'ADMIN', hours, expiresAt, businessHoursOnly: Boolean(businessHoursOnly) },
+      }, tx);
+      return created;
+    }, { isolationLevel: 'Serializable' });
 
-    const grant = await prisma.tempGrant.create({
-      data: {
-        userId: target.id,
-        username: target.username,
-        grantedRole: 'ADMIN',
-        fromRole,
-        condition,
-        reason: reason || null,
-        status: 'ACTIVE',
-        grantedById: actor.id,
-        grantedByUsername: actor.username,
-        expiresAt,
-      },
-    });
-
-    await writeAuditLog({
-      actorId: actor.id,
-      actorUsername: actor.username,
-      action: 'temp.grant',
-      targetType: 'user',
-      targetId: target.id,
-      targetLabel: target.username,
-      detail: { grantedRole: 'ADMIN', hours: h, expiresAt, businessHoursOnly: Boolean(businessHoursOnly) },
-    });
-
-    return apiSuccess(grant, `已临时授予 ${target.username} ${roleLabel('ADMIN')}（${h} 小时后自动回收）`);
+    return apiSuccess(grant, `已临时授予 ${grant.username} ${roleLabel('ADMIN')}（${hours} 小时后自动回收）`);
   } catch (error) {
+    if (error instanceof TempGrantError) return apiError(error.message, error.status);
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2034') {
+      return apiError('授权状态已变化，请刷新后重试', 409);
+    }
     return handleApiError(error, '授予临时权限失败', 'POST /api/temp-grants error');
   }
+}
+
+class TempGrantError extends Error {
+  constructor(message: string, public readonly status: number) { super(message); }
 }

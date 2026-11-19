@@ -9,6 +9,7 @@ import {
 import { getPermissionsByRole } from '@/lib/permission';
 import { Role } from '@/constants/permission';
 import { resolveRoleFromNames } from '@/lib/user-role';
+import { applyActiveTempGrants } from '@/lib/admin-user';
 import { apiError } from '@/lib/api-response';
 import {
   isLockedOut,
@@ -79,7 +80,11 @@ export async function POST(request: Request) {
       return apiError('用户名或密码错误', 401);
     }
 
-    const role = resolveRoleFromNames(adminUser.userRoles.map((item) => item.role.name)) as Role;
+    const roleNames = await applyActiveTempGrants(
+      adminUser.id,
+      adminUser.userRoles.map((item) => item.role.name),
+    );
+    const role = resolveRoleFromNames(roleNames) as Role;
     const permissions = getPermissionsByRole(role);
 
     const maintenanceSetting = await prisma.systemSetting.findUnique({

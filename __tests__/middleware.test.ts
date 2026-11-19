@@ -43,6 +43,18 @@ describe('middleware', () => {
     expect(res.status).toBe(200);
   });
 
+  it('未登录访问 /api/cron/expire-grants 放行（由路由校验 CRON_SECRET）', async () => {
+    const res = await middleware(makeRequest('/api/cron/expire-grants'));
+    expect(res.status).toBe(200);
+    expect(mockVerify).not.toHaveBeenCalled();
+  });
+
+  it('未登录访问名称相近的 API 仍然 401', async () => {
+    mockVerify.mockResolvedValue(null);
+    const res = await middleware(makeRequest('/api/cronjobs'));
+    expect(res.status).toBe(401);
+  });
+
   it('未登录访问 API 返回 401 JSON', async () => {
     mockVerify.mockResolvedValue(null);
     const res = await middleware(makeRequest('/api/users'));

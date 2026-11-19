@@ -212,3 +212,70 @@ model TempGrant {
   @@index([expiresAt])
   @@map("temp_grants")
 }
+
+/// 培训考试试卷。题目 JSON 含标准答案，只在服务端判分时读取。
+/// 数据来源字段固定为「演示数据」，作者 suijiafeng 的个人演示。
+model ExamPaper {
+  id             String        @id
+  title          String
+  summary        String
+  status         String
+  authorUsername String
+  durationSec    Int
+  passScore      Int
+  questions      Json
+  dataSource     String        @default("演示数据")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  attempts       ExamAttempt[]
+
+  @@index([status])
+  @@map("exam_papers")
+}
+
+/// 作答记录。看板从这张表聚合，seeded 为演示样本，学员交卷也会写入。
+model ExamAttempt {
+  id             Int       @id @default(autoincrement())
+  externalKey    String?   @unique
+  paperId        String
+  paperTitle     String
+  username       String
+  learnerLabel   String
+  department     String
+  answers        Json
+  earned         Int
+  total          Int
+  passed         Boolean
+  pointsAwarded  Int
+  submittedAt    DateTime
+  dataSource     String    @default("演示数据")
+  seeded         Boolean   @default(false)
+  paper          ExamPaper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@index([paperId])
+  @@index([submittedAt])
+  @@index([department])
+  @@map("exam_attempts")
+}
+
+/// 货品采集演示。录入、审核、上架是同一条记录的三个环节。
+model GoodsItem {
+  id               Int      @id @default(autoincrement())
+  sku              String   @unique
+  name             String
+  category         String
+  priceCents       Int
+  stock            Int
+  reviewStatus     String   @default("DRAFT")
+  shelfChannel     String?
+  shelfTitle       String?
+  shelfPriceCents  Int?
+  authorUsername   String
+  reviewerUsername String?
+  dataSource       String   @default("演示数据")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([reviewStatus])
+  @@map("goods_items")
+}

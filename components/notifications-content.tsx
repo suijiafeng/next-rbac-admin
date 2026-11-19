@@ -57,6 +57,10 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'temp.grant': { label: '临时授权', color: 'geekblue' },
   'temp.revoke': { label: '回收授权', color: 'orange' },
   'temp.expire': { label: '到期回收', color: 'default' },
+  'exam.submit': { label: '提交试卷审批', color: 'blue' },
+  'exam.withdraw': { label: '撤回试卷', color: 'orange' },
+  'exam.approve': { label: '试卷通过', color: 'green' },
+  'exam.reject': { label: '试卷驳回', color: 'red' },
 };
 
 const TARGET_TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -81,6 +85,10 @@ const ACTION_RISK: Record<string, { label: string; color: string }> = {
   'temp.grant': { label: '中', color: 'gold' },
   'temp.revoke': { label: '低', color: 'lime' },
   'temp.expire': { label: '低', color: 'cyan' },
+  'exam.submit': { label: '中', color: 'blue' },
+  'exam.withdraw': { label: '低', color: 'cyan' },
+  'exam.approve': { label: '中', color: 'blue' },
+  'exam.reject': { label: '中', color: 'blue' },
 };
 
 const RISK_SCORE: Record<string, number> = {

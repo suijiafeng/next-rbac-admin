@@ -6,6 +6,7 @@ loadEnv({ path: '.env' });
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { PERMISSIONS } from '../constants/permission';
+import { seedExamRows } from '../lib/exam/seed-db';
 
 const prisma = new PrismaClient();
 
@@ -408,6 +409,44 @@ async function main() {
   }
   console.log('✅ 治理权限绑定完成');
 
+  // 培训考试是个人演示模块，权限码写入同一张权限表，运行时仍以 ROLE_PERMISSION_MAP 为准。
+  const examPermissions = [
+    { code: PERMISSIONS.EXAM_TAKE, name: '参加考试', description: '学员作答已发布的演示试卷' },
+    { code: PERMISSIONS.EXAM_AUTHOR, name: '维护试卷', description: '出题人提交或撤回试卷发布' },
+    { code: PERMISSIONS.EXAM_REVIEW, name: '审批试卷', description: '审核人通过或驳回试卷发布' },
+    { code: PERMISSIONS.EXAM_STATS, name: '考试看板', description: '查看演示成绩看板' },
+  ];
+  for (const p of examPermissions) {
+    await prisma.permission.upsert({ where: { code: p.code }, update: {}, create: p });
+  }
+  const examRows = await prisma.permission.findMany({
+    where: { code: { in: examPermissions.map((p) => p.code) } },
+  });
+  const userExamCodes = [PERMISSIONS.EXAM_TAKE];
+  const adminExamCodes = [PERMISSIONS.EXAM_AUTHOR, PERMISSIONS.EXAM_STATS];
+  for (const perm of examRows) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: superAdminRole!.id, permissionId: perm.id } },
+      update: {},
+      create: { roleId: superAdminRole!.id, permissionId: perm.id },
+    });
+    if (adminExamCodes.includes(perm.code as typeof adminExamCodes[number])) {
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId: adminRole!.id, permissionId: perm.id } },
+        update: {},
+        create: { roleId: adminRole!.id, permissionId: perm.id },
+      });
+    }
+    if (userExamCodes.includes(perm.code as typeof userExamCodes[number])) {
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId: userRole!.id, permissionId: perm.id } },
+        update: {},
+        create: { roleId: userRole!.id, permissionId: perm.id },
+      });
+    }
+  }
+  console.log('✅ 培训考试演示权限绑定完成');
+
   // 示例变更请求（仅当为空时）
   const changeRequestCount = await prisma.changeRequest.count();
   if (changeRequestCount === 0) {
@@ -498,6 +537,37 @@ async function main() {
     }
     console.log('✅ 示例临时授权创建完成');
   }
+
+  await seedExamRows(prisma);
+  console.log('✅ 培训考试演示试卷与作答记录已写入数据库（已有审批状态不会被覆盖）');
+
+  const goodsPermissions = [
+    { code: PERMISSIONS.GOODS_SUBMIT, name: '货品录入', description: '录入货品并提交审核、配置上架' },
+    { code: PERMISSIONS.GOODS_REVIEW, name: '货品审核', description: '通过或驳回货品' },
+    { code: PERMISSIONS.OPS_VIEW, name: '运营看板', description: '查看演示运营指标' },
+  ];
+  for (const item of goodsPermissions) {
+    await prisma.permission.upsert({ where: { code: item.code }, update: {}, create: item });
+  }
+  const goodsRows = await prisma.permission.findMany({
+    where: { code: { in: goodsPermissions.map((item) => item.code) } },
+  });
+  const adminGoodsCodes: string[] = [PERMISSIONS.GOODS_SUBMIT, PERMISSIONS.OPS_VIEW];
+  for (const perm of goodsRows) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: superAdminRole!.id, permissionId: perm.id } },
+      update: {},
+      create: { roleId: superAdminRole!.id, permissionId: perm.id },
+    });
+    if (adminGoodsCodes.includes(perm.code)) {
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId: adminRole!.id, permissionId: perm.id } },
+        update: {},
+        create: { roleId: adminRole!.id, permissionId: perm.id },
+      });
+    }
+  }
+  console.log('✅ 货品与运营看板权限绑定完成');
 
   console.log('🎉 RBAC 初始化完成！');
   console.log('');

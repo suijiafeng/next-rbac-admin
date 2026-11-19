@@ -57,6 +57,10 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   'temp.grant': { label: '临时授权', color: 'geekblue' },
   'temp.revoke': { label: '回收授权', color: 'orange' },
   'temp.expire': { label: '到期回收', color: 'default' },
+  'exam.submit': { label: '提交试卷审批', color: 'blue' },
+  'exam.withdraw': { label: '撤回试卷', color: 'orange' },
+  'exam.approve': { label: '试卷通过', color: 'green' },
+  'exam.reject': { label: '试卷驳回', color: 'red' },
 };
 
 const PIE_COLORS = ['#1677ff', '#52c41a', '#fadb14', '#ff7a45', '#9254de', '#13c2c2', '#f5222d', '#faad14'];

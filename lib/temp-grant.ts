@@ -15,6 +15,7 @@ export async function removeUserRole(userId: number, roleName: string) {
  * 扫描所有到期的临时授权并自动回收：
  * 移除提升的角色 → 置为 EXPIRED → 写一条 temp.expire 审计（actor 记为 system）。
  * 被 GET /api/temp-grants（懒回收）与 /api/cron/expire-grants（定时兜底）复用。
+ * 权限是否生效不依赖这里：鉴权读取时会忽略已过期的 ACTIVE 授权。
  */
 export async function expireDueGrants(): Promise<number> {
   const due = await prisma.tempGrant.findMany({

@@ -3,8 +3,8 @@ import { getPermissionsByRole, hasPermission } from '@/lib/permission-map';
 import { PERMISSIONS } from '@/constants/permission';
 
 describe('getPermissionsByRole', () => {
-  it('USER 只有 user:view 权限', () => {
-    expect(getPermissionsByRole('USER')).toEqual([PERMISSIONS.USER_VIEW]);
+  it('USER 只有 user:view 和 exam:take', () => {
+    expect(getPermissionsByRole('USER')).toEqual([PERMISSIONS.USER_VIEW, PERMISSIONS.EXAM_TAKE]);
   });
 
   it('ADMIN 包含 user:view、user:create、user:edit、role:view', () => {

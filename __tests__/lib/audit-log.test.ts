@@ -79,3 +79,12 @@ describe('writeAuditLog', () => {
     ).resolves.toBeUndefined();
   });
 });
+
+describe('事务内审计', () => {
+  it('使用事务客户端，失败向外抛出以触发回滚', async () => {
+    const create = vi.fn().mockRejectedValue(new Error('audit unavailable'));
+    const tx = { auditLog: { create } } as unknown as import('@prisma/client').Prisma.TransactionClient;
+    await expect(writeAuditLog({ actorId: 1, actorUsername: 'super', action: 'temp.grant', targetType: 'user' }, tx)).rejects.toThrow('audit unavailable');
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+});

@@ -7,8 +7,8 @@ describe('resolvePageMeta', () => {
   });
 
   it('已配置页面返回预设标题和 closable', () => {
-    expect(resolvePageMeta('/dashboard')).toEqual({ label: '仪表盘', closable: false });
-    expect(resolvePageMeta('/notifications')).toEqual({ label: '审计日志', closable: true });
+    expect(resolvePageMeta('/dashboard')).toEqual({ label: '治理概览', closable: false });
+    expect(resolvePageMeta('/audit')).toEqual({ label: '审计日志', closable: true });
   });
 
   it('支持嵌套路由，仅按第一段解析', () => {
