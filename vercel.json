@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/expire-grants",
-      "schedule": "0 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
