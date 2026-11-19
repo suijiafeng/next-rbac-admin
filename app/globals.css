@@ -6,51 +6,52 @@
  * Design Tokens —— 数据密集型企业风（明色）
  * ============================================================ */
 :root {
-  /* —— Background 层级（冷调 slate，更透气干净） —— */
-  --bg-layout: #f4f6f8;      /* 整体页面底色 */
-  --bg-container: #ffffff;   /* 卡片/容器底色 */
-  --bg-elevated: #ffffff;    /* 悬浮元素（dropdown/modal） */
-  --bg-subtle: #f7f9fb;      /* 次级容器（如 table header） */
-  --bg-hover: rgba(15, 23, 42, 0.04);
-  --bg-active: rgba(22, 119, 255, 0.08);
+  /* 浅色：微暖灰白底 + 纯白面板。强调色只有墨色。 */
+  --bg-layout: #fafafa;
+  --bg-container: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-subtle: #f4f4f5;
+  --bg-hover: rgba(24, 24, 27, 0.04);
+  --bg-active: rgba(24, 24, 27, 0.06);
 
-  /* —— Sider 专用（深色侧边栏，与主体反差） —— */
-  --sider-bg: #101c2e;
-  --sider-bg-hover: rgba(255, 255, 255, 0.07);
-  --sider-bg-selected: #1677ff;
-  --sider-text: rgba(255, 255, 255, 0.85);
-  --sider-text-muted: rgba(255, 255, 255, 0.45);
-  --sider-divider: rgba(255, 255, 255, 0.08);
+  --sider-bg: #ffffff;
+  --sider-bg-hover: rgba(24, 24, 27, 0.04);
+  --sider-bg-selected: #18181b;
+  --sider-text: rgba(24, 24, 27, 0.88);
+  --sider-text-muted: rgba(24, 24, 27, 0.45);
+  --sider-divider: #e4e4e7;
 
-  /* —— Border（slate，更干净） —— */
-  --border-base: #e3e8ef;
-  --border-subtle: #eef1f5;
-  --border-strong: #cdd5df;
+  --border-base: rgba(228, 228, 231, 0.95);
+  --border-subtle: #f4f4f5;
+  --border-strong: #d4d4d8;
 
-  /* —— Text —— */
-  --text-primary: rgba(0, 0, 0, 0.88);
-  --text-secondary: rgba(0, 0, 0, 0.65);
-  --text-tertiary: rgba(0, 0, 0, 0.45);
-  --text-disabled: rgba(0, 0, 0, 0.25);
+  --text-primary: rgba(24, 24, 27, 0.92);
+  --text-secondary: rgba(24, 24, 27, 0.65);
+  --text-tertiary: #71717a;
+  --text-disabled: rgba(24, 24, 27, 0.28);
 
-  /* —— 主题色 —— */
-  --color-primary: #1677ff;
-  --color-primary-hover: #4096ff;
-  --color-primary-active: #0958d9;
-  --color-success: #52c41a;
+  --color-primary: #18181b;
+  --color-primary-hover: #27272a;
+  --color-primary-active: #09090b;
+  --accent-contrast: #ffffff;
+  --color-success: #16a34a;
   --color-success-bg: #f0fdf4;
-  --color-success-text: #16a34a;
-  --color-warning: #faad14;
-  --color-danger: #ff4d4f;
-  --color-info: #1677ff;
+  --color-success-text: #15803d;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-info: #18181b;
+
+  --chart-stroke: #18181b;
+  --chart-grid: #e4e4e7;
+  --chart-fill: rgba(24, 24, 27, 0.12);
+  --chart-muted: #71717a;
 
   /* —— 状态标签 —— */
-  --tag-muted-bg: #f3f4f6;
-  --tag-muted-text: #6b7280;
+  --tag-muted-bg: #f4f4f5;
+  --tag-muted-text: #52525b;
 
-  /* —— 阴影（利落、低扩散） —— */
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-  --shadow-elevated: 0 4px 12px rgba(16, 24, 40, 0.10), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 1px 2px rgba(0, 0, 0, 0.06);
 
   /* —— 圆角 —— */
   --radius-sm: 4px;
@@ -68,50 +69,56 @@
   --sider-width-collapsed: 64px;
 
   /* —— Table 专用 token —— */
-  --table-stripe-bg: #ebf0f9;
+  --table-stripe-bg: #fafafa;
 }
 
 /* ============================================================
  * Design Tokens —— 暗色主题
  * ============================================================ */
 html[data-theme='dark'] {
-  /* —— Table 专用 token（暗色） —— */
-  --table-stripe-bg: #1a1d25;
+  /* 深色：中性锌黑，不用发蓝的 slate。强调色反转为浅灰，保证按钮可读。 */
+  --table-stripe-bg: #18181b;
 
-  --bg-layout: #0f1115;
-  --bg-container: #181a20;
-  --bg-elevated: #1f2128;
-  --bg-subtle: #14161b;
+  --bg-layout: #09090b;
+  --bg-container: #18181b;
+  --bg-elevated: #27272a;
+  --bg-subtle: #18181b;
   --bg-hover: rgba(255, 255, 255, 0.06);
-  --bg-active: rgba(22, 119, 255, 0.16);
+  --bg-active: rgba(255, 255, 255, 0.08);
 
-  --sider-bg: #0a0c10;
-  --sider-bg-hover: rgba(255, 255, 255, 0.07);
-  --sider-bg-selected: #1677ff;
-  --sider-text: rgba(255, 255, 255, 0.85);
+  --sider-bg: #09090b;
+  --sider-bg-hover: rgba(255, 255, 255, 0.06);
+  --sider-bg-selected: #f4f4f5;
+  --sider-text: rgba(255, 255, 255, 0.88);
   --sider-text-muted: rgba(255, 255, 255, 0.45);
-  --sider-divider: rgba(255, 255, 255, 0.06);
+  --sider-divider: rgba(255, 255, 255, 0.08);
 
-  --border-base: #2a2d36;
-  --border-subtle: #23262e;
-  --border-strong: #3a3d47;
+  --border-base: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.16);
 
-  --text-primary: rgba(255, 255, 255, 0.88);
+  --text-primary: rgba(255, 255, 255, 0.92);
   --text-secondary: rgba(255, 255, 255, 0.65);
   --text-tertiary: rgba(255, 255, 255, 0.45);
-  --text-disabled: rgba(255, 255, 255, 0.25);
+  --text-disabled: rgba(255, 255, 255, 0.28);
 
-  --color-primary: #1677ff;
-  --color-primary-hover: #4096ff;
-  --color-primary-active: #0958d9;
-  --color-success-bg: rgba(82, 196, 26, 0.16);
-  --color-success-text: #73d13d;
+  --color-primary: #f4f4f5;
+  --color-primary-hover: #ffffff;
+  --color-primary-active: #e4e4e7;
+  --accent-contrast: #18181b;
+  --color-success-bg: rgba(22, 163, 74, 0.16);
+  --color-success-text: #4ade80;
+
+  --chart-stroke: #e4e4e7;
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-fill: rgba(244, 244, 245, 0.12);
+  --chart-muted: rgba(255, 255, 255, 0.45);
 
   --tag-muted-bg: rgba(255, 255, 255, 0.08);
   --tag-muted-text: rgba(255, 255, 255, 0.65);
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
-  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.55), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-card: none;
+  --shadow-elevated: none;
 }
 
 /* ============================================================
@@ -123,6 +130,7 @@ body {
   margin: 0;
   background: var(--bg-layout);
   color: var(--text-primary);
+  font-family: "SF Pro Text", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -147,20 +155,15 @@ a {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background:
-    linear-gradient(rgba(8, 12, 28, 0.62), rgba(8, 12, 28, 0.78)),
-    url('/assets/bg.jpg') center / cover no-repeat;
-  background-color: #0b1020;
+  background: var(--bg-layout);
+  padding: 24px;
 }
 
 .login-wrap::before,
-.login-wrap::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-  z-index: 0;
+.login-wrap::after,
+.login-blob3,
+.auth-particles {
+  display: none;
 }
 
 .login-wrap::before {
@@ -233,16 +236,11 @@ a {
   z-index: 1;
   width: 400px;
   max-width: calc(100vw - 32px);
-  padding: 44px 40px 36px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(22px) saturate(140%);
-  animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  padding: 28px 28px 24px;
+  border: 1px solid var(--border-base);
+  border-radius: 8px;
+  background: var(--bg-container);
+  box-shadow: var(--shadow-card);
 }
 
 @keyframes cardIn {
@@ -258,81 +256,64 @@ a {
 }
 
 .glass-logo {
-  display: flex;
-  width: 56px;
-  height: 56px;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 18px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #6366f1, #06b6d4);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
-  color: #fff;
-  font-size: 26px;
+  display: none;
 }
 
 .glass-title {
   margin-bottom: 6px;
-  color: #fff;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-align: center;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-align: left;
 }
 
 .glass-sub {
-  margin-bottom: 30px;
-  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 24px;
+  color: var(--text-secondary);
   font-size: 13px;
-  text-align: center;
+  text-align: left;
 }
 
 .glass-card .ant-input-affix-wrapper {
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.42);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s, transform 0.25s;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg-container);
+  box-shadow: none;
+  transition: border-color 150ms ease-out;
 }
 
 .glass-card .ant-input-affix-wrapper:hover {
-  border-color: rgba(165, 180, 252, 0.82);
-  background: rgba(30, 41, 59, 0.62);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 0 0 3px rgba(99, 102, 241, 0.16);
+  border-color: var(--text-tertiary);
+  background: var(--bg-container);
+  box-shadow: none;
 }
 
 .glass-card .ant-input-affix-wrapper-focused,
 .glass-card .ant-input-affix-wrapper:focus-within {
-  border-color: #a5b4fc;
-  background: rgba(15, 23, 42, 0.72);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 0 0 3px rgba(139, 92, 246, 0.3),
-    0 10px 28px rgba(15, 23, 42, 0.24);
-  transform: translateY(-1px);
+  border-color: var(--color-primary);
+  background: var(--bg-container);
+  box-shadow: none;
+  transform: none;
 }
 
 .glass-card .ant-input-affix-wrapper-status-error,
 .glass-card .ant-input-affix-wrapper-status-error:not(.ant-input-affix-wrapper-disabled),
 .glass-card .ant-input-affix-wrapper-status-error:hover,
 .glass-card .ant-input-affix-wrapper-status-error:focus-within {
-  border-color: #fb7185;
-  background: rgba(127, 29, 29, 0.34);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 3px rgba(244, 63, 94, 0.22);
+  border-color: var(--color-danger);
+  background: var(--bg-container);
+  box-shadow: none;
 }
 
 .glass-card .ant-input,
 .glass-card .ant-input-affix-wrapper .ant-input,
 .glass-card .ant-input-affix-wrapper input.ant-input {
   background: transparent !important;
-  color: rgba(255, 255, 255, 0.96) !important;
-  font-weight: 500;
-  caret-color: #fff;
+  color: var(--text-primary) !important;
+  font-weight: 400;
+  caret-color: var(--text-primary);
 }
 
 .glass-card .ant-input-status-error,
@@ -340,47 +321,47 @@ a {
 .glass-card .ant-input-status-error:hover,
 .glass-card .ant-input-status-error:focus {
   background: transparent !important;
-  color: rgba(255, 255, 255, 0.96) !important;
+  color: var(--text-primary) !important;
 }
 
 .glass-card .ant-input-affix-wrapper-status-error .ant-input,
 .glass-card .ant-input-affix-wrapper-status-error .ant-input::placeholder {
-  color: rgba(255, 255, 255, 0.96) !important;
+  color: var(--text-primary) !important;
 }
 
 .glass-card .ant-input:-webkit-autofill,
 .glass-card .ant-input:-webkit-autofill:hover,
 .glass-card .ant-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: rgba(255, 255, 255, 0.96);
-  caret-color: #fff;
+  -webkit-text-fill-color: var(--text-primary);
+  caret-color: var(--text-primary);
   transition: background-color 9999s ease-in-out 0s;
-  box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.72) inset;
+  box-shadow: 0 0 0 1000px var(--bg-container) inset;
 }
 
 .glass-card .ant-input::placeholder {
-  color: rgba(226, 232, 240, 0.54);
+  color: var(--text-tertiary);
 }
 
 .glass-card .ant-input-prefix {
   margin-inline-end: 10px;
-  color: rgba(199, 210, 254, 0.86);
-  transition: color 0.25s;
+  color: var(--text-tertiary);
+  transition: color 150ms ease-out;
 }
 
 .glass-card .ant-input-password-icon {
-  color: rgba(199, 210, 254, 0.78);
-  transition: color 0.25s;
+  color: var(--text-tertiary);
+  transition: color 150ms ease-out;
 }
 
 .glass-card .ant-input-password-icon:hover,
 .glass-card .ant-input-affix-wrapper:hover .ant-input-prefix,
 .glass-card .ant-input-affix-wrapper:focus-within .ant-input-prefix {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .glass-card .ant-form-item-label > label {
-  color: rgba(241, 245, 249, 0.92);
-  font-weight: 600;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .glass-card .ant-form-item-explain-error {
@@ -389,38 +370,34 @@ a {
 }
 
 .glass-card .ant-btn-primary {
-  height: 46px;
-  border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6 50%, #06b6d4);
-  background-size: 200% auto;
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  transition: all 0.4s;
+  height: 36px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: normal;
+  box-shadow: none;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
 }
 
 .glass-card .ant-btn-primary:hover {
-  background-position: right center;
-  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.7);
-  transform: translateY(-1px);
+  box-shadow: none;
+  transform: none;
 }
 
 .glass-foot {
-  margin-top: 22px;
-  color: rgba(255, 255, 255, 0.6);
+  margin-top: 20px;
+  color: var(--text-secondary);
   font-size: 13px;
-  text-align: center;
+  text-align: left;
 }
 
 .glass-foot a {
-  color: #a5b4fc;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
 .glass-foot a:hover {
-  color: #c7d2fe;
+  color: var(--text-secondary);
 }
 
 .auth-register {
@@ -477,11 +454,11 @@ a {
 }
 
 .glass-card .ant-result-title {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .glass-card .ant-result-subtitle {
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--text-secondary);
 }
 
 .auth-particles {
@@ -552,10 +529,55 @@ a {
 
 /* 侧边栏深色滚动条 */
 .admin-sider ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-strong);
 }
 .admin-sider ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--text-tertiary);
+}
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-base);
+  border-radius: 8px;
+  background: var(--border-base);
+}
+
+@media (min-width: 992px) {
+  .stat-strip.stat-strip-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.stat-cell {
+  min-width: 0;
+  padding: 10px 12px;
+  background: var(--bg-container);
+}
+
+.stat-label {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.stat-value {
+  margin-top: 2px;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  line-height: 1.3;
+}
+
+.stat-sub {
+  margin-top: 2px;
+  color: var(--text-tertiary);
+  font-size: 12px;
 }
 
 /* ============================================================
@@ -590,11 +612,16 @@ a {
 /* 1) 卡片：用上已定义却闲置的阴影令牌，从「平铺融底」升级为「轻浮起的表面」 */
 .ant-layout-content .ant-card {
   box-shadow: var(--shadow-card);
-  transition: box-shadow 0.2s ease;
+  border: 1px solid var(--border-base);
+  transition: border-color 150ms ease-out;
 }
-/* 可交互卡片（标记 hoverable）悬浮时轻微抬升，反馈跟手而不浮夸 */
+
+.ant-layout-content .ant-card .ant-card {
+  box-shadow: none;
+}
+
 .ant-layout-content .ant-card.ant-card-hoverable:hover {
-  box-shadow: var(--shadow-elevated);
+  box-shadow: var(--shadow-card);
 }
 
 /* 2) 卡片标题：略增字重，标题与正文的层级更分明 */
@@ -620,11 +647,9 @@ a {
 
 /* 5) 主按钮：叠一道与品牌色呼应的极轻投影，从「贴纸感」变「实体感」
  *    仅限内容区，登录页的渐变按钮不受影响（不同 DOM 子树，选择器不命中） */
-.ant-layout-content .ant-btn-primary:not(:disabled) {
-  box-shadow: 0 1px 2px rgba(22, 119, 255, 0.16), 0 2px 6px rgba(22, 119, 255, 0.10);
-}
+.ant-layout-content .ant-btn-primary:not(:disabled),
 .ant-layout-content .ant-btn-primary:not(:disabled):hover {
-  box-shadow: 0 2px 4px rgba(22, 119, 255, 0.20), 0 4px 12px rgba(22, 119, 255, 0.14);
+  box-shadow: none;
 }
 
 /* 6) 标签圆角与整体令牌统一（细节一致性） */

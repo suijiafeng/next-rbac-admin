@@ -47,20 +47,6 @@ const ROLE_LABEL: Record<string, string> = {
   USER: '普通用户',
 };
 
-const AVATAR_COLORS = [
-  '#1677ff', '#52c41a', '#faad14', '#f5222d',
-  '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16',
-];
-function avatarColor(username: string) {
-  if (!username) {
-    return AVATAR_COLORS[0];
-  }
-
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) hash += username.charCodeAt(i);
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-}
-
 function EditableRow({
   label, fieldName, rules, form, submitLoading, onConfirm, onCancel,
 }: {
@@ -206,7 +192,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
   ];
 
   const displayName = profile ? (profile.nickname || profile.username || '?') : '?';
-  const bgColor = profile ? avatarColor(profile.username || displayName) : '#1677ff';
+  const bgColor = 'var(--color-primary)';
   const firstChar = displayName[0]?.toUpperCase() || '?';
 
   return (
@@ -220,7 +206,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
       {profile && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 0 16px' }}>
-            <Avatar size={48} style={{ backgroundColor: bgColor, fontSize: 20, fontWeight: 700, flexShrink: 0 }}>
+            <Avatar size={48} style={{ backgroundColor: bgColor, color: 'var(--accent-contrast)', fontSize: 20, fontWeight: 600, flexShrink: 0 }}>
               {firstChar}
             </Avatar>
             <div>

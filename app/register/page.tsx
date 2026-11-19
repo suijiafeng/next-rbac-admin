@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Button, Form, Input, Result, message } from 'antd';
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import Link from 'next/link';
-import AuthParticles from '@/components/auth/AuthParticles';
 
 const DEVICE_TOKEN_KEY = 'next-rbac-device-token';
 
@@ -68,9 +67,6 @@ export default function RegisterPage() {
 
   return (
     <div className="login-wrap auth-register">
-      <span className="login-blob3" />
-      <AuthParticles />
-
       <div className="glass-card">
         {registered ? (
           <Result
@@ -85,9 +81,8 @@ export default function RegisterPage() {
           />
         ) : (
           <>
-            <div className="glass-logo">✦</div>
             <div className="glass-title">注册账号</div>
-            <div className="glass-sub">创建您的账户，开启后台之旅</div>
+            <div className="glass-sub">提交后由管理员审核，通过后才能登录。</div>
 
             <Form form={form} layout="vertical" onFinish={handleRegister} autoComplete="off">
               <Form.Item

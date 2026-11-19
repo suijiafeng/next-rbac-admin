@@ -37,17 +37,6 @@ const ROLE_LABEL: Record<string, { text: string; color: string }> = {
 };
 
 // ─── 头像配色 ─────────────────────────────────────────────
-const AVATAR_COLORS = [
-  '#1677ff', '#52c41a', '#faad14', '#f5222d',
-  '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16',
-];
-function avatarColor(username: string) {
-  if (!username) return AVATAR_COLORS[0];
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) hash += username.charCodeAt(i);
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-}
-
 interface CurrentUser {
   nickname: string | null;
   username: string;
@@ -86,7 +75,7 @@ export default function AdminHeader(props: AdminHeaderProps) {
 
   const displayName = currentUser.nickname || currentUser.username || '?';
   const firstChar = displayName[0]?.toUpperCase() || '?';
-  const bgColor = avatarColor(currentUser.username || displayName);
+  const bgColor = 'var(--color-primary)';
   const roleTag = ROLE_LABEL[currentUser.role] ?? { text: currentUser.role, color: 'default' };
 
   const userMenu: MenuProps['items'] = [
@@ -221,7 +210,7 @@ export default function AdminHeader(props: AdminHeaderProps) {
           >
             <Avatar
               size={28}
-              style={{ backgroundColor: bgColor, fontWeight: 600, fontSize: 13, flexShrink: 0 }}
+              style={{ backgroundColor: bgColor, color: 'var(--accent-contrast)', fontWeight: 600, fontSize: 13, flexShrink: 0 }}
             >
               {firstChar}
             </Avatar>

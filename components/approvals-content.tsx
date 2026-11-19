@@ -4,14 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Button,
   Card,
-  Col,
   Form,
   Input,
   Modal,
-  Row,
   Select,
   Space,
-  Statistic,
   Table,
   Tabs,
   Tag,
@@ -296,34 +293,25 @@ export default function ApprovalsContent() {
       }
     >
       {stats && (
-        <Row gutter={16} style={{ marginBottom: 8 }}>
-          <Col xs={12} sm={8} md={4}>
-            <Statistic
-              title="待审批"
-              value={stats.pending}
-              valueStyle={stats.pending ? { color: '#d46b08' } : undefined}
-            />
-          </Col>
-          <Col xs={12} sm={8} md={4}>
-            <Statistic title="已通过" value={stats.approved} valueStyle={{ color: '#389e0d' }} />
-          </Col>
-          <Col xs={12} sm={8} md={4}>
-            <Statistic title="已驳回" value={stats.rejected} />
-          </Col>
-          <Col xs={12} sm={8} md={4}>
-            <Statistic title="生效中临时授权" value={stats.activeGrants} />
-          </Col>
-          <Col xs={12} sm={8} md={4}>
-            <Statistic title="已自动回收" value={stats.expiredGrants} />
-          </Col>
-          <Col xs={12} sm={8} md={4}>
-            <Statistic
-              title="按时回收率"
-              value={stats.autoReclaimRate ?? '—'}
-              suffix={stats.autoReclaimRate != null ? '%' : ''}
-            />
-          </Col>
-        </Row>
+        <div className="stat-strip stat-strip-6">
+          {[
+            { label: '待审批', value: stats.pending, warn: stats.pending > 0 },
+            { label: '已通过', value: stats.approved, warn: false },
+            { label: '已驳回', value: stats.rejected, warn: false },
+            { label: '生效中临时授权', value: stats.activeGrants, warn: false },
+            { label: '已自动回收', value: stats.expiredGrants, warn: false },
+            {
+              label: '按时回收率',
+              value: stats.autoReclaimRate != null ? `${stats.autoReclaimRate}%` : '—',
+              warn: false,
+            },
+          ].map((item) => (
+            <div key={item.label} className="stat-cell">
+              <div className="stat-label">{item.label}</div>
+              <div className="stat-value" style={item.warn ? { color: 'var(--color-warning)' } : undefined}>{item.value}</div>
+            </div>
+          ))}
+        </div>
       )}
       <Tabs
         activeKey={scope}

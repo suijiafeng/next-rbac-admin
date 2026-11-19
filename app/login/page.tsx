@@ -6,7 +6,6 @@ import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/providers/AuthProvider';
-import AuthParticles from '@/components/auth/AuthParticles';
 
 interface LoginFormValues {
   username: string;
@@ -44,13 +43,9 @@ export default function LoginPage() {
 
   return (
     <div className="login-wrap">
-      <span className="login-blob3" />
-      <AuthParticles />
-
       <div className="glass-card">
-        <div className="glass-logo">✦</div>
-        <div className="glass-title">后台登录</div>
-        <div className="glass-sub">欢迎回来，请登录您的账户</div>
+        <div className="glass-title">登录</div>
+        <div className="glass-sub">使用已有账号进入后台。</div>
 
         <Form
           form={form}
@@ -84,7 +79,7 @@ export default function LoginPage() {
 
           <Form.Item style={{ marginBottom: 8 }}>
             <Button type="primary" htmlType="submit" block loading={submitting}>
-              登 录
+              登录
             </Button>
           </Form.Item>
         </Form>

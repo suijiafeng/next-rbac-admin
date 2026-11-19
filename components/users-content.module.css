@@ -10,8 +10,7 @@
   background: var(--bg-subtle) !important;
   font-weight: 600;
   font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: normal;
   color: var(--text-secondary) !important;
   border-bottom: 1px solid var(--border-base) !important;
   padding: 10px 16px !important;
