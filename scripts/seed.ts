@@ -154,6 +154,9 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash('123456', 10);
 
+  const seedDate = new Date();
+  const createdDaysAgo = (days: number) => new Date(seedDate.getTime() - days * 86_400_000);
+
   // 创建超级管理员用户
   const superAdminUser = await prisma.user.upsert({
     where: { username: 'super_admin' },
@@ -163,6 +166,7 @@ async function main() {
       password: hashedPassword,
       nickname: '超级管理员',
       email: 'super_admin@example.com',
+      createdAt: createdDaysAgo(27),
       status: 1,
     },
   });
@@ -190,6 +194,7 @@ async function main() {
       password: hashedPassword,
       nickname: '管理员',
       email: 'admin@example.com',
+      createdAt: createdDaysAgo(17),
       status: 1,
     },
   });
@@ -217,6 +222,7 @@ async function main() {
       password: hashedPassword,
       nickname: '普通用户',
       email: 'user@example.com',
+      createdAt: createdDaysAgo(3),
       status: 1,
     },
   });
@@ -268,7 +274,8 @@ async function main() {
     { username: 'support2', nickname: '朱技术支持', email: 'support2@company.com', role: 'USER', status: 1 },
   ];
 
-  for (const userData of testUsers) {
+  for (let index = 0; index < testUsers.length; index += 1) {
+    const userData = testUsers[index];
     const testUser = await prisma.user.upsert({
       where: { username: userData.username },
       update: {},
@@ -278,6 +285,7 @@ async function main() {
         nickname: userData.nickname,
         email: userData.email,
         status: userData.status,
+        createdAt: createdDaysAgo((index * 11) % 29),
       },
     });
 
