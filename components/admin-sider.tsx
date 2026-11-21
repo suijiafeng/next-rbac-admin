@@ -170,22 +170,27 @@ export default function AdminSider(props: AdminSiderProps) {
 
   // 数据密集风：分组菜单（折叠时退化为平铺，避免拥挤）
   const menuItems = useMemo(() => {
-    if (collapsed) {
-      return visibleMenus.map((item) => ({
-        key: item.key,
-        icon: item.icon,
-        label: <Link href={item.key}>{item.label}</Link>,
-      }));
-    }
+    const isDemo = (item: MenuItemConfig) => ['培训考试', '货品', '运营'].includes(item.group);
+    const asLink = (item: MenuItemConfig) => ({
+      key: item.key,
+      icon: item.icon,
+      label: <Link href={item.key}>{item.label}</Link>,
+    });
+    const core = visibleMenus.filter((item) => !isDemo(item));
+    const demo = visibleMenus.filter(isDemo);
+    const examples = demo.length
+      ? [{ key: 'demo-modules', label: '业务演示', icon: <FundOutlined />, children: demo.map(asLink) }]
+      : [];
+    if (collapsed) return [...core.map(asLink), ...examples];
 
     const groups = new Map<string, MenuItemConfig[]>();
-    visibleMenus.forEach((item) => {
+    core.forEach((item) => {
       const list = groups.get(item.group) ?? [];
       list.push(item);
       groups.set(item.group, list);
     });
 
-    return Array.from(groups.entries()).map(([group, items]) => ({
+    const mainItems = Array.from(groups.entries()).map(([group, items]) => ({
       key: `group-${group}`,
       type: 'group' as const,
       label: (
@@ -205,6 +210,7 @@ export default function AdminSider(props: AdminSiderProps) {
         label: <Link href={item.key}>{item.label}</Link>,
       })),
     }));
+    return [...mainItems, ...examples];
   }, [collapsed, visibleMenus]);
 
   return (
@@ -283,6 +289,7 @@ export default function AdminSider(props: AdminSiderProps) {
           theme="dark"
           mode="inline"
           selectedKeys={selectedKeys}
+          defaultOpenKeys={menuItems.some((item) => item.key === 'demo-modules' && 'children' in item && item.children?.some((child) => selectedKeys.includes(child.key))) ? ['demo-modules'] : []}
           items={menuItems}
           style={{ border: 'none', background: 'transparent' }}
         />
